@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChefMind 智食谱 - AI智能菜谱生成平台</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- 头部导航 -->
+        <header class="header">
+            <div class="container">
+                <div class="logo">
+                    <i class="fas fa-utensils"></i>
+                    <h1>ChefMind 智食谱</h1>
+                </div>
+                <nav class="nav">
+                    <a href="#" class="nav-link active">智能生成</a>
+                    <a href="#" class="nav-link">我的菜谱</a>
+                    <a href="#" class="nav-link">关于我们</a>
+                </nav>
+            </div>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="main">
+            <div class="container">
+                <!-- 步骤指示器 -->
+                <div class="step-indicator">
+                    <div class="step active" data-step="1">
+                        <div class="step-number">1</div>
+                        <div class="step-title">选择食材</div>
+                    </div>
+                    <div class="step" data-step="2">
+                        <div class="step-number">2</div>
+                        <div class="step-title">烹饪方式</div>
+                    </div>
+                    <div class="step" data-step="3">
+                        <div class="step-number">3</div>
+                        <div class="step-title">约束条件</div>
+                    </div>
+                    <div class="step" data-step="4">
+                        <div class="step-number">4</div>
+                        <div class="step-title">生成菜谱</div>
+                    </div>
+                </div>
+
+                <!-- 第一步：食材选择 -->
+                <div class="step-content active" id="step1">
+                    <div class="step-header">
+                        <h2>选择您的食材</h2>
+                        <p>选择您现有的食材，我们将为您推荐最佳搭配</p>
+                    </div>
+
+                    <!-- 搜索框 -->
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="ingredientSearch" placeholder="搜索食材名称...">
+                    </div>
+
+                    <!-- 已选食材标签 -->
+                    <div class="selected-ingredients">
+                        <h3>已选食材：</h3>
+                        <div class="ingredient-tags" id="selectedTags"></div>
+                    </div>
+
+                    <!-- 食材分类 -->
+                    <div class="ingredient-categories">
+                        <div class="category">
+                            <h3><i class="fas fa-leaf"></i> 蔬菜类</h3>
+                            <div class="ingredient-grid" data-category="vegetables">
+                                <div class="ingredient-item" data-ingredient="白菜">白菜</div>
+                                <div class="ingredient-item" data-ingredient="萝卜">萝卜</div>
+                                <div class="ingredient-item" data-ingredient="土豆">土豆</div>
+                                <div class="ingredient-item" data-ingredient="西红柿">西红柿</div>
+                                <div class="ingredient-item" data-ingredient="黄瓜">黄瓜</div>
+                                <div class="ingredient-item" data-ingredient="茄子">茄子</div>
+                                <div class="ingredient-item" data-ingredient="豆角">豆角</div>
+                                <div class="ingredient-item" data-ingredient="青椒">青椒</div>
+                                <div class="ingredient-item" data-ingredient="洋葱">洋葱</div>
+                                <div class="ingredient-item" data-ingredient="胡萝卜">胡萝卜</div>
+                            </div>
+                        </div>
+
+                        <div class="category">
+                            <h3><i class="fas fa-drumstick-bite"></i> 肉类</h3>
+                            <div class="ingredient-grid" data-category="meat">
+                                <div class="ingredient-item" data-ingredient="猪肉">猪肉</div>
+                                <div class="ingredient-item" data-ingredient="牛肉">牛肉</div>
+                                <div class="ingredient-item" data-ingredient="鸡肉">鸡肉</div>
+                                <div class="ingredient-item" data-ingredient="羊肉">羊肉</div>
+                                <div class="ingredient-item" data-ingredient="鸭肉">鸭肉</div>
+                                <div class="ingredient-item" data-ingredient="排骨">排骨</div>
+                                <div class="ingredient-item" data-ingredient="鸡翅">鸡翅</div>
+                                <div class="ingredient-item" data-ingredient="牛排">牛排</div>
+                            </div>
+                        </div>
+
+                        <div class="category">
+                            <h3><i class="fas fa-fish"></i> 海鲜类</h3>
+                            <div class="ingredient-grid" data-category="seafood">
+                                <div class="ingredient-item" data-ingredient="鱼">鱼</div>
+                                <div class="ingredient-item" data-ingredient="虾">虾</div>
+                                <div class="ingredient-item" data-ingredient="蟹">蟹</div>
+                                <div class="ingredient-item" data-ingredient="鱿鱼">鱿鱼</div>
+                                <div class="ingredient-item" data-ingredient="带鱼">带鱼</div>
+                                <div class="ingredient-item" data-ingredient="扇贝">扇贝</div>
+                                <div class="ingredient-item" data-ingredient="海带">海带</div>
+                            </div>
+                        </div>
+
+                        <div class="category">
+                            <h3><i class="fas fa-bread-slice"></i> 主食类</h3>
+                            <div class="ingredient-grid" data-category="staple">
+                                <div class="ingredient-item" data-ingredient="米饭">米饭</div>
+                                <div class="ingredient-item" data-ingredient="面条">面条</div>
+                                <div class="ingredient-item" data-ingredient="饺子皮">饺子皮</div>
+                                <div class="ingredient-item" data-ingredient="面包">面包</div>
+                                <div class="ingredient-item" data-ingredient="馒头">馒头</div>
+                                <div class="ingredient-item" data-ingredient="年糕">年糕</div>
+                            </div>
+                        </div>
+
+                        <div class="category">
+                            <h3><i class="fas fa-pepper-hot"></i> 调料类</h3>
+                            <div class="ingredient-grid" data-category="seasoning">
+                                <div class="ingredient-item" data-ingredient="生抽">生抽</div>
+                                <div class="ingredient-item" data-ingredient="老抽">老抽</div>
+                                <div class="ingredient-item" data-ingredient="料酒">料酒</div>
+                                <div class="ingredient-item" data-ingredient="醋">醋</div>
+                                <div class="ingredient-item" data-ingredient="糖">糖</div>
+                                <div class="ingredient-item" data-ingredient="盐">盐</div>
+                                <div class="ingredient-item" data-ingredient="蒜">蒜</div>
+                                <div class="ingredient-item" data-ingredient="姜">姜</div>
+                                <div class="ingredient-item" data-ingredient="葱">葱</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-actions">
+                        <button class="btn btn-primary" id="nextStep1" disabled>下一步：选择烹饪方式</button>
+                    </div>
+                </div>
+
+                <!-- 第二步：烹饪方式选择 -->
+                <div class="step-content" id="step2">
+                    <div class="step-header">
+                        <h2>选择烹饪方式</h2>
+                        <p>根据您的食材，我们推荐以下烹饪方式</p>
+                    </div>
+
+                    <div class="cooking-methods">
+                        <div class="method-item" data-method="炒">
+                            <i class="fas fa-fire"></i>
+                            <h3>炒</h3>
+                            <p>快速翻炒，保持食材鲜嫩</p>
+                        </div>
+                        <div class="method-item" data-method="煮">
+                            <i class="fas fa-tint"></i>
+                            <h3>煮</h3>
+                            <p>水煮烹饪，营养健康</p>
+                        </div>
+                        <div class="method-item" data-method="蒸">
+                            <i class="fas fa-cloud"></i>
+                            <h3>蒸</h3>
+                            <p>蒸汽烹饪，原汁原味</p>
+                        </div>
+                        <div class="method-item" data-method="烤">
+                            <i class="fas fa-burn"></i>
+                            <h3>烤</h3>
+                            <p>烘烤制作，香味浓郁</p>
+                        </div>
+                        <div class="method-item" data-method="炸">
+                            <i class="fas fa-oil-can"></i>
+                            <h3>炸</h3>
+                            <p>油炸酥脆，口感丰富</p>
+                        </div>
+                        <div class="method-item" data-method="炖">
+                            <i class="fas fa-clock"></i>
+                            <h3>炖</h3>
+                            <p>慢火炖煮，营养充分</p>
+                        </div>
+                        <div class="method-item" data-method="凉拌">
+                            <i class="fas fa-snowflake"></i>
+                            <h3>凉拌</h3>
+                            <p>清爽凉拌，简单易做</p>
+                        </div>
+                        <div class="method-item" data-method="焖">
+                            <i class="fas fa-pot"></i>
+                            <h3>焖</h3>
+                            <p>焖制入味，软烂可口</p>
+                        </div>
+                    </div>
+
+                    <div class="step-actions">
+                        <button class="btn btn-secondary" id="prevStep2">上一步</button>
+                        <button class="btn btn-primary" id="nextStep2" disabled>下一步：设置条件</button>
+                    </div>
+                </div>
+
+                <!-- 第三步：约束条件设定 -->
+                <div class="step-content" id="step3">
+                    <div class="step-header">
+                        <h2>设置约束条件</h2>
+                        <p>告诉我们您的具体需求，我们将为您量身定制</p>
+                    </div>
+
+                    <div class="constraints">
+                        <div class="constraint-group">
+                            <h3><i class="fas fa-clock"></i> 烹饪时间</h3>
+                            <div class="constraint-options">
+                                <div class="constraint-item" data-constraint="time" data-value="15">15分钟内</div>
+                                <div class="constraint-item" data-constraint="time" data-value="30">30分钟内</div>
+                                <div class="constraint-item" data-constraint="time" data-value="60">1小时内</div>
+                                <div class="constraint-item" data-constraint="time" data-value="unlimited">不限时间</div>
+                            </div>
+                        </div>
+
+                        <div class="constraint-group">
+                            <h3><i class="fas fa-users"></i> 用餐人数</h3>
+                            <div class="constraint-options">
+                                <div class="constraint-item" data-constraint="people" data-value="1-2">1-2人</div>
+                                <div class="constraint-item" data-constraint="people" data-value="3-4">3-4人</div>
+                                <div class="constraint-item" data-constraint="people" data-value="5-6">5-6人</div>
+                                <div class="constraint-item" data-constraint="people" data-value="6+">6人以上</div>
+                            </div>
+                        </div>
+
+                        <div class="constraint-group">
+                            <h3><i class="fas fa-star"></i> 难度偏好</h3>
+                            <div class="constraint-options">
+                                <div class="constraint-item" data-constraint="difficulty" data-value="easy">简单</div>
+                                <div class="constraint-item" data-constraint="difficulty" data-value="medium">中等</div>
+                                <div class="constraint-item" data-constraint="difficulty" data-value="hard">困难</div>
+                                <div class="constraint-item" data-constraint="difficulty" data-value="any">不限</div>
+                            </div>
+                        </div>
+
+                        <div class="constraint-group">
+                            <h3><i class="fas fa-pepper-hot"></i> 口味偏好</h3>
+                            <div class="constraint-options">
+                                <div class="constraint-item" data-constraint="taste" data-value="light">清淡</div>
+                                <div class="constraint-item" data-constraint="taste" data-value="medium">适中</div>
+                                <div class="constraint-item" data-constraint="taste" data-value="strong">重口味</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-actions">
+                        <button class="btn btn-secondary" id="prevStep3">上一步</button>
+                        <button class="btn btn-primary" id="generateRecipes">生成智能菜谱</button>
+                    </div>
+                </div>
+
+                <!-- 第四步：菜谱生成结果 -->
+                <div class="step-content" id="step4">
+                    <div class="step-header">
+                        <h2>为您推荐的菜谱</h2>
+                        <p>基于您的选择，AI为您生成了以下菜谱方案</p>
+                    </div>
+
+                    <!-- 加载状态 -->
+                    <div class="loading" id="loadingState">
+                        <div class="loading-spinner"></div>
+                        <p>AI正在为您生成专属菜谱...</p>
+                    </div>
+
+                    <!-- 菜谱结果 -->
+                    <div class="recipe-results" id="recipeResults" style="display: none;">
+                        <!-- 菜谱卡片将通过JavaScript动态生成 -->
+                    </div>
+
+                    <div class="step-actions">
+                        <button class="btn btn-secondary" id="prevStep4">重新选择</button>
+                        <button class="btn btn-primary" id="saveRecipes" style="display: none;">保存菜谱</button>
+                    </div>
+                </div>
+
+                <!-- 详细烹饪指导模态框 -->
+                <div class="modal" id="recipeModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 id="modalRecipeTitle">菜谱详情</h2>
+                            <button class="modal-close" id="closeModal">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="recipe-details" id="recipeDetails">
+                                <!-- 详细步骤将通过JavaScript动态生成 -->
+                            </div>
+                            <div class="external-links">
+                                <h3>相关资源</h3>
+                                <div class="link-buttons">
+                                    <a href="#" class="link-btn bilibili" target="_blank">
+                                        <i class="fab fa-bilibili"></i> B站视频教程
+                                    </a>
+                                    <a href="#" class="link-btn douyin" target="_blank">
+                                        <i class="fas fa-video"></i> 抖音短视频
+                                    </a>
+                                    <a href="#" class="link-btn xiachufang" target="_blank">
+                                        <i class="fas fa-book"></i> 下厨房图文
+                                    </a>
+                                    <a href="#" class="link-btn xiaohongshu" target="_blank">
+                                        <i class="fas fa-heart"></i> 小红书分享
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 页脚 -->
+        <footer class="footer">
+            <div class="container">
+                <p>&copy; 2024 ChefMind 智食谱. 让AI成为您的专属厨师助手</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
