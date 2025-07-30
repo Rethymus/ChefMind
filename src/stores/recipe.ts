@@ -1,6 +1,8 @@
-import { defineStore } from 'pinia'
+// ChefMind 智食谱 - 菜谱状态管理
+
 import { ref, computed } from 'vue'
-import type { Recipe, Ingredient, CookingMethod, Constraints } from '@/types/recipe'
+import { defineStore } from 'pinia'
+import type { Ingredient, CookingMethod, Recipe, Constraints } from '@/types/recipe'
 import { recipeService } from '@/services/recipeService'
 
 export const useRecipeStore = defineStore('recipe', () => {
@@ -8,26 +10,31 @@ export const useRecipeStore = defineStore('recipe', () => {
   const selectedIngredients = ref<Ingredient[]>([])
   const selectedMethods = ref<CookingMethod[]>([])
   const constraints = ref<Constraints>({
-    time: null,
-    people: null,
+    cookingTime: null,
     difficulty: null,
-    taste: null
+    servings: null,
+    dietaryRestrictions: [],
+    excludeIngredients: []
   })
-  const currentStep = ref(1)
   const generatedRecipes = ref<Recipe[]>([])
+  const currentStep = ref(1)
   const isGenerating = ref(false)
   const savedRecipes = ref<Recipe[]>([])
 
   // 计算属性
-  const canProceedToStep2 = computed(() => selectedIngredients.value.length > 0)
-  const canProceedToStep3 = computed(() => selectedMethods.value.length > 0)
-  const canGenerateRecipes = computed(() => {
-    return selectedIngredients.value.length > 0 && 
-           selectedMethods.value.length > 0 &&
-           Object.values(constraints.value).some(v => v !== null)
+  const canProceedToStep2 = computed(() => {
+    return selectedIngredients.value.length > 0
   })
 
-  // 动作
+  const canProceedToStep3 = computed(() => {
+    return selectedMethods.value.length > 0
+  })
+
+  const canGenerateRecipes = computed(() => {
+    return selectedIngredients.value.length > 0 && selectedMethods.value.length > 0
+  })
+
+  // 方法
   const toggleIngredient = (ingredient: Ingredient) => {
     const index = selectedIngredients.value.findIndex(item => item.id === ingredient.id)
     if (index > -1) {
@@ -42,12 +49,12 @@ export const useRecipeStore = defineStore('recipe', () => {
     if (index > -1) {
       selectedMethods.value.splice(index, 1)
     } else {
-      selectedMethods.value.push({ ...method, selected: true })
+      selectedMethods.value.push({ ...method })
     }
   }
 
-  const updateConstraints = (key: keyof Constraints, value: string) => {
-    constraints.value[key] = value
+  const updateConstraints = (key: keyof Constraints, value: any) => {
+    (constraints.value as any)[key] = value
   }
 
   const nextStep = () => {
@@ -62,19 +69,22 @@ export const useRecipeStore = defineStore('recipe', () => {
     }
   }
 
-  const resetToStep1 = () => {
-    currentStep.value = 1
+  const setStep = (step: number) => {
+    if (step >= 1 && step <= 4) {
+      currentStep.value = step
+    }
   }
 
   const generateRecipes = async () => {
-    isGenerating.value = true
     try {
+      isGenerating.value = true
+      
       const request = {
-        ingredients: selectedIngredients.value.map(item => item.name),
-        methods: selectedMethods.value.map(item => item.name),
+        ingredients: selectedIngredients.value.map(ing => ing.name),
+        methods: selectedMethods.value.map(method => method.name),
         constraints: constraints.value
       }
-      
+
       const recipes = await recipeService.generateRecipes(request)
       generatedRecipes.value = recipes
       currentStep.value = 4
@@ -86,27 +96,17 @@ export const useRecipeStore = defineStore('recipe', () => {
     }
   }
 
-  const saveRecipe = (recipe: Recipe) => {
-    const existingIndex = savedRecipes.value.findIndex(item => item.id === recipe.id)
-    if (existingIndex === -1) {
-      savedRecipes.value.push(recipe)
-      // 保存到本地存储
-      localStorage.setItem('chefmind-saved-recipes', JSON.stringify(savedRecipes.value))
-    }
-  }
-
-  const removeRecipe = (recipeId: string) => {
-    const index = savedRecipes.value.findIndex(item => item.id === recipeId)
-    if (index > -1) {
-      savedRecipes.value.splice(index, 1)
-      localStorage.setItem('chefmind-saved-recipes', JSON.stringify(savedRecipes.value))
-    }
-  }
-
-  const loadSavedRecipes = () => {
-    const saved = localStorage.getItem('chefmind-saved-recipes')
-    if (saved) {
-      savedRecipes.value = JSON.parse(saved)
+  const saveRecipe = async (recipe: Recipe) => {
+    try {
+      const success = await recipeService.saveRecipe(recipe)
+      if (success) {
+        savedRecipes.value.push(recipe)
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('保存菜谱失败:', error)
+      return false
     }
   }
 
@@ -114,13 +114,24 @@ export const useRecipeStore = defineStore('recipe', () => {
     selectedIngredients.value = []
     selectedMethods.value = []
     constraints.value = {
-      time: null,
-      people: null,
+      cookingTime: null,
       difficulty: null,
-      taste: null
+      servings: null,
+      dietaryRestrictions: [],
+      excludeIngredients: []
     }
     generatedRecipes.value = []
     currentStep.value = 1
+    isGenerating.value = false
+  }
+
+  const loadSavedRecipes = async () => {
+    try {
+      const recipes = await recipeService.getFavoriteRecipes()
+      savedRecipes.value = recipes
+    } catch (error) {
+      console.error('加载收藏菜谱失败:', error)
+    }
   }
 
   return {
@@ -128,8 +139,8 @@ export const useRecipeStore = defineStore('recipe', () => {
     selectedIngredients,
     selectedMethods,
     constraints,
-    currentStep,
     generatedRecipes,
+    currentStep,
     isGenerating,
     savedRecipes,
     
@@ -138,17 +149,16 @@ export const useRecipeStore = defineStore('recipe', () => {
     canProceedToStep3,
     canGenerateRecipes,
     
-    // 动作
+    // 方法
     toggleIngredient,
     toggleMethod,
     updateConstraints,
     nextStep,
     prevStep,
-    resetToStep1,
+    setStep,
     generateRecipes,
     saveRecipe,
-    removeRecipe,
-    loadSavedRecipes,
-    resetSelection
+    resetSelection,
+    loadSavedRecipes
   }
 })

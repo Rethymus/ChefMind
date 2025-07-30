@@ -1,234 +1,251 @@
 <template>
   <div class="ingredient-selection">
-    <div class="step-header">
-      <h2>选择您的食材</h2>
-      <p>选择您喜欢的食材，我们将为您推荐最佳搭配</p>
-    </div>
-    
-    <!-- 搜索框 -->
     <div class="search-section">
-      <el-input
-        v-model="searchQuery"
-        placeholder="搜索食材名称..."
-        size="large"
-        clearable
-      >
-        <template #prefix>
-          <el-icon><Search /></el-icon>
-        </template>
-      </el-input>
-      
-      <!-- 语音搜索按钮 -->
-      <button 
-        class="voice-search-btn"
-        @click="startVoiceSearch"
-        :class="{ 'listening': isListening }"
-        :title="isListening ? '正在听取...' : '语音搜索'"
-      >
-        <i class="fas fa-microphone" v-if="!isListening"></i>
-        <i class="fas fa-microphone-slash" v-else></i>
-      </button>
-    </div>
-    
-    <!-- 已选食材 -->
-    <div class="selected-section" v-if="selectedIngredients.length > 0">
-      <h3>已选食材：</h3>
-      <div class="selected-tags">
-        <el-tag
-          v-for="ingredient in selectedIngredients"
-          :key="ingredient.id"
-          type="danger"
-          closable
-          @close="removeIngredient(ingredient)"
-        >
-          {{ ingredient.name }}
-        </el-tag>
+      <div class="search-container">
+        <div class="search-input-wrapper">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="搜索食材..."
+            class="search-input"
+          />
+          <button
+            @click="startVoiceSearch"
+            class="voice-search-btn"
+            :class="{ 'listening': isListening }"
+            :title="isListening ? '正在听取...' : '语音搜索'"
+          >
+            <i class="fas fa-microphone" v-if="!isListening"></i>
+            <i class="fas fa-microphone-slash" v-else></i>
+          </button>
+        </div>
+        <div class="category-filter">
+          <button
+            v-for="category in ingredientCategories"
+            :key="category.id"
+            @click="selectedCategory = selectedCategory === category.id ? null : category.id"
+            class="category-btn"
+            :class="{ active: selectedCategory === category.id }"
+          >
+            <span class="category-icon">{{ category.icon }}</span>
+            <span class="category-name">{{ category.name }}</span>
+          </button>
+        </div>
       </div>
     </div>
-    
-    <!-- 食材分类 -->
-    <div class="categories-section">
-      <div 
-        v-for="category in filteredCategories" 
+
+    <div class="ingredients-grid">
+      <div
+        v-for="category in filteredCategories"
         :key="category.id"
         class="category-section"
       >
-        <div class="category-header">
+        <h3 class="category-title">
           <span class="category-icon">{{ category.icon }}</span>
-          <h3 class="category-title">{{ category.name }}</h3>
-        </div>
+          {{ category.name }}
+        </h3>
         
-        <div class="ingredient-grid">
-          <!-- 显示的食材（最多14个） -->
+        <div class="ingredients-list">
+          <!-- 显示前14个食材 -->
           <div
-            v-for="ingredient in getDisplayItems(category)"
+            v-for="ingredient in getDisplayIngredients(category)"
             :key="ingredient.id"
-            class="ingredient-item"
-            :class="{ 'selected': isSelected(ingredient.id) }"
             @click="toggleIngredient(ingredient)"
+            class="ingredient-item"
+            :class="{ 
+              selected: isSelected(ingredient),
+              'fade-in': true
+            }"
           >
-            {{ ingredient.name }}
+            <span class="ingredient-icon">{{ ingredient.icon || '🥬' }}</span>
+            <span class="ingredient-name">{{ ingredient.name }}</span>
+            <i 
+              v-if="isSelected(ingredient)" 
+              class="fas fa-check selected-icon"
+            ></i>
           </div>
           
           <!-- 更多按钮 -->
           <div
-            v-if="hasMoreItems(category)"
-            class="more-button"
-            @click="showMoreDialog(category)"
+            v-if="category.items.length > 14"
+            @click="showMore(category)"
+            class="ingredient-item more-btn"
           >
-            更多 >
+            <span class="ingredient-icon">➕</span>
+            <span class="ingredient-name">更多 ></span>
+            <span class="more-count">({{ category.items.length - 14 }})</span>
           </div>
         </div>
       </div>
     </div>
-    
-    <!-- 智能推荐组件 -->
-    <SmartRecommendation 
-      :selected-ingredients="selectedIngredients"
-      @ingredient-toggle="toggleIngredient"
-    />
-    
-    <!-- 更多食材弹窗 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="`选择${currentCategory?.name || ''}`"
-      width="70%"
-      destroy-on-close
-    >
-      <div class="dialog-content">
-        <el-input
-          v-model="dialogSearch"
-          placeholder="搜索食材..."
-          clearable
-          style="margin-bottom: 20px;"
+
+    <!-- 已选择的食材 -->
+    <div v-if="props.selectedIngredients.length > 0" class="selected-ingredients">
+      <h3 class="selected-title">
+        <i class="fas fa-check-circle"></i>
+        已选择的食材 ({{ props.selectedIngredients.length }})
+      </h3>
+      <div class="selected-list">
+        <div
+          v-for="ingredient in props.selectedIngredients"
+          :key="ingredient.id"
+          @click="toggleIngredient(ingredient)"
+          class="selected-item"
         >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
+          <span class="ingredient-icon">{{ ingredient.icon || '🥬' }}</span>
+          <span class="ingredient-name">{{ ingredient.name }}</span>
+          <i class="fas fa-times remove-icon"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 更多食材弹窗 -->
+    <div v-if="showMoreModal" class="modal-overlay" @click="closeModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>
+            <span class="category-icon">{{ currentMoreCategory?.icon }}</span>
+            {{ currentMoreCategory?.name }} - 全部食材
+          </h3>
+          <button @click="closeModal" class="close-btn">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
         
-        <div class="dialog-grid">
+        <div class="modal-search">
+          <input
+            v-model="modalSearchQuery"
+            type="text"
+            placeholder="在当前分类中搜索..."
+            class="modal-search-input"
+          />
+        </div>
+        
+        <div class="modal-ingredients">
           <div
-            v-for="ingredient in getDialogItems()"
+            v-for="ingredient in filteredModalIngredients"
             :key="ingredient.id"
-            class="dialog-item"
-            :class="{ 'selected': isSelected(ingredient.id) }"
             @click="toggleIngredient(ingredient)"
+            class="modal-ingredient-item"
+            :class="{ selected: isSelected(ingredient) }"
           >
-            {{ ingredient.name }}
+            <span class="ingredient-icon">{{ ingredient.icon || '🥬' }}</span>
+            <span class="ingredient-name">{{ ingredient.name }}</span>
+            <i 
+              v-if="isSelected(ingredient)" 
+              class="fas fa-check selected-icon"
+            ></i>
           </div>
         </div>
       </div>
-      
-      <template #footer>
-        <el-button @click="dialogVisible = false">关闭</el-button>
-        <el-button type="primary" @click="dialogVisible = false">
-          确定 (已选{{ selectedIngredients.length }}个)
-        </el-button>
-      </template>
-    </el-dialog>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import type { Ingredient, IngredientCategory } from '@/types/recipe'
 import { ingredientCategories } from '@/data/mockData'
-import type { Ingredient } from '@/types/recipe'
-import { Search } from '@element-plus/icons-vue'
 
 // Props
 interface Props {
   selectedIngredients: Ingredient[]
 }
 
-// Emits
-interface Emits {
-  (e: 'ingredient-toggle', ingredient: Ingredient): void
-}
-
 const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+
+// Emits
+const emit = defineEmits<{
+  'ingredient-toggle': [ingredient: Ingredient]
+}>()
 
 // 响应式数据
 const searchQuery = ref('')
-const dialogVisible = ref(false)
-const currentCategory = ref<any>(null)
-const dialogSearch = ref('')
+const showMoreModal = ref(false)
+const selectedCategory = ref<string | null>(null)
+const currentMoreCategory = ref<IngredientCategory | null>(null)
+const modalSearchQuery = ref('')
+const isListening = ref(false)
 
-// 过滤后的分类
+// 计算属性
 const filteredCategories = computed(() => {
-  if (!searchQuery.value) return ingredientCategories
-  
-  return ingredientCategories.map(category => ({
-    ...category,
-    items: category.items.filter(item => 
-      item.name.includes(searchQuery.value)
-    )
-  })).filter(category => category.items.length > 0)
+  let categories = ingredientCategories
+
+  // 按分类筛选
+  if (selectedCategory.value) {
+    categories = categories.filter(cat => cat.id === selectedCategory.value)
+  }
+
+  // 按搜索关键词筛选
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase().trim()
+    categories = categories.map(category => ({
+      ...category,
+      items: category.items.filter(item =>
+        item.name.toLowerCase().includes(query)
+      )
+    })).filter(category => category.items.length > 0)
+  }
+
+  return categories
 })
 
-// 获取显示的食材（最多14个）
-const getDisplayItems = (category: any) => {
-  if (category.id === 'vegetables') {
-    // 蔬菜类显示前14个
-    return category.items.slice(0, 14)
+const filteredModalIngredients = computed(() => {
+  if (!currentMoreCategory.value) return []
+  
+  let ingredients = currentMoreCategory.value.items
+  
+  if (modalSearchQuery.value.trim()) {
+    const query = modalSearchQuery.value.toLowerCase().trim()
+    ingredients = ingredients.filter(item =>
+      item.name.toLowerCase().includes(query)
+    )
   }
-  // 其他类别显示所有
-  return category.items
+  
+  return ingredients
+})
+
+// 方法
+const getDisplayIngredients = (category: IngredientCategory) => {
+  return category.items.slice(0, 14)
 }
 
-// 检查是否有更多食材
-const hasMoreItems = (category: any) => {
-  if (category.id === 'vegetables') {
-    return category.items.length > 14
-  }
-  return false
+const isSelected = (ingredient: Ingredient) => {
+  return props.selectedIngredients.some(item => item.id === ingredient.id)
 }
 
-// 检查食材是否已选择
-const isSelected = (ingredientId: number): boolean => {
-  return props.selectedIngredients.some(item => item.id === ingredientId)
-}
-
-// 切换食材选择
 const toggleIngredient = (ingredient: Ingredient) => {
   emit('ingredient-toggle', ingredient)
 }
 
-// 移除食材
-const removeIngredient = (ingredient: Ingredient) => {
-  emit('ingredient-toggle', ingredient)
+const showMore = (category: IngredientCategory) => {
+  currentMoreCategory.value = category
+  modalSearchQuery.value = ''
+  showMoreModal.value = true
 }
 
-// 显示更多弹窗
-const showMoreDialog = (category: any) => {
-  currentCategory.value = category
-  dialogSearch.value = ''
-  dialogVisible.value = true
-}
-
-// 获取弹窗中的食材
-const getDialogItems = () => {
-  if (!currentCategory.value) return []
-  
-  const items = currentCategory.value.items
-  if (!dialogSearch.value) return items
-  
-  return items.filter((item: Ingredient) => 
-    item.name.includes(dialogSearch.value)
-  )
+const closeModal = () => {
+  showMoreModal.value = false
+  currentMoreCategory.value = null
+  modalSearchQuery.value = ''
 }
 
 // 语音搜索功能
 const startVoiceSearch = () => {
+  // 检查浏览器支持
   if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
     alert('您的浏览器不支持语音识别功能')
     return
   }
 
-  const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition
-  const recognition = new SpeechRecognition()
+  const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
   
+  if (!SpeechRecognition) {
+    alert('语音识别功能不可用')
+    return
+  }
+
+  const recognition = new SpeechRecognition()
   recognition.lang = 'zh-CN'
   recognition.continuous = false
   recognition.interimResults = false
@@ -237,18 +254,15 @@ const startVoiceSearch = () => {
     isListening.value = true
   }
 
-  recognition.onresult = (event) => {
+  recognition.onresult = (event: any) => {
     const transcript = event.results[0][0].transcript
     searchQuery.value = transcript
     isListening.value = false
   }
 
-  recognition.onerror = (event) => {
+  recognition.onerror = (event: any) => {
     console.error('语音识别错误:', event.error)
     isListening.value = false
-    if (event.error === 'not-allowed') {
-      alert('请允许麦克风权限以使用语音搜索功能')
-    }
   }
 
   recognition.onend = () => {
@@ -257,242 +271,403 @@ const startVoiceSearch = () => {
 
   recognition.start()
 }
+
+// 监听搜索查询变化
+watch(searchQuery, (newQuery) => {
+  if (newQuery.trim()) {
+    selectedCategory.value = null // 清除分类筛选
+  }
+})
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 .ingredient-selection {
-  padding: 2rem;
-  
-  .step-header {
-    text-align: center;
-    margin-bottom: 2rem;
-    
-    h2 {
-      font-size: 2rem;
-      color: #2c3e50;
-      margin-bottom: 0.5rem;
-    }
-    
-    p {
-      color: #666;
-      font-size: 1.1rem;
-    }
-  }
-  
-  .search-section {
-    margin-bottom: 2rem;
-    max-width: 500px;
-    margin-left: auto;
-    margin-right: auto;
-    position: relative;
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-  }
-
-  .voice-search-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    }
-
-    &.listening {
-      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-      animation: pulse 1.5s infinite;
-    }
-  }
-
-  @keyframes pulse {
-    0% {
-      box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7);
-    }
-    70% {
-      box-shadow: 0 0 0 10px rgba(255, 107, 107, 0);
-    }
-    100% {
-      box-shadow: 0 0 0 0 rgba(255, 107, 107, 0);
-    }
-  }
-  
-  .selected-section {
-    margin-bottom: 2rem;
-    
-    h3 {
-      margin-bottom: 1rem;
-      color: #2c3e50;
-    }
-    
-    .selected-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-  }
-  
-  .categories-section {
-    .category-section {
-      margin-bottom: 3rem;
-      
-      .category-header {
-        display: flex;
-        align-items: center;
-        gap: 0.8rem;
-        margin-bottom: 1.5rem;
-        
-        .category-icon {
-          font-size: 1.5rem;
-        }
-        
-        .category-title {
-          font-size: 1.3rem;
-          color: #2c3e50;
-          margin: 0;
-        }
-      }
-      
-      .ingredient-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 1rem;
-        
-        .ingredient-item,
-        .more-button {
-          background: white;
-          border: 2px solid #e0e0e0;
-          border-radius: 10px;
-          padding: 1rem;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          text-align: center;
-          font-weight: 500;
-          min-height: 60px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          
-          &:hover {
-            border-color: #ff6b6b;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.2);
-          }
-          
-          &.selected {
-            background: #ff6b6b;
-            color: white;
-            border-color: #ff6b6b;
-          }
-        }
-        
-        .more-button {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          border: none;
-          
-          &:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-          }
-        }
-      }
-    }
-  }
-  
-  .dialog-content {
-    .dialog-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 1rem;
-      max-height: 400px;
-      overflow-y: auto;
-      
-      .dialog-item {
-        background: white;
-        border: 2px solid #e0e0e0;
-        border-radius: 10px;
-        padding: 1rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-align: center;
-        font-weight: 500;
-        
-        &:hover {
-          border-color: #ff6b6b;
-          transform: translateY(-2px);
-          box-shadow: 0 5px 15px rgba(255, 107, 107, 0.2);
-        }
-        
-        &.selected {
-          background: #ff6b6b;
-          color: white;
-          border-color: #ff6b6b;
-        }
-      }
-    }
-  }
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  margin-bottom: 20px;
 }
 
-// 响应式设计
-@media (max-width: 1200px) {
-  .ingredient-selection .categories-section .category-section .ingredient-grid {
-    grid-template-columns: repeat(6, 1fr);
-  }
+.search-section {
+  margin-bottom: 24px;
 }
 
-@media (max-width: 992px) {
-  .ingredient-selection .categories-section .category-section .ingredient-grid {
-    grid-template-columns: repeat(5, 1fr);
-  }
+.search-container {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.search-input-wrapper {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 50px 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.voice-search-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.voice-search-btn:hover {
+  background: #0056b3;
+}
+
+.voice-search-btn.listening {
+  background: #dc3545;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: translateY(-50%) scale(1); }
+  50% { transform: translateY(-50%) scale(1.1); }
+  100% { transform: translateY(-50%) scale(1); }
+}
+
+.category-filter {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.category-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.category-btn:hover {
+  background: #e9ecef;
+  border-color: #007bff;
+}
+
+.category-btn.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.category-icon {
+  font-size: 16px;
+}
+
+.ingredients-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.category-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.category-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.ingredients-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.ingredient-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  min-height: 80px;
+  justify-content: center;
+}
+
+.ingredient-item:hover {
+  background: #e9ecef;
+  border-color: #007bff;
+  transform: translateY(-2px);
+}
+
+.ingredient-item.selected {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.ingredient-item.more-btn {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border-color: #28a745;
+}
+
+.ingredient-item.more-btn:hover {
+  background: linear-gradient(135deg, #218838, #1ea080);
+  transform: translateY(-2px);
+}
+
+.ingredient-icon {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.ingredient-name {
+  font-size: 12px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.more-count {
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.selected-icon {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 12px;
+}
+
+.selected-ingredients {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.selected-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px 0;
+  color: #28a745;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.selected-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selected-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #28a745;
+  color: white;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.selected-item:hover {
+  background: #218838;
+}
+
+.remove-icon {
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+/* 弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.modal-header h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 4px;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+.modal-search {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.modal-search-input {
+  width: 100%;
+  padding: 10px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.modal-search-input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.modal-ingredients {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.modal-ingredient-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  min-height: 80px;
+  justify-content: center;
+}
+
+.modal-ingredient-item:hover {
+  background: #e9ecef;
+  border-color: #007bff;
+}
+
+.modal-ingredient-item.selected {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+/* 响应式设计 */
 @media (max-width: 768px) {
-  .ingredient-selection .categories-section .category-section .ingredient-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.8rem;
+  .ingredient-selection {
+    padding: 16px;
+  }
+  
+  .ingredients-list {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+  }
+  
+  .ingredient-item {
+    min-height: 70px;
+    padding: 8px 4px;
+  }
+  
+  .ingredient-icon {
+    font-size: 20px;
+  }
+  
+  .ingredient-name {
+    font-size: 11px;
+  }
+  
+  .modal-ingredients {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
   }
 }
 
-@media (max-width: 480px) {
-  .ingredient-selection .categories-section .category-section .ingredient-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.6rem;
-  }
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
 }
 
-// 暗色主题
-:global(.dark) .ingredient-selection {
-  .step-header {
-    h2, p {
-      color: #f9fafb;
-    }
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  
-  .selected-section h3 {
-    color: #f9fafb;
-  }
-  
-  .category-header .category-title {
-    color: #f9fafb;
-  }
-  
-  .ingredient-item,
-  .dialog-item {
-    background: #374151;
-    border-color: #4b5563;
-    color: #f9fafb;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

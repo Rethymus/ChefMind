@@ -123,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { cookingMethods } from '@/data/mockData'
 import type { CookingMethod } from '@/types/recipe'
 import {

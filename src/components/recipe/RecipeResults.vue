@@ -186,7 +186,7 @@ const sortBy = ref('recommended')
 const showDetailDialog = ref(false)
 const selectedRecipe = ref<Recipe | null>(null)
 const loadingProgress = ref(0)
-let loadingInterval: NodeJS.Timeout | null = null
+let loadingInterval: number | null = null
 
 // 排序后的菜谱
 const sortedRecipes = computed(() => {

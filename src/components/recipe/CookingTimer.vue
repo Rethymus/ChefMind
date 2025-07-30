@@ -403,7 +403,7 @@ const onTimerFinished = (timer: Timer) => {
 const playSound = (soundType: string) => {
   try {
     // 使用 Web Audio API 生成简单的提示音
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
     const oscillator = audioContext.createOscillator()
     const gainNode = audioContext.createGain()
     

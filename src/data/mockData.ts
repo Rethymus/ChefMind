@@ -1,62 +1,72 @@
-// 食材数据
-export const ingredientCategories = [
+// ChefMind 智食谱 - 模拟数据
+
+import type { 
+  IngredientCategory, 
+  CookingMethod, 
+  Recipe, 
+  NutritionInfo
+} from '@/types/recipe'
+
+// 食材分类数据
+export const ingredientCategories: IngredientCategory[] = [
   {
     id: 'vegetables',
     name: '蔬菜类',
     icon: '🥬',
     items: [
-      // 前14个显示在主界面（两行，每行7个）
-      { id: 1, name: '白菜', category: 'vegetables' },
-      { id: 2, name: '萝卜', category: 'vegetables' },
-      { id: 3, name: '土豆', category: 'vegetables' },
-      { id: 4, name: '西红柿', category: 'vegetables' },
-      { id: 5, name: '黄瓜', category: 'vegetables' },
-      { id: 6, name: '茄子', category: 'vegetables' },
-      { id: 7, name: '豆角', category: 'vegetables' },
-      { id: 8, name: '青椒', category: 'vegetables' },
-      { id: 9, name: '洋葱', category: 'vegetables' },
-      { id: 10, name: '胡萝卜', category: 'vegetables' },
-      { id: 11, name: '芹菜', category: 'vegetables' },
-      { id: 12, name: '韭菜', category: 'vegetables' },
-      { id: 13, name: '菠菜', category: 'vegetables' },
-      { id: 14, name: '生菜', category: 'vegetables' },
-      // 其余36个通过"更多"按钮显示
-      { id: 15, name: '西兰花', category: 'vegetables' },
-      { id: 16, name: '花菜', category: 'vegetables' },
-      { id: 17, name: '包菜', category: 'vegetables' },
-      { id: 18, name: '油菜', category: 'vegetables' },
-      { id: 19, name: '小白菜', category: 'vegetables' },
-      { id: 20, name: '娃娃菜', category: 'vegetables' },
-      { id: 21, name: '芥蓝', category: 'vegetables' },
-      { id: 22, name: '菜心', category: 'vegetables' },
-      { id: 23, name: '空心菜', category: 'vegetables' },
-      { id: 24, name: '苋菜', category: 'vegetables' },
-      { id: 25, name: '茼蒿', category: 'vegetables' },
-      { id: 26, name: '香菜', category: 'vegetables' },
-      { id: 27, name: '大葱', category: 'vegetables' },
-      { id: 28, name: '小葱', category: 'vegetables' },
-      { id: 29, name: '蒜苗', category: 'vegetables' },
-      { id: 30, name: '韭黄', category: 'vegetables' },
-      { id: 31, name: '豆苗', category: 'vegetables' },
-      { id: 32, name: '豌豆', category: 'vegetables' },
-      { id: 33, name: '毛豆', category: 'vegetables' },
-      { id: 34, name: '蚕豆', category: 'vegetables' },
-      { id: 35, name: '冬瓜', category: 'vegetables' },
-      { id: 36, name: '南瓜', category: 'vegetables' },
-      { id: 37, name: '丝瓜', category: 'vegetables' },
-      { id: 38, name: '苦瓜', category: 'vegetables' },
-      { id: 39, name: '黄瓜', category: 'vegetables' },
-      { id: 40, name: '节瓜', category: 'vegetables' },
-      { id: 41, name: '莲藕', category: 'vegetables' },
-      { id: 42, name: '山药', category: 'vegetables' },
-      { id: 43, name: '芋头', category: 'vegetables' },
-      { id: 44, name: '红薯', category: 'vegetables' },
-      { id: 45, name: '紫薯', category: 'vegetables' },
-      { id: 46, name: '玉米', category: 'vegetables' },
-      { id: 47, name: '竹笋', category: 'vegetables' },
-      { id: 48, name: '蘑菇', category: 'vegetables' },
-      { id: 49, name: '金针菇', category: 'vegetables' },
-      { id: 50, name: '香菇', category: 'vegetables' }
+      // 主界面显示的前14种蔬菜
+      { id: 1, name: '白菜', category: 'vegetables', icon: '🥬' },
+      { id: 2, name: '萝卜', category: 'vegetables', icon: '🥕' },
+      { id: 3, name: '土豆', category: 'vegetables', icon: '🥔' },
+      { id: 4, name: '西红柿', category: 'vegetables', icon: '🍅' },
+      { id: 5, name: '黄瓜', category: 'vegetables', icon: '🥒' },
+      { id: 6, name: '茄子', category: 'vegetables', icon: '🍆' },
+      { id: 7, name: '豆角', category: 'vegetables', icon: '🫘' },
+      { id: 8, name: '辣椒', category: 'vegetables', icon: '🌶️' },
+      { id: 9, name: '洋葱', category: 'vegetables', icon: '🧅' },
+      { id: 10, name: '大蒜', category: 'vegetables', icon: '🧄' },
+      { id: 11, name: '生姜', category: 'vegetables', icon: '🫚' },
+      { id: 12, name: '西兰花', category: 'vegetables', icon: '🥦' },
+      { id: 13, name: '菠菜', category: 'vegetables', icon: '🥬' },
+      { id: 14, name: '生菜', category: 'vegetables', icon: '🥬' },
+      
+      // 更多蔬菜（剩余36种）
+      { id: 15, name: '芹菜', category: 'vegetables', icon: '🥬' },
+      { id: 16, name: '韭菜', category: 'vegetables', icon: '🥬' },
+      { id: 17, name: '小白菜', category: 'vegetables', icon: '🥬' },
+      { id: 18, name: '油菜', category: 'vegetables', icon: '🥬' },
+      { id: 19, name: '菜花', category: 'vegetables', icon: '🥦' },
+      { id: 20, name: '包菜', category: 'vegetables', icon: '🥬' },
+      { id: 21, name: '莴笋', category: 'vegetables', icon: '🥬' },
+      { id: 22, name: '冬瓜', category: 'vegetables', icon: '🥒' },
+      { id: 23, name: '南瓜', category: 'vegetables', icon: '🎃' },
+      { id: 24, name: '丝瓜', category: 'vegetables', icon: '🥒' },
+      { id: 25, name: '苦瓜', category: 'vegetables', icon: '🥒' },
+      { id: 26, name: '胡萝卜', category: 'vegetables', icon: '🥕' },
+      { id: 27, name: '山药', category: 'vegetables', icon: '🥔' },
+      { id: 28, name: '莲藕', category: 'vegetables', icon: '🥔' },
+      { id: 29, name: '竹笋', category: 'vegetables', icon: '🥬' },
+      { id: 30, name: '豆芽', category: 'vegetables', icon: '🌱' },
+      { id: 31, name: '韭黄', category: 'vegetables', icon: '🥬' },
+      { id: 32, name: '蒜苗', category: 'vegetables', icon: '🥬' },
+      { id: 33, name: '香菜', category: 'vegetables', icon: '🌿' },
+      { id: 34, name: '小葱', category: 'vegetables', icon: '🥬' },
+      { id: 35, name: '青椒', category: 'vegetables', icon: '🫑' },
+      { id: 36, name: '红椒', category: 'vegetables', icon: '🌶️' },
+      { id: 37, name: '尖椒', category: 'vegetables', icon: '🌶️' },
+      { id: 38, name: '蘑菇', category: 'vegetables', icon: '🍄' },
+      { id: 39, name: '香菇', category: 'vegetables', icon: '🍄' },
+      { id: 40, name: '金针菇', category: 'vegetables', icon: '🍄' },
+      { id: 41, name: '平菇', category: 'vegetables', icon: '🍄' },
+      { id: 42, name: '杏鲍菇', category: 'vegetables', icon: '🍄' },
+      { id: 43, name: '木耳', category: 'vegetables', icon: '🍄' },
+      { id: 44, name: '银耳', category: 'vegetables', icon: '🍄' },
+      { id: 45, name: '海带', category: 'vegetables', icon: '🌿' },
+      { id: 46, name: '紫菜', category: 'vegetables', icon: '🌿' },
+      { id: 47, name: '豆腐', category: 'vegetables', icon: '🧈' },
+      { id: 48, name: '豆干', category: 'vegetables', icon: '🧈' },
+      { id: 49, name: '腐竹', category: 'vegetables', icon: '🧈' },
+      { id: 50, name: '玉米', category: 'vegetables', icon: '🌽' }
     ]
   },
   {
@@ -64,62 +74,14 @@ export const ingredientCategories = [
     name: '肉类',
     icon: '🥩',
     items: [
-      { id: 51, name: '猪肉', category: 'meat' },
-      { id: 52, name: '牛肉', category: 'meat' },
-      { id: 53, name: '鸡肉', category: 'meat' },
-      { id: 54, name: '羊肉', category: 'meat' },
-      { id: 55, name: '鸭肉', category: 'meat' },
-      { id: 56, name: '排骨', category: 'meat' },
-      { id: 57, name: '鸡翅', category: 'meat' },
-      { id: 58, name: '牛排', category: 'meat' },
-      { id: 59, name: '里脊肉', category: 'meat' },
-      { id: 60, name: '五花肉', category: 'meat' },
-      { id: 61, name: '鸡胸肉', category: 'meat' },
-      { id: 62, name: '鸡腿', category: 'meat' },
-      { id: 63, name: '培根', category: 'meat' },
-      { id: 64, name: '香肠', category: 'meat' }
-    ]
-  },
-  {
-    id: 'seafood',
-    name: '海鲜类',
-    icon: '🐟',
-    items: [
-      { id: 65, name: '鱼', category: 'seafood' },
-      { id: 66, name: '虾', category: 'seafood' },
-      { id: 67, name: '蟹', category: 'seafood' },
-      { id: 68, name: '鱿鱼', category: 'seafood' },
-      { id: 69, name: '带鱼', category: 'seafood' },
-      { id: 70, name: '扇贝', category: 'seafood' },
-      { id: 71, name: '海带', category: 'seafood' },
-      { id: 72, name: '紫菜', category: 'seafood' },
-      { id: 73, name: '海蛎', category: 'seafood' },
-      { id: 74, name: '蛤蜊', category: 'seafood' },
-      { id: 75, name: '章鱼', category: 'seafood' },
-      { id: 76, name: '墨鱼', category: 'seafood' },
-      { id: 77, name: '龙虾', category: 'seafood' },
-      { id: 78, name: '鲍鱼', category: 'seafood' }
-    ]
-  },
-  {
-    id: 'staple',
-    name: '主食类',
-    icon: '🍚',
-    items: [
-      { id: 79, name: '米饭', category: 'staple' },
-      { id: 80, name: '面条', category: 'staple' },
-      { id: 81, name: '饺子皮', category: 'staple' },
-      { id: 82, name: '面包', category: 'staple' },
-      { id: 83, name: '馒头', category: 'staple' },
-      { id: 84, name: '年糕', category: 'staple' },
-      { id: 85, name: '粉丝', category: 'staple' },
-      { id: 86, name: '河粉', category: 'staple' },
-      { id: 87, name: '意大利面', category: 'staple' },
-      { id: 88, name: '通心粉', category: 'staple' },
-      { id: 89, name: '燕麦', category: 'staple' },
-      { id: 90, name: '小米', category: 'staple' },
-      { id: 91, name: '糯米', category: 'staple' },
-      { id: 92, name: '薏米', category: 'staple' }
+      { id: 51, name: '猪肉', category: 'meat', icon: '🥩' },
+      { id: 52, name: '牛肉', category: 'meat', icon: '🥩' },
+      { id: 53, name: '鸡肉', category: 'meat', icon: '🍗' },
+      { id: 54, name: '鸭肉', category: 'meat', icon: '🦆' },
+      { id: 55, name: '羊肉', category: 'meat', icon: '🐑' },
+      { id: 56, name: '鱼肉', category: 'seafood', icon: '🐟' },
+      { id: 57, name: '虾', category: 'seafood', icon: '🦐' },
+      { id: 58, name: '螃蟹', category: 'seafood', icon: '🦀' }
     ]
   },
   {
@@ -127,253 +89,195 @@ export const ingredientCategories = [
     name: '烹饪厨具',
     icon: '🍳',
     items: [
-      { id: 93, name: '炒锅', category: 'cookware' },
-      { id: 94, name: '平底锅', category: 'cookware' },
-      { id: 95, name: '不粘锅', category: 'cookware' },
-      { id: 96, name: '蒸锅', category: 'cookware' },
-      { id: 97, name: '汤锅', category: 'cookware' },
-      { id: 98, name: '砂锅', category: 'cookware' },
-      { id: 99, name: '电饭煲', category: 'cookware' },
-      { id: 100, name: '高压锅', category: 'cookware' },
-      { id: 101, name: '烤箱', category: 'cookware' },
-      { id: 102, name: '微波炉', category: 'cookware' },
-      { id: 103, name: '空气炸锅', category: 'cookware' },
-      { id: 104, name: '电磁炉', category: 'cookware' },
-      { id: 105, name: '燃气灶', category: 'cookware' },
-      { id: 106, name: '蒸蛋器', category: 'cookware' }
+      { id: 59, name: '炒锅', category: 'cookware', icon: '🍳' },
+      { id: 60, name: '平底锅', category: 'cookware', icon: '🍳' },
+      { id: 61, name: '不粘锅', category: 'cookware', icon: '🍳' },
+      { id: 62, name: '蒸锅', category: 'cookware', icon: '🥘' },
+      { id: 63, name: '汤锅', category: 'cookware', icon: '🍲' },
+      { id: 64, name: '砂锅', category: 'cookware', icon: '🍲' },
+      { id: 65, name: '电饭煲', category: 'cookware', icon: '🍚' },
+      { id: 66, name: '高压锅', category: 'cookware', icon: '🥘' },
+      { id: 67, name: '烤箱', category: 'cookware', icon: '🔥' },
+      { id: 68, name: '微波炉', category: 'cookware', icon: '📱' },
+      { id: 69, name: '空气炸锅', category: 'cookware', icon: '🔥' },
+      { id: 70, name: '电磁炉', category: 'cookware', icon: '🔥' },
+      { id: 71, name: '燃气灶', category: 'cookware', icon: '🔥' },
+      { id: 72, name: '蒸蛋器', category: 'cookware', icon: '🥚' }
     ]
   }
 ]
 
 // 烹饪方式数据
-export const cookingMethods = [
+export const cookingMethods: CookingMethod[] = [
   {
-    id: 'stir-fry',
+    id: 'stir_fry',
     name: '炒',
     icon: '🍳',
-    description: '快速翻炒，保持食材鲜嫩'
+    description: '用少量油在高温下快速翻炒',
+    difficulty: 2,
+    time: 15
+  },
+  {
+    id: 'steam',
+    name: '蒸',
+    icon: '♨️',
+    description: '利用蒸汽加热烹饪',
+    difficulty: 1,
+    time: 20
   },
   {
     id: 'boil',
     name: '煮',
     icon: '🍲',
-    description: '水煮烹饪，营养健康'
-  },
-  {
-    id: 'steam',
-    name: '蒸',
-    icon: '🥟',
-    description: '蒸汽烹饪，保持原味'
-  },
-  {
-    id: 'bake',
-    name: '烤',
-    icon: '🔥',
-    description: '烘烤制作，香味浓郁'
-  },
-  {
-    id: 'fry',
-    name: '炸',
-    icon: '🍟',
-    description: '油炸烹饪，酥脆可口'
-  },
-  {
-    id: 'stew',
-    name: '炖',
-    icon: '🍯',
-    description: '慢炖细煮，汤汁浓郁'
-  },
-  {
-    id: 'cold',
-    name: '凉拌',
-    icon: '🥗',
-    description: '凉拌制作，清爽开胃'
+    description: '在沸水中烹饪食材',
+    difficulty: 1,
+    time: 25
   },
   {
     id: 'braise',
-    name: '焖',
-    icon: '🍛',
-    description: '焖煮入味，软烂香甜'
+    name: '红烧',
+    icon: '🥘',
+    description: '先炒后焖的烹饪方法',
+    difficulty: 3,
+    time: 45
+  },
+  {
+    id: 'deep_fry',
+    name: '炸',
+    icon: '🔥',
+    description: '在大量热油中烹饪',
+    difficulty: 3,
+    time: 10
+  },
+  {
+    id: 'grill',
+    name: '烤',
+    icon: '🔥',
+    description: '用干热烹饪食材',
+    difficulty: 2,
+    time: 30
   }
 ]
 
-// 约束条件数据
-export const constraints = {
-  time: [
-    { id: '15min', name: '15分钟内', value: 15 },
-    { id: '30min', name: '30分钟内', value: 30 },
-    { id: '60min', name: '1小时内', value: 60 },
-    { id: 'unlimited', name: '不限时间', value: null }
-  ],
-  people: [
-    { id: '1-2', name: '1-2人', value: '1-2' },
-    { id: '3-4', name: '3-4人', value: '3-4' },
-    { id: '5-6', name: '5-6人', value: '5-6' },
-    { id: '6+', name: '6人以上', value: '6+' }
-  ],
-  difficulty: [
-    { id: 'easy', name: '简单', value: 1 },
-    { id: 'medium', name: '中等', value: 2 },
-    { id: 'hard', name: '困难', value: 3 },
-    { id: 'unlimited', name: '不限', value: null }
-  ],
-  taste: [
-    { id: 'light', name: '清淡', value: 'light' },
-    { id: 'medium', name: '适中', value: 'medium' },
-    { id: 'heavy', name: '重口味', value: 'heavy' }
-  ]
+// 营养数据库
+export const nutritionDatabase: Record<string, NutritionInfo> = {
+  '白菜': { calories: 13, protein: 1.5, carbs: 2.2, fat: 0.2, fiber: 1.2 },
+  '萝卜': { calories: 16, protein: 0.9, carbs: 3.4, fat: 0.1, fiber: 1.6 },
+  '土豆': { calories: 77, protein: 2.0, carbs: 17.5, fat: 0.1, fiber: 2.2 },
+  '西红柿': { calories: 18, protein: 0.9, carbs: 3.9, fat: 0.2, fiber: 1.2 },
+  '黄瓜': { calories: 15, protein: 0.7, carbs: 3.6, fat: 0.1, fiber: 0.5 },
+  '茄子': { calories: 25, protein: 1.0, carbs: 5.9, fat: 0.2, fiber: 3.0 },
+  '豆角': { calories: 35, protein: 2.4, carbs: 8.0, fat: 0.1, fiber: 2.7 },
+  '辣椒': { calories: 40, protein: 1.9, carbs: 9.5, fat: 0.4, fiber: 1.5 },
+  '洋葱': { calories: 40, protein: 1.1, carbs: 9.3, fat: 0.1, fiber: 1.7 },
+  '大蒜': { calories: 149, protein: 6.4, carbs: 33.1, fat: 0.5, fiber: 2.1 },
+  '生姜': { calories: 80, protein: 1.8, carbs: 17.8, fat: 0.8, fiber: 2.0 },
+  '西兰花': { calories: 34, protein: 2.8, carbs: 7.0, fat: 0.4, fiber: 2.6 },
+  '菠菜': { calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4, fiber: 2.2 },
+  '生菜': { calories: 15, protein: 1.4, carbs: 2.9, fat: 0.2, fiber: 1.3 },
+  '猪肉': { calories: 242, protein: 27.0, carbs: 0.0, fat: 14.0, fiber: 0.0 },
+  '牛肉': { calories: 250, protein: 26.0, carbs: 0.0, fat: 15.0, fiber: 0.0 },
+  '鸡肉': { calories: 165, protein: 31.0, carbs: 0.0, fat: 3.6, fiber: 0.0 },
+  '豆腐': { calories: 76, protein: 8.1, carbs: 1.9, fat: 4.8, fiber: 0.4 }
 }
 
-// 外部链接数据
-export const externalLinks = [
-  {
-    name: 'B站',
-    url: 'https://search.bilibili.com/all?keyword=',
-    icon: 'VideoPlay',
-    color: '#00a1d6'
-  },
-  {
-    name: '抖音',
-    url: 'https://www.douyin.com/search/',
-    icon: 'VideoCamera',
-    color: '#fe2c55'
-  },
-  {
-    name: '下厨房',
-    url: 'https://www.xiachufang.com/search/?keyword=',
-    icon: 'Reading',
-    color: '#42c02e'
-  },
-  {
-    name: '小红书',
-    url: 'https://www.xiaohongshu.com/search_result?keyword=',
-    icon: 'Heart',
-    color: '#ff2442'
-  }
-]
-
 // 模拟菜谱数据
-export const mockRecipes = [
+export const mockRecipes: Recipe[] = [
   {
-    id: 1,
-    name: '宫保鸡丁',
-    description: '经典川菜，鸡肉嫩滑，花生酥脆，酸甜微辣',
-    difficulty: 3,
-    nutrition: 4,
-    time: 25,
-    servings: '2-3人',
-    tags: ['川菜', '下饭菜', '家常菜'],
+    id: '1',
+    name: '西红柿炒鸡蛋',
+    description: '经典家常菜，营养丰富，制作简单',
     ingredients: [
-      { id: 53, name: '鸡肉', category: 'meat' },
-      { id: 1, name: '白菜', category: 'vegetables' },
-      { id: 8, name: '青椒', category: 'vegetables' }
+      { id: 4, name: '西红柿', category: 'vegetables', amount: '2', unit: '个' },
+      { id: 53, name: '鸡蛋', category: 'meat', amount: '3', unit: '个' }
     ],
+    method: cookingMethods[0],
     steps: [
-      {
-        id: 1,
-        title: '准备食材',
-        description: '鸡胸肉切丁，用料酒、生抽、淀粉腌制15分钟',
-        tips: '鸡肉切丁要均匀，腌制时间不要太长'
-      },
-      {
-        id: 2,
-        title: '调制酱汁',
-        description: '生抽、老抽、醋、糖、淀粉调成酱汁',
-        tips: '酱汁要调匀，避免有颗粒'
-      },
-      {
-        id: 3,
-        title: '炒制鸡丁',
-        description: '热锅下油，下鸡丁炒至变色盛起',
-        tips: '火候要大，快速炒制保持嫩滑'
-      },
-      {
-        id: 4,
-        title: '爆炒配菜',
-        description: '下干辣椒、花椒爆香，下蔬菜丁炒匀',
-        tips: '辣椒不要炒糊，影响口感'
-      },
-      {
-        id: 5,
-        title: '收汁装盘',
-        description: '倒入酱汁，炒匀收汁，撒花生米即可',
-        tips: '收汁要快，保持食材脆嫩'
-      }
+      '将西红柿洗净切块',
+      '鸡蛋打散加少许盐',
+      '热锅下油，炒鸡蛋盛起',
+      '下西红柿炒出汁水',
+      '倒入鸡蛋翻炒均匀即可'
     ],
+    cookingTime: 15,
+    difficulty: 1,
+    servings: 2,
+    nutrition: {
+      calories: 180,
+      protein: 12.5,
+      carbs: 8.2,
+      fat: 11.8,
+      fiber: 2.1
+    },
+    tags: ['家常菜', '快手菜', '营养'],
     createdAt: new Date('2024-01-15')
   },
   {
-    id: 2,
-    name: '蒸蛋羹',
-    description: '嫩滑如豆腐，营养丰富，老少皆宜',
-    difficulty: 1,
-    nutrition: 5,
-    time: 15,
-    servings: '1-2人',
-    tags: ['蒸菜', '营养', '简单'],
+    id: '2',
+    name: '红烧土豆',
+    description: '软糯香甜的红烧土豆，老少皆宜',
     ingredients: [
-      { id: 79, name: '米饭', category: 'staple' }
+      { id: 3, name: '土豆', category: 'vegetables', amount: '500', unit: 'g' }
     ],
+    method: cookingMethods[3],
     steps: [
-      {
-        id: 1,
-        title: '打散鸡蛋',
-        description: '鸡蛋打散，加入温水搅拌均匀',
-        tips: '水蛋比例1:1.5，水温不要太热'
-      },
-      {
-        id: 2,
-        title: '过筛去泡',
-        description: '蛋液过筛，去除泡沫',
-        tips: '过筛可以让蛋羹更嫩滑'
-      },
-      {
-        id: 3,
-        title: '上锅蒸制',
-        description: '盖保鲜膜，大火蒸10分钟',
-        tips: '保鲜膜防止水汽滴落'
-      }
+      '土豆去皮切块',
+      '热锅下油炸至微黄',
+      '加生抽老抽上色',
+      '加水焖煮20分钟',
+      '大火收汁即可'
     ],
+    cookingTime: 30,
+    difficulty: 2,
+    servings: 3,
+    nutrition: {
+      calories: 120,
+      protein: 3.2,
+      carbs: 26.8,
+      fat: 0.8,
+      fiber: 3.1
+    },
+    tags: ['素食', '下饭菜'],
     createdAt: new Date('2024-01-16')
-  },
-  {
-    id: 3,
-    name: '红烧肉',
-    description: '色泽红亮，肥而不腻，入口即化',
-    difficulty: 4,
-    nutrition: 3,
-    time: 90,
-    servings: '3-4人',
-    tags: ['红烧菜', '下饭菜', '传统菜'],
-    ingredients: [
-      { id: 60, name: '五花肉', category: 'meat' }
-    ],
-    steps: [
-      {
-        id: 1,
-        title: '处理五花肉',
-        description: '五花肉切块，冷水下锅焯水去腥',
-        tips: '焯水时加料酒去腥效果更好'
-      },
-      {
-        id: 2,
-        title: '炒糖色',
-        description: '锅内放冰糖，小火炒至焦糖色',
-        tips: '火候要小，糖色不能炒过头'
-      },
-      {
-        id: 3,
-        title: '炒制上色',
-        description: '下肉块炒制上色，加调料',
-        tips: '要炒到每块肉都上色'
-      },
-      {
-        id: 4,
-        title: '焖煮收汁',
-        description: '加水没过肉块，大火烧开转小火焖1小时',
-        tips: '中途要翻动，防止粘锅'
-      }
-    ],
-    createdAt: new Date('2024-01-17')
   }
 ]
+
+// 导出模拟数据对象（保持向后兼容）
+export const mockRecipeData = {
+  recipes: mockRecipes,
+  cookingMethods: cookingMethods,
+  ingredients: ingredientCategories.flatMap(cat => cat.items)
+}
+
+// 推荐数据
+export const recommendationData = {
+  nutrition: {
+    '土豆': [
+      { id: 4, name: '西红柿', category: 'vegetables', icon: '🍅', reason: '富含维生素C，与土豆搭配营养均衡' },
+      { id: 12, name: '西兰花', category: 'vegetables', icon: '🥦', reason: '高纤维，促进消化' }
+    ],
+    '西红柿': [
+      { id: 3, name: '土豆', category: 'vegetables', icon: '🥔', reason: '经典搭配，营养互补' },
+      { id: 53, name: '鸡蛋', category: 'meat', icon: '🥚', reason: '蛋白质丰富，经典组合' }
+    ],
+    '白菜': [
+      { id: 47, name: '豆腐', category: 'vegetables', icon: '🧈', reason: '清淡营养，适合养生' }
+    ]
+  },
+  flavor: {
+    '茄子': [
+      { id: 8, name: '辣椒', category: 'vegetables', icon: '🌶️', reason: '增加香辣味，开胃下饭' }
+    ],
+    '豆角': [
+      { id: 51, name: '猪肉', category: 'meat', icon: '🥩', reason: '荤素搭配，口感丰富' }
+    ]
+  },
+  classic: {
+    '鸡肉': [
+      { id: 3, name: '土豆', category: 'vegetables', icon: '🥔', reason: '经典搭配，家常美味' }
+    ],
+    '牛肉': [
+      { id: 3, name: '土豆', category: 'vegetables', icon: '🥔', reason: '西式经典，营养丰富' }
+    ]
+  }
+}

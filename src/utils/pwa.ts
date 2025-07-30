@@ -197,7 +197,10 @@ export class PWAManager {
 
       // 注册后台同步
       if (this.sw && 'sync' in window.ServiceWorkerRegistration.prototype) {
-        this.sw.sync.register('background-sync');
+        // 注册后台同步（如果支持）
+        if ('sync' in this.sw) {
+          (this.sw as any).sync.register('background-sync');
+        }
       }
     } catch (error) {
       console.error('[PWA] 添加待同步数据失败:', error);

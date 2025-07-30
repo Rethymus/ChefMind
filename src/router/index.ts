@@ -1,4 +1,6 @@
-import { createRouter, createWebHistory } from 'vue-router'
+// ChefMind 智食谱 - 路由配置
+
+import { createRouter, createWebHashHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
@@ -7,39 +9,15 @@ const routes: RouteRecordRaw[] = [
     name: 'Home',
     component: () => import('@/views/HomeView.vue'),
     meta: {
-      title: 'ChefMind 智食谱'
-    }
-  },
-  {
-    path: '/recipe/:id',
-    name: 'RecipeDetail',
-    component: () => import('@/views/RecipeDetailView.vue'),
-    meta: {
-      title: '菜谱详情'
-    }
-  },
-  {
-    path: '/my-recipes',
-    name: 'MyRecipes',
-    component: () => import('@/views/MyRecipesView.vue'),
-    meta: {
-      title: '我的菜谱'
-    }
-  },
-  {
-    path: '/about',
-    name: 'About',
-    component: () => import('@/views/AboutView.vue'),
-    meta: {
-      title: '关于我们'
+      title: 'ChefMind 智食谱 - 首页'
     }
   }
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes,
-  scrollBehavior(to, from, savedPosition) {
+  scrollBehavior(_to, _from, savedPosition) {
     if (savedPosition) {
       return savedPosition
     } else {
@@ -48,10 +26,11 @@ const router = createRouter({
   }
 })
 
-router.beforeEach((to, from, next) => {
+// 路由守卫
+router.beforeEach((_to, _from, next) => {
   // 设置页面标题
-  if (to.meta?.title) {
-    document.title = to.meta.title as string
+  if (_to.meta?.title) {
+    document.title = _to.meta.title as string
   }
   next()
 })
