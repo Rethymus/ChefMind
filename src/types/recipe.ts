@@ -1,8 +1,8 @@
 // 食材接口
 export interface Ingredient {
-  id: string
+  id: number
   name: string
-  category: 'vegetables' | 'meat' | 'seafood' | 'staple' | 'seasoning'
+  category: 'vegetables' | 'meat' | 'seafood' | 'staple' | 'cookware'
   selected?: boolean
 }
 

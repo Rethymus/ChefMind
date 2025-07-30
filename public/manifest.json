@@ -1,0 +1,145 @@
+{
+  "name": "ChefMind 智食谱",
+  "short_name": "ChefMind",
+  "description": "AI驱动的智能菜谱生成平台，提供个性化菜谱推荐、营养分析和烹饪指导",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4CAF50",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["food", "lifestyle", "health"],
+  "screenshots": [
+    {
+      "src": "/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "ChefMind 智食谱主界面"
+    },
+    {
+      "src": "/screenshot-narrow.png", 
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "移动端界面"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-96x96.png",
+      "sizes": "96x96", 
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "智能菜谱",
+      "short_name": "菜谱",
+      "description": "快速生成个性化菜谱",
+      "url": "/?shortcut=recipe",
+      "icons": [
+        {
+          "src": "/shortcut-recipe.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "营养分析",
+      "short_name": "营养",
+      "description": "查看营养分析和健康建议",
+      "url": "/?shortcut=nutrition",
+      "icons": [
+        {
+          "src": "/shortcut-nutrition.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "烹饪计时器",
+      "short_name": "计时器",
+      "description": "使用烹饪计时器",
+      "url": "/?shortcut=timer",
+      "icons": [
+        {
+          "src": "/shortcut-timer.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "购物清单",
+      "short_name": "购物",
+      "description": "管理购物清单",
+      "url": "/?shortcut=shopping",
+      "icons": [
+        {
+          "src": "/shortcut-shopping.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "handle_links": "preferred",
+  "protocol_handlers": [
+    {
+      "protocol": "web+chefmind",
+      "url": "/?recipe=%s"
+    }
+  ]
+}

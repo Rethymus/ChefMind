@@ -1,9 +1,42 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ChefMind">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="ChefMind 智食谱">
     <title>ChefMind 智食谱 - AI智能菜谱生成平台</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="ChefMind智食谱是一个AI驱动的智能菜谱生成平台，提供营养分析、烹饪计时器、购物清单等功能，支持离线使用">
+    <meta name="keywords" content="智能菜谱,AI菜谱,食谱生成,烹饪助手,营养分析,食材搭配,离线菜谱">
+    <meta name="author" content="ChefMind Team">
+    <meta name="theme-color" content="#4ecdc4">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ChefMind">
+    <meta name="msapplication-TileColor" content="#4ecdc4">
+    <meta name="msapplication-config" content="/browserconfig.xml">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png">
+    
+    <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -81,6 +114,11 @@
                                 <div class="ingredient-item" data-ingredient="青椒">青椒</div>
                                 <div class="ingredient-item" data-ingredient="洋葱">洋葱</div>
                                 <div class="ingredient-item" data-ingredient="胡萝卜">胡萝卜</div>
+                                <div class="ingredient-item" data-ingredient="芹菜">芹菜</div>
+                                <div class="ingredient-item" data-ingredient="韭菜">韭菜</div>
+                                <div class="ingredient-item" data-ingredient="菠菜">菠菜</div>
+                                <div class="ingredient-item" data-ingredient="生菜">生菜</div>
+                                <div class="more-button" data-category="vegetables">更多 ></div>
                             </div>
                         </div>
 
@@ -124,17 +162,22 @@
                         </div>
 
                         <div class="category">
-                            <h3><i class="fas fa-pepper-hot"></i> 调料类</h3>
-                            <div class="ingredient-grid" data-category="seasoning">
-                                <div class="ingredient-item" data-ingredient="生抽">生抽</div>
-                                <div class="ingredient-item" data-ingredient="老抽">老抽</div>
-                                <div class="ingredient-item" data-ingredient="料酒">料酒</div>
-                                <div class="ingredient-item" data-ingredient="醋">醋</div>
-                                <div class="ingredient-item" data-ingredient="糖">糖</div>
-                                <div class="ingredient-item" data-ingredient="盐">盐</div>
-                                <div class="ingredient-item" data-ingredient="蒜">蒜</div>
-                                <div class="ingredient-item" data-ingredient="姜">姜</div>
-                                <div class="ingredient-item" data-ingredient="葱">葱</div>
+                            <h3><i class="fas fa-utensils"></i> 烹饪厨具</h3>
+                            <div class="ingredient-grid" data-category="cookware">
+                                <div class="ingredient-item" data-ingredient="炒锅">🍳 炒锅</div>
+                                <div class="ingredient-item" data-ingredient="平底锅">平底锅</div>
+                                <div class="ingredient-item" data-ingredient="不粘锅">不粘锅</div>
+                                <div class="ingredient-item" data-ingredient="蒸锅">蒸锅</div>
+                                <div class="ingredient-item" data-ingredient="汤锅">汤锅</div>
+                                <div class="ingredient-item" data-ingredient="砂锅">砂锅</div>
+                                <div class="ingredient-item" data-ingredient="电饭煲">电饭煲</div>
+                                <div class="ingredient-item" data-ingredient="高压锅">🔥 高压锅</div>
+                                <div class="ingredient-item" data-ingredient="烤箱">烤箱</div>
+                                <div class="ingredient-item" data-ingredient="微波炉">微波炉</div>
+                                <div class="ingredient-item" data-ingredient="空气炸锅">空气炸锅</div>
+                                <div class="ingredient-item" data-ingredient="电磁炉">电磁炉</div>
+                                <div class="ingredient-item" data-ingredient="燃气灶">燃气灶</div>
+                                <div class="ingredient-item" data-ingredient="蒸蛋器">蒸蛋器</div>
                             </div>
                         </div>
                     </div>

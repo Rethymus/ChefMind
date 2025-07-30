@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChefMind 测试页面</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #ff6b6b;
+            text-align: center;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .item-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+        .item {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .more-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ChefMind 食材测试</h1>
+        
+        <div class="section">
+            <h2>🥬 蔬菜类 (50种)</h2>
+            <div class="item-grid">
+                <div class="item">白菜</div>
+                <div class="item">萝卜</div>
+                <div class="item">土豆</div>
+                <div class="item">西红柿</div>
+                <div class="item">黄瓜</div>
+                <div class="item">茄子</div>
+                <div class="item">豆角</div>
+                <div class="more-btn">更多 ></div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🍳 烹饪厨具 (14种)</h2>
+            <div class="item-grid">
+                <div class="item">炒锅</div>
+                <div class="item">平底锅</div>
+                <div class="item">不粘锅</div>
+                <div class="item">蒸锅</div>
+                <div class="item">汤锅</div>
+                <div class="item">砂锅</div>
+                <div class="item">电饭煲</div>
+                <div class="item">高压锅</div>
+                <div class="item">烤箱</div>
+                <div class="item">微波炉</div>
+                <div class="item">空气炸锅</div>
+                <div class="item">电磁炉</div>
+                <div class="item">燃气灶</div>
+                <div class="item">蒸蛋器</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 简单的测试脚本
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('测试页面加载完成');
+            
+            // 检查数据是否正确
+            const cookwareItems = document.querySelectorAll('.section:nth-child(3) .item');
+            console.log(`烹饪厨具数量: ${cookwareItems.length}`);
+            
+            // 添加点击事件
+            document.querySelector('.more-btn').addEventListener('click', function() {
+                alert('显示更多蔬菜');
+            });
+        });
+    </script>
+</body>
+</html>

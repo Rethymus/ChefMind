@@ -1,132 +1,147 @@
 <template>
   <div class="ingredient-selection">
     <div class="step-header">
-      <h2>选择食材</h2>
-      <p>挑选你喜欢的食材，AI将为你推荐最佳搭配</p>
+      <h2>选择您的食材</h2>
+      <p>选择您喜欢的食材，我们将为您推荐最佳搭配</p>
     </div>
     
     <!-- 搜索框 -->
     <div class="search-section">
       <el-input
         v-model="searchQuery"
-        placeholder="搜索食材..."
+        placeholder="搜索食材名称..."
         size="large"
         clearable
-        @input="handleSearch"
       >
         <template #prefix>
           <el-icon><Search /></el-icon>
         </template>
       </el-input>
+      
+      <!-- 语音搜索按钮 -->
+      <button 
+        class="voice-search-btn"
+        @click="startVoiceSearch"
+        :class="{ 'listening': isListening }"
+        :title="isListening ? '正在听取...' : '语音搜索'"
+      >
+        <i class="fas fa-microphone" v-if="!isListening"></i>
+        <i class="fas fa-microphone-slash" v-else></i>
+      </button>
     </div>
     
-    <!-- 已选食材标签 -->
-    <div class="selected-section">
-      <h3>
-        <el-icon><Collection /></el-icon>
-        已选食材 ({{ selectedIngredients.length }})
-      </h3>
-      <div class="ingredient-tags">
+    <!-- 已选食材 -->
+    <div class="selected-section" v-if="selectedIngredients.length > 0">
+      <h3>已选食材：</h3>
+      <div class="selected-tags">
         <el-tag
           v-for="ingredient in selectedIngredients"
           :key="ingredient.id"
           type="danger"
-          size="large"
           closable
-          effect="dark"
-          @close="handleRemoveIngredient(ingredient)"
+          @close="removeIngredient(ingredient)"
         >
           {{ ingredient.name }}
-        </el-tag>
-        <div v-if="selectedIngredients.length === 0" class="empty-state">
-          <el-icon><Plus /></el-icon>
-          <span>请选择食材</span>
-        </div>
-      </div>
-    </div>
-    
-    <!-- AI搭配建议 -->
-    <div v-if="suggestions.length > 0" class="suggestions-section">
-      <h3>
-        <el-icon><Lightbulb /></el-icon>
-        AI推荐搭配
-      </h3>
-      <div class="suggestion-tags">
-        <el-tag
-          v-for="suggestion in suggestions"
-          :key="suggestion.id"
-          type="success"
-          size="medium"
-          @click="handleAddSuggestion(suggestion)"
-          style="cursor: pointer;"
-        >
-          <el-icon><Plus /></el-icon>
-          {{ suggestion.name }}
         </el-tag>
       </div>
     </div>
     
     <!-- 食材分类 -->
     <div class="categories-section">
-      <el-tabs v-model="activeCategory" @tab-click="handleCategoryChange">
-        <el-tab-pane
-          v-for="category in categories"
-          :key="category.key"
-          :label="category.label"
-          :name="category.key"
-        >
-          <template #label>
-            <span class="category-label">
-              <el-icon>
-                <component :is="category.icon" />
-              </el-icon>
-              {{ category.label }}
-            </span>
-          </template>
-          
-          <div class="ingredient-grid">
-            <div
-              v-for="ingredient in filteredIngredients[category.key]"
-              :key="ingredient.id"
-              class="ingredient-item"
-              :class="{ selected: isSelected(ingredient) }"
-              @click="handleToggleIngredient(ingredient)"
-            >
-              <div class="ingredient-content">
-                <span class="ingredient-name">{{ ingredient.name }}</span>
-                <el-icon v-if="isSelected(ingredient)" class="selected-icon">
-                  <Check />
-                </el-icon>
-              </div>
-            </div>
+      <div 
+        v-for="category in filteredCategories" 
+        :key="category.id"
+        class="category-section"
+      >
+        <div class="category-header">
+          <span class="category-icon">{{ category.icon }}</span>
+          <h3 class="category-title">{{ category.name }}</h3>
+        </div>
+        
+        <div class="ingredient-grid">
+          <!-- 显示的食材（最多14个） -->
+          <div
+            v-for="ingredient in getDisplayItems(category)"
+            :key="ingredient.id"
+            class="ingredient-item"
+            :class="{ 'selected': isSelected(ingredient.id) }"
+            @click="toggleIngredient(ingredient)"
+          >
+            {{ ingredient.name }}
           </div>
-        </el-tab-pane>
-      </el-tabs>
+          
+          <!-- 更多按钮 -->
+          <div
+            v-if="hasMoreItems(category)"
+            class="more-button"
+            @click="showMoreDialog(category)"
+          >
+            更多 >
+          </div>
+        </div>
+      </div>
     </div>
+    
+    <!-- 智能推荐组件 -->
+    <SmartRecommendation 
+      :selected-ingredients="selectedIngredients"
+      @ingredient-toggle="toggleIngredient"
+    />
+    
+    <!-- 更多食材弹窗 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="`选择${currentCategory?.name || ''}`"
+      width="70%"
+      destroy-on-close
+    >
+      <div class="dialog-content">
+        <el-input
+          v-model="dialogSearch"
+          placeholder="搜索食材..."
+          clearable
+          style="margin-bottom: 20px;"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        
+        <div class="dialog-grid">
+          <div
+            v-for="ingredient in getDialogItems()"
+            :key="ingredient.id"
+            class="dialog-item"
+            :class="{ 'selected': isSelected(ingredient.id) }"
+            @click="toggleIngredient(ingredient)"
+          >
+            {{ ingredient.name }}
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <el-button @click="dialogVisible = false">关闭</el-button>
+        <el-button type="primary" @click="dialogVisible = false">
+          确定 (已选{{ selectedIngredients.length }}个)
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { ingredients } from '@/data/mockData'
+import { ref, computed } from 'vue'
+import { ingredientCategories } from '@/data/mockData'
 import type { Ingredient } from '@/types/recipe'
-import {
-  Search,
-  Collection,
-  Plus,
-  Lightbulb,
-  Check,
-  Apple,
-  Chicken,
-  Fish,
-  Bowl,
-  Coffee
-} from '@element-plus/icons-vue'
+import { Search } from '@element-plus/icons-vue'
 
+// Props
 interface Props {
   selectedIngredients: Ingredient[]
 }
 
+// Emits
 interface Emits {
   (e: 'ingredient-toggle', ingredient: Ingredient): void
 }
@@ -134,118 +149,120 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
+// 响应式数据
 const searchQuery = ref('')
-const activeCategory = ref('vegetables')
-const suggestions = ref<Ingredient[]>([])
+const dialogVisible = ref(false)
+const currentCategory = ref<any>(null)
+const dialogSearch = ref('')
 
-// 食材分类配置
-const categories = [
-  { key: 'vegetables', label: '蔬菜', icon: Apple },
-  { key: 'meat', label: '肉类', icon: Chicken },
-  { key: 'seafood', label: '海鲜', icon: Fish },
-  { key: 'staple', label: '主食', icon: Bowl },
-  { key: 'seasoning', label: '调料', icon: Coffee }
-]
-
-// 按分类过滤的食材
-const filteredIngredients = computed(() => {
-  const result: Record<string, Ingredient[]> = {}
+// 过滤后的分类
+const filteredCategories = computed(() => {
+  if (!searchQuery.value) return ingredientCategories
   
-  categories.forEach(category => {
-    result[category.key] = ingredients
-      .filter(ingredient => ingredient.category === category.key)
-      .filter(ingredient => 
-        searchQuery.value === '' || 
-        ingredient.name.includes(searchQuery.value)
-      )
-  })
-  
-  return result
+  return ingredientCategories.map(category => ({
+    ...category,
+    items: category.items.filter(item => 
+      item.name.includes(searchQuery.value)
+    )
+  })).filter(category => category.items.length > 0)
 })
 
-// 检查食材是否已选择
-const isSelected = (ingredient: Ingredient): boolean => {
-  return props.selectedIngredients.some(item => item.id === ingredient.id)
-}
-
-// 处理食材切换
-const handleToggleIngredient = (ingredient: Ingredient) => {
-  emit('ingredient-toggle', ingredient)
-}
-
-// 处理移除食材
-const handleRemoveIngredient = (ingredient: Ingredient) => {
-  emit('ingredient-toggle', ingredient)
-}
-
-// 处理搜索
-const handleSearch = () => {
-  // 搜索逻辑已在计算属性中处理
-}
-
-// 处理分类切换
-const handleCategoryChange = () => {
-  // 分类切换逻辑
-}
-
-// 处理添加建议食材
-const handleAddSuggestion = (ingredient: Ingredient) => {
-  if (!isSelected(ingredient)) {
-    emit('ingredient-toggle', ingredient)
+// 获取显示的食材（最多14个）
+const getDisplayItems = (category: any) => {
+  if (category.id === 'vegetables') {
+    // 蔬菜类显示前14个
+    return category.items.slice(0, 14)
   }
+  // 其他类别显示所有
+  return category.items
 }
 
-// 生成AI搭配建议
-const generateSuggestions = () => {
-  if (props.selectedIngredients.length === 0) {
-    suggestions.value = []
+// 检查是否有更多食材
+const hasMoreItems = (category: any) => {
+  if (category.id === 'vegetables') {
+    return category.items.length > 14
+  }
+  return false
+}
+
+// 检查食材是否已选择
+const isSelected = (ingredientId: number): boolean => {
+  return props.selectedIngredients.some(item => item.id === ingredientId)
+}
+
+// 切换食材选择
+const toggleIngredient = (ingredient: Ingredient) => {
+  emit('ingredient-toggle', ingredient)
+}
+
+// 移除食材
+const removeIngredient = (ingredient: Ingredient) => {
+  emit('ingredient-toggle', ingredient)
+}
+
+// 显示更多弹窗
+const showMoreDialog = (category: any) => {
+  currentCategory.value = category
+  dialogSearch.value = ''
+  dialogVisible.value = true
+}
+
+// 获取弹窗中的食材
+const getDialogItems = () => {
+  if (!currentCategory.value) return []
+  
+  const items = currentCategory.value.items
+  if (!dialogSearch.value) return items
+  
+  return items.filter((item: Ingredient) => 
+    item.name.includes(dialogSearch.value)
+  )
+}
+
+// 语音搜索功能
+const startVoiceSearch = () => {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    alert('您的浏览器不支持语音识别功能')
     return
   }
-  
-  // 简单的搭配建议逻辑
-  const allIngredients = ingredients.filter(ingredient => 
-    !isSelected(ingredient)
-  )
-  
-  // 根据已选食材推荐相关食材
-  const recommendedIngredients: Ingredient[] = []
-  
-  // 如果选择了蔬菜，推荐肉类和调料
-  if (props.selectedIngredients.some(item => item.category === 'vegetables')) {
-    recommendedIngredients.push(
-      ...allIngredients.filter(item => 
-        item.category === 'meat' || item.category === 'seasoning'
-      ).slice(0, 3)
-    )
-  }
-  
-  // 如果选择了肉类，推荐蔬菜和调料
-  if (props.selectedIngredients.some(item => item.category === 'meat')) {
-    recommendedIngredients.push(
-      ...allIngredients.filter(item => 
-        item.category === 'vegetables' || item.category === 'seasoning'
-      ).slice(0, 3)
-    )
-  }
-  
-  // 去重并限制数量
-  suggestions.value = Array.from(
-    new Map(recommendedIngredients.map(item => [item.id, item])).values()
-  ).slice(0, 5)
-}
 
-// 监听已选食材变化，生成建议
-watch(
-  () => props.selectedIngredients,
-  () => {
-    generateSuggestions()
-  },
-  { immediate: true }
-)
+  const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition
+  const recognition = new SpeechRecognition()
+  
+  recognition.lang = 'zh-CN'
+  recognition.continuous = false
+  recognition.interimResults = false
+
+  recognition.onstart = () => {
+    isListening.value = true
+  }
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript
+    searchQuery.value = transcript
+    isListening.value = false
+  }
+
+  recognition.onerror = (event) => {
+    console.error('语音识别错误:', event.error)
+    isListening.value = false
+    if (event.error === 'not-allowed') {
+      alert('请允许麦克风权限以使用语音搜索功能')
+    }
+  }
+
+  recognition.onend = () => {
+    isListening.value = false
+  }
+
+  recognition.start()
+}
 </script>
 
 <style lang="scss" scoped>
 .ingredient-selection {
+  padding: 2rem;
+  
   .step-header {
     text-align: center;
     margin-bottom: 2rem;
@@ -267,56 +284,59 @@ watch(
     max-width: 500px;
     margin-left: auto;
     margin-right: auto;
+    position: relative;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .voice-search-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    &.listening {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+      animation: pulse 1.5s infinite;
+    }
+  }
+
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(255, 107, 107, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(255, 107, 107, 0);
+    }
   }
   
   .selected-section {
     margin-bottom: 2rem;
     
     h3 {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
       margin-bottom: 1rem;
       color: #2c3e50;
-      font-size: 1.2rem;
     }
     
-    .ingredient-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      min-height: 50px;
-      padding: 1rem;
-      border: 2px dashed #ddd;
-      border-radius: 10px;
-      background: #f9f9f9;
-      align-items: center;
-      
-      .empty-state {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #999;
-        font-style: italic;
-        width: 100%;
-        justify-content: center;
-      }
-    }
-  }
-  
-  .suggestions-section {
-    margin-bottom: 2rem;
-    
-    h3 {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      color: #2c3e50;
-      font-size: 1.1rem;
-    }
-    
-    .suggestion-tags {
+    .selected-tags {
       display: flex;
       flex-wrap: wrap;
       gap: 0.5rem;
@@ -324,140 +344,155 @@ watch(
   }
   
   .categories-section {
-    .category-label {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+    .category-section {
+      margin-bottom: 3rem;
+      
+      .category-header {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        margin-bottom: 1.5rem;
+        
+        .category-icon {
+          font-size: 1.5rem;
+        }
+        
+        .category-title {
+          font-size: 1.3rem;
+          color: #2c3e50;
+          margin: 0;
+        }
+      }
+      
+      .ingredient-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1rem;
+        
+        .ingredient-item,
+        .more-button {
+          background: white;
+          border: 2px solid #e0e0e0;
+          border-radius: 10px;
+          padding: 1rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          text-align: center;
+          font-weight: 500;
+          min-height: 60px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          &:hover {
+            border-color: #ff6b6b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.2);
+          }
+          
+          &.selected {
+            background: #ff6b6b;
+            color: white;
+            border-color: #ff6b6b;
+          }
+        }
+        
+        .more-button {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border: none;
+          
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+          }
+        }
+      }
     }
-    
-    .ingredient-grid {
+  }
+  
+  .dialog-content {
+    .dialog-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       gap: 1rem;
-      margin-top: 1rem;
-    }
-    
-    .ingredient-item {
-      background: white;
-      border: 2px solid #e0e0e0;
-      border-radius: 10px;
-      padding: 1rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
+      max-height: 400px;
+      overflow-y: auto;
       
-      &:hover {
-        border-color: #ff6b6b;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(255, 107, 107, 0.2);
-      }
-      
-      &.selected {
-        background: #ff6b6b;
-        color: white;
-        border-color: #ff6b6b;
-        
-        .selected-icon {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          font-size: 1.2rem;
-        }
-      }
-      
-      .ingredient-content {
+      .dialog-item {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
         text-align: center;
+        font-weight: 500;
         
-        .ingredient-name {
-          font-weight: 500;
-          font-size: 0.9rem;
+        &:hover {
+          border-color: #ff6b6b;
+          transform: translateY(-2px);
+          box-shadow: 0 5px 15px rgba(255, 107, 107, 0.2);
+        }
+        
+        &.selected {
+          background: #ff6b6b;
+          color: white;
+          border-color: #ff6b6b;
         }
       }
     }
+  }
+}
+
+// 响应式设计
+@media (max-width: 1200px) {
+  .ingredient-selection .categories-section .category-section .ingredient-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
+  .ingredient-selection .categories-section .category-section .ingredient-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .ingredient-selection .categories-section .category-section .ingredient-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .ingredient-selection .categories-section .category-section .ingredient-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
   }
 }
 
 // 暗色主题
 :global(.dark) .ingredient-selection {
   .step-header {
-    h2 {
+    h2, p {
       color: #f9fafb;
-    }
-    
-    p {
-      color: #d1d5db;
     }
   }
   
-  .selected-section,
-  .suggestions-section {
-    h3 {
-      color: #f9fafb;
-    }
-    
-    .ingredient-tags {
-      background: #374151;
-      border-color: #4b5563;
-      
-      .empty-state {
-        color: #9ca3af;
-      }
-    }
+  .selected-section h3 {
+    color: #f9fafb;
   }
   
-  .ingredient-item {
+  .category-header .category-title {
+    color: #f9fafb;
+  }
+  
+  .ingredient-item,
+  .dialog-item {
     background: #374151;
     border-color: #4b5563;
     color: #f9fafb;
-    
-    &:hover {
-      border-color: #ff6b6b;
-    }
-  }
-}
-
-// 响应式设计
-@media (max-width: 768px) {
-  .ingredient-selection {
-    .ingredient-grid {
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 0.8rem;
-    }
-    
-    .ingredient-item {
-      padding: 0.8rem;
-      
-      .ingredient-name {
-        font-size: 0.85rem;
-      }
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .ingredient-selection {
-    .step-header {
-      h2 {
-        font-size: 1.5rem;
-      }
-      
-      p {
-        font-size: 1rem;
-      }
-    }
-    
-    .ingredient-grid {
-      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-      gap: 0.6rem;
-    }
-    
-    .ingredient-item {
-      padding: 0.6rem;
-      
-      .ingredient-name {
-        font-size: 0.8rem;
-      }
-    }
   }
 }
 </style>

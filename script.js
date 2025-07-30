@@ -1,4 +1,153 @@
 // ChefMind 智食谱 - 主要JavaScript功能
+
+// PWA 功能初始化
+class PWAManager {
+    constructor() {
+        this.deferredPrompt = null;
+        this.isOnline = navigator.onLine;
+        this.init();
+    }
+
+    init() {
+        this.registerServiceWorker();
+        this.setupInstallPrompt();
+        this.setupOfflineDetection();
+        this.setupUpdateNotification();
+    }
+
+    // 注册 Service Worker
+    async registerServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            try {
+                const registration = await navigator.serviceWorker.register('/sw.js');
+                console.log('Service Worker 注册成功:', registration);
+                
+                // 监听更新
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            this.showUpdateNotification();
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error('Service Worker 注册失败:', error);
+            }
+        }
+    }
+
+    // 设置安装提示
+    setupInstallPrompt() {
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            this.deferredPrompt = e;
+            this.showInstallButton();
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA 安装成功');
+            this.hideInstallButton();
+        });
+    }
+
+    // 显示安装按钮
+    showInstallButton() {
+        const installBtn = document.createElement('button');
+        installBtn.id = 'pwa-install-btn';
+        installBtn.className = 'pwa-install-btn';
+        installBtn.innerHTML = '<i class="fas fa-download"></i> 安装应用';
+        installBtn.onclick = () => this.installApp();
+        
+        document.body.appendChild(installBtn);
+    }
+
+    // 隐藏安装按钮
+    hideInstallButton() {
+        const installBtn = document.getElementById('pwa-install-btn');
+        if (installBtn) {
+            installBtn.remove();
+        }
+    }
+
+    // 安装应用
+    async installApp() {
+        if (this.deferredPrompt) {
+            this.deferredPrompt.prompt();
+            const { outcome } = await this.deferredPrompt.userChoice;
+            console.log('安装结果:', outcome);
+            this.deferredPrompt = null;
+            this.hideInstallButton();
+        }
+    }
+
+    // 设置离线检测
+    setupOfflineDetection() {
+        window.addEventListener('online', () => {
+            this.isOnline = true;
+            this.hideOfflineNotification();
+            console.log('网络已连接');
+        });
+
+        window.addEventListener('offline', () => {
+            this.isOnline = false;
+            this.showOfflineNotification();
+            console.log('网络已断开');
+        });
+
+        // 初始状态检查
+        if (!this.isOnline) {
+            this.showOfflineNotification();
+        }
+    }
+
+    // 显示离线通知
+    showOfflineNotification() {
+        const notification = document.createElement('div');
+        notification.id = 'offline-notification';
+        notification.className = 'offline-notification';
+        notification.innerHTML = `
+            <i class="fas fa-wifi"></i>
+            <span>您当前处于离线状态，部分功能可能受限</span>
+            <button onclick="this.parentElement.remove()">&times;</button>
+        `;
+        
+        document.body.appendChild(notification);
+    }
+
+    // 隐藏离线通知
+    hideOfflineNotification() {
+        const notification = document.getElementById('offline-notification');
+        if (notification) {
+            notification.remove();
+        }
+    }
+
+    // 显示更新通知
+    showUpdateNotification() {
+        const notification = document.createElement('div');
+        notification.id = 'update-notification';
+        notification.className = 'update-notification';
+        notification.innerHTML = `
+            <i class="fas fa-sync-alt"></i>
+            <span>发现新版本，点击更新</span>
+            <button onclick="window.location.reload()">更新</button>
+            <button onclick="this.parentElement.remove()">&times;</button>
+        `;
+        
+        document.body.appendChild(notification);
+    }
+
+    // 设置更新通知
+    setupUpdateNotification() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                window.location.reload();
+            });
+        }
+    }
+}
+
 class ChefMind {
     constructor() {
         this.selectedIngredients = [];
@@ -31,6 +180,14 @@ class ChefMind {
         document.querySelectorAll('.ingredient-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 this.toggleIngredient(e.target.dataset.ingredient);
+            });
+        });
+
+        // "更多"按钮点击事件
+        document.querySelectorAll('.more-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const category = e.target.dataset.category;
+                this.showMoreIngredients(category);
             });
         });
 
@@ -532,6 +689,113 @@ class ChefMind {
     }
 
     // 显示错误信息
+    // 显示更多食材弹窗
+    showMoreIngredients(category) {
+        const allVegetables = [
+            '白菜', '萝卜', '土豆', '西红柿', '黄瓜', '茄子', '豆角', '青椒', '洋葱', '胡萝卜', 
+            '芹菜', '韭菜', '菠菜', '生菜', '西兰花', '花菜', '包菜', '油菜', '小白菜', '娃娃菜',
+            '芥蓝', '菜心', '空心菜', '苋菜', '茼蒿', '香菜', '大葱', '小葱', '蒜苗', '韭黄',
+            '豆苗', '豌豆', '毛豆', '蚕豆', '冬瓜', '南瓜', '丝瓜', '苦瓜', '节瓜', '莲藕',
+            '山药', '芋头', '红薯', '紫薯', '玉米', '竹笋', '蘑菇', '金针菇', '香菇', '平菇'
+        ];
+
+        if (category === 'vegetables') {
+            this.createMoreIngredientsModal('蔬菜类', allVegetables);
+        }
+    }
+
+    // 创建更多食材模态框
+    createMoreIngredientsModal(categoryName, ingredients) {
+        // 创建模态框HTML
+        const modalHTML = `
+            <div class="modal active" id="moreIngredientsModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>选择${categoryName}</h2>
+                        <button class="modal-close" onclick="chefMind.closeMoreIngredientsModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="search-box" style="margin-bottom: 20px;">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="moreIngredientsSearch" placeholder="搜索食材名称...">
+                        </div>
+                        <div class="more-ingredients-grid">
+                            ${ingredients.map(ingredient => `
+                                <div class="ingredient-item ${this.selectedIngredients.includes(ingredient) ? 'selected' : ''}" 
+                                     data-ingredient="${ingredient}"
+                                     onclick="chefMind.toggleIngredientInModal('${ingredient}')">
+                                    ${ingredient}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="chefMind.closeMoreIngredientsModal()">关闭</button>
+                        <button class="btn btn-primary" onclick="chefMind.closeMoreIngredientsModal()">
+                            确定 (已选${this.selectedIngredients.length}个)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 添加到页面
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // 绑定搜索事件
+        document.getElementById('moreIngredientsSearch').addEventListener('input', (e) => {
+            this.searchMoreIngredients(e.target.value);
+        });
+    }
+
+    // 在模态框中切换食材选择
+    toggleIngredientInModal(ingredient) {
+        const index = this.selectedIngredients.indexOf(ingredient);
+        const modalItem = document.querySelector(`#moreIngredientsModal [data-ingredient="${ingredient}"]`);
+        const mainItem = document.querySelector(`[data-ingredient="${ingredient}"]:not(#moreIngredientsModal [data-ingredient="${ingredient}"])`);
+        
+        if (index > -1) {
+            this.selectedIngredients.splice(index, 1);
+            modalItem.classList.remove('selected');
+            if (mainItem) mainItem.classList.remove('selected');
+        } else {
+            this.selectedIngredients.push(ingredient);
+            modalItem.classList.add('selected');
+            if (mainItem) mainItem.classList.add('selected');
+        }
+        
+        this.updateSelectedTags();
+        this.updateNextButton();
+        
+        // 更新模态框按钮文本
+        const confirmBtn = document.querySelector('#moreIngredientsModal .btn-primary');
+        if (confirmBtn) {
+            confirmBtn.textContent = `确定 (已选${this.selectedIngredients.length}个)`;
+        }
+    }
+
+    // 搜索更多食材
+    searchMoreIngredients(query) {
+        const items = document.querySelectorAll('#moreIngredientsModal .ingredient-item');
+        items.forEach(item => {
+            const ingredient = item.dataset.ingredient;
+            if (ingredient.includes(query) || query === '') {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    // 关闭更多食材模态框
+    closeMoreIngredientsModal() {
+        const modal = document.getElementById('moreIngredientsModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    // 显示错误信息
     showError(message) {
         document.getElementById('loadingState').innerHTML = `
             <div style="text-align: center; color: #ff6b6b;">
@@ -547,8 +811,10 @@ class ChefMind {
 
 // 初始化应用
 let chefMind;
+let pwaManager;
 document.addEventListener('DOMContentLoaded', () => {
     chefMind = new ChefMind();
+    pwaManager = new PWAManager();
 });
 
 // 工具函数
