@@ -45,9 +45,9 @@ class GLMService {
   private model: string;
 
   constructor() {
-    this.apiKey = import.meta.env.VITE_GLM_API_KEY || '';
-    this.baseURL = import.meta.env.VITE_GLM_API_BASE_URL || 'https://open.bigmodel.cn/api/paas/v4';
-    this.model = import.meta.env.VITE_GLM_MODEL || 'glm-4';
+    this.apiKey = import.meta.env.GLM_API_KEY || '';
+    this.baseURL = import.meta.env.GLM_API_BASE_URL || 'https://open.bigmodel.cn/api/paas/v4';
+    this.model = import.meta.env.GLM_MODEL || 'glm-4';
 
     if (!this.apiKey) {
       console.warn('GLM API Key 未配置，请检查环境变量 GLM_API_KEY');

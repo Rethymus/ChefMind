@@ -10,7 +10,7 @@ class RecipeService {
 
   // 检查GLM API是否可用
   private isGLMAvailable(): boolean {
-    return !!import.meta.env.VITE_GLM_API_KEY
+    return !!import.meta.env.GLM_API_KEY
   }
 
   // 生成菜谱（主要方法）
