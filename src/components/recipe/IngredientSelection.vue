@@ -15,8 +15,8 @@
             :class="{ 'listening': isListening }"
             :title="isListening ? '正在听取...' : '语音搜索'"
           >
-            <i class="fas fa-microphone" v-if="!isListening"></i>
-            <i class="fas fa-microphone-slash" v-else></i>
+            <el-icon v-if="!isListening"><Microphone /></el-icon>
+            <el-icon v-else><Mute /></el-icon>
           </button>
         </div>
         <div class="category-filter">
@@ -59,10 +59,10 @@
           >
             <span class="ingredient-icon">{{ ingredient.icon || '🥬' }}</span>
             <span class="ingredient-name">{{ ingredient.name }}</span>
-            <i 
+            <el-icon 
               v-if="isSelected(ingredient)" 
-              class="fas fa-check selected-icon"
-            ></i>
+              class="selected-icon"
+            ><Check /></el-icon>
           </div>
           
           <!-- 更多按钮 -->
@@ -82,7 +82,7 @@
     <!-- 已选择的食材 -->
     <div v-if="props.selectedIngredients.length > 0" class="selected-ingredients">
       <h3 class="selected-title">
-        <i class="fas fa-check-circle"></i>
+        <el-icon><CircleCheck /></el-icon>
         已选择的食材 ({{ props.selectedIngredients.length }})
       </h3>
       <div class="selected-list">
@@ -94,7 +94,7 @@
         >
           <span class="ingredient-icon">{{ ingredient.icon || '🥬' }}</span>
           <span class="ingredient-name">{{ ingredient.name }}</span>
-          <i class="fas fa-times remove-icon"></i>
+          <el-icon class="remove-icon"><Close /></el-icon>
         </div>
       </div>
     </div>
@@ -108,7 +108,7 @@
             {{ currentMoreCategory?.name }} - 全部食材
           </h3>
           <button @click="closeModal" class="close-btn">
-            <i class="fas fa-times"></i>
+            <el-icon><Close /></el-icon>
           </button>
         </div>
         
@@ -131,10 +131,10 @@
           >
             <span class="ingredient-icon">{{ ingredient.icon || '🥬' }}</span>
             <span class="ingredient-name">{{ ingredient.name }}</span>
-            <i 
+            <el-icon 
               v-if="isSelected(ingredient)" 
-              class="fas fa-check selected-icon"
-            ></i>
+              class="selected-icon"
+            ><Check /></el-icon>
           </div>
         </div>
       </div>
@@ -146,6 +146,7 @@
 import { ref, computed, watch } from 'vue'
 import type { Ingredient, IngredientCategory } from '@/types/recipe'
 import { ingredientCategories } from '@/data/mockData'
+import { Microphone, Mute, Check, CircleCheck, Close } from '@element-plus/icons-vue'
 
 // Props
 interface Props {

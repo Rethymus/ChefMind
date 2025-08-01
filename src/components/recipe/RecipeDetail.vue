@@ -1,4 +1,4 @@
-<template>
+﻿﻿﻿<template>
   <div class="recipe-detail">
     <!-- 菜谱头部信息 -->
     <div class="recipe-header">
@@ -42,7 +42,7 @@
           </div>
           <div class="meta-item">
             <el-icon><Calendar /></el-icon>
-            <span>创建时间：{{ formatDate(recipe.createdAt) }}</span>
+            <span>创建时间：{{ recipe.createdAt ? formatDate(recipe.createdAt) : '未知' }}</span>
           </div>
         </div>
         
@@ -103,7 +103,7 @@
             <h3 class="step-title">{{ step.title }}</h3>
             <p class="step-description">{{ step.description }}</p>
             <div v-if="step.tips" class="step-tips">
-              <el-icon><Lightbulb /></el-icon>
+              <el-icon><InfoFilled /></el-icon>
               <span>小贴士：{{ step.tips }}</span>
             </div>
           </div>
@@ -236,7 +236,6 @@ import {
   ShoppingBag,
   List,
   Check,
-  Lightbulb,
   Link,
   ArrowRight,
   DataAnalysis,
@@ -246,13 +245,13 @@ import {
   Printer,
   Apple,
   Chicken,
-  Fish,
   Bowl,
   Coffee,
   VideoPlay,
   VideoCamera,
   Reading,
-  Heart
+  StarFilled,
+  InfoFilled
 } from '@element-plus/icons-vue'
 
 interface Props {
@@ -274,7 +273,7 @@ const getCategoryIcon = (category: string) => {
   const iconMap = {
     vegetables: Apple,
     meat: Chicken,
-    seafood: Fish,
+    seafood: Apple, // 替换为Apple图标，因为Fish图标不存在
     staple: Bowl,
     seasoning: Coffee
   }
@@ -284,10 +283,10 @@ const getCategoryIcon = (category: string) => {
 // 获取链接图标
 const getLinkIcon = (iconName: string) => {
   const iconMap = {
-    VideoPlay,
-    VideoCamera,
-    Reading,
-    Heart
+    VideoPlay: VideoPlay,
+    VideoCamera: VideoCamera,
+    Reading: Reading,
+    StarFilled: StarFilled // 使用 StarFilled 图标
   }
   return iconMap[iconName as keyof typeof iconMap] || Link
 }

@@ -2,7 +2,7 @@
   <div class="nutrition-analysis">
     <div class="nutrition-header">
       <h3>
-        <i class="fas fa-heartbeat"></i>
+        <el-icon><DataAnalysis /></el-icon>
         营养分析与健康建议
       </h3>
       <div class="analysis-toggle">
@@ -11,7 +11,7 @@
           :class="{ active: showDetailed }"
           @click="showDetailed = !showDetailed"
         >
-          <i class="fas fa-chart-pie"></i>
+          <el-icon><PieChart /></el-icon>
           {{ showDetailed ? '简化视图' : '详细分析' }}
         </button>
       </div>
@@ -21,7 +21,7 @@
     <div class="nutrition-overview">
       <div class="overview-card calories">
         <div class="card-icon">
-          <i class="fas fa-fire"></i>
+          <el-icon><Sunny /></el-icon>
         </div>
         <div class="card-content">
           <div class="card-value">{{ totalCalories }}</div>
@@ -35,7 +35,7 @@
 
       <div class="overview-card protein">
         <div class="card-icon">
-          <i class="fas fa-dumbbell"></i>
+          <el-icon><TrendCharts /></el-icon>
         </div>
         <div class="card-content">
           <div class="card-value">{{ totalProtein }}</div>
@@ -49,7 +49,7 @@
 
       <div class="overview-card carbs">
         <div class="card-icon">
-          <i class="fas fa-bread-slice"></i>
+          <el-icon><Food /></el-icon>
         </div>
         <div class="card-content">
           <div class="card-value">{{ totalCarbs }}</div>
@@ -63,7 +63,7 @@
 
       <div class="overview-card fat">
         <div class="card-icon">
-          <i class="fas fa-tint"></i>
+          <el-icon><Drizzling /></el-icon>
         </div>
         <div class="card-content">
           <div class="card-value">{{ totalFat }}</div>
@@ -126,7 +126,7 @@
     <!-- 健康建议 -->
     <div class="health-suggestions">
       <h4>
-        <i class="fas fa-user-md"></i>
+        <el-icon><User /></el-icon>
         个性化健康建议
       </h4>
       
@@ -135,7 +135,7 @@
         <div class="profile-prompt">
           <p>为了提供更准确的健康建议，请设置您的基本信息：</p>
           <button class="setup-btn" @click="showProfileModal = true">
-            <i class="fas fa-user-cog"></i>
+            <el-icon><Setting /></el-icon>
             设置个人信息
           </button>
         </div>
@@ -150,7 +150,10 @@
           :class="suggestion.type"
         >
           <div class="suggestion-icon">
-            <i :class="suggestion.icon"></i>
+            <!-- 根据图标类型显示 -->
+            <el-icon v-if="suggestion.icon === 'Warning'"><Warning /></el-icon>
+            <el-icon v-else-if="suggestion.icon === 'TrendCharts'"><TrendCharts /></el-icon>
+            <span v-else>{{ suggestion.icon }}</span>
           </div>
           <div class="suggestion-content">
             <div class="suggestion-title">{{ suggestion.title }}</div>
@@ -171,7 +174,7 @@
     <!-- 营养目标追踪 -->
     <div class="nutrition-goals" v-if="userProfile.isSet">
       <h4>
-        <i class="fas fa-target"></i>
+        <el-icon><Aim /></el-icon>
         营养目标追踪
       </h4>
       <div class="goals-grid">
@@ -304,6 +307,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRecipeStore } from '@/stores/recipe'
+import { ElCard, ElProgress, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElSelect, ElOption, ElIcon } from 'element-plus'
+import { DataAnalysis, PieChart, Sunny, TrendCharts, Food, Drizzling, User, Setting, Warning, Aim } from '@element-plus/icons-vue'
 
 interface NutrientInfo {
   name: string
@@ -479,7 +484,7 @@ const healthSuggestions = computed((): HealthSuggestion[] => {
     suggestions.push({
       id: 'high-calories',
       type: 'warning',
-      icon: 'fas fa-exclamation-triangle',
+      icon: 'Warning',
       title: '卡路里偏高',
       description: `这餐的卡路里(${totalCalories.value})较高，建议适量食用或增加运动。`,
       priority: 'high',
@@ -493,7 +498,7 @@ const healthSuggestions = computed((): HealthSuggestion[] => {
     suggestions.push({
       id: 'low-protein',
       type: 'info',
-      icon: 'fas fa-dumbbell',
+      icon: 'TrendCharts',
       title: '蛋白质不足',
       description: '建议增加蛋白质含量丰富的食材，如鸡蛋、豆腐、瘦肉等。',
       priority: 'medium',
@@ -509,7 +514,7 @@ const healthSuggestions = computed((): HealthSuggestion[] => {
     suggestions.push({
       id: 'more-vegetables',
       type: 'tip',
-      icon: 'fas fa-leaf',
+      icon: '🥬',
       title: '增加蔬菜摄入',
       description: '建议增加更多蔬菜，以获得丰富的维生素和纤维。',
       priority: 'medium',
@@ -522,7 +527,7 @@ const healthSuggestions = computed((): HealthSuggestion[] => {
     suggestions.push({
       id: 'high-sodium',
       type: 'warning',
-      icon: 'fas fa-tint',
+      icon: '💧',
       title: '钠含量偏高',
       description: '建议减少盐分摄入，多喝水，选择低钠调料。',
       priority: 'high',
@@ -535,7 +540,7 @@ const healthSuggestions = computed((): HealthSuggestion[] => {
     suggestions.push({
       id: 'protein-balance',
       type: 'info',
-      icon: 'fas fa-balance-scale',
+      icon: '⚖️',
       title: '营养比例调整',
       description: '建议调整蛋白质比例，保持营养均衡。',
       priority: 'low',

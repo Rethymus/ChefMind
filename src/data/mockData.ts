@@ -193,11 +193,11 @@ export const mockRecipes: Recipe[] = [
     ],
     method: cookingMethods[0],
     steps: [
-      '将西红柿洗净切块',
-      '鸡蛋打散加少许盐',
-      '热锅下油，炒鸡蛋盛起',
-      '下西红柿炒出汁水',
-      '倒入鸡蛋翻炒均匀即可'
+      { id: 1, title: '准备食材', description: '将西红柿洗净切块', tips: '西红柿要选择熟透的' },
+      { id: 2, title: '处理鸡蛋', description: '鸡蛋打散加少许盐', tips: '加盐可以让鸡蛋更嫩滑' },
+      { id: 3, title: '炒鸡蛋', description: '热锅下油，炒鸡蛋盛起', tips: '油温要适中，避免炒老' },
+      { id: 4, title: '炒西红柿', description: '下西红柿炒出汁水', tips: '要炒出西红柿的汁水' },
+      { id: 5, title: '混合翻炒', description: '倒入鸡蛋翻炒均匀即可', tips: '快速翻炒保持口感' }
     ],
     cookingTime: 15,
     difficulty: 1,
@@ -221,11 +221,11 @@ export const mockRecipes: Recipe[] = [
     ],
     method: cookingMethods[3],
     steps: [
-      '土豆去皮切块',
-      '热锅下油炸至微黄',
-      '加生抽老抽上色',
-      '加水焖煮20分钟',
-      '大火收汁即可'
+      { id: 1, title: '准备土豆', description: '土豆去皮切块', tips: '土豆块不要切太小' },
+      { id: 2, title: '油炸土豆', description: '热锅下油炸至微黄', tips: '油温要控制好' },
+      { id: 3, title: '调色', description: '加生抽老抽上色', tips: '老抽主要用于上色' },
+      { id: 4, title: '焖煮', description: '加水焖煮20分钟', tips: '水量要适中' },
+      { id: 5, title: '收汁', description: '大火收汁即可', tips: '收汁时要不断翻炒' }
     ],
     cookingTime: 30,
     difficulty: 2,
@@ -281,3 +281,31 @@ export const recommendationData = {
     ]
   }
 }
+
+// 外部链接数据
+export const externalLinks = [
+  {
+    name: 'Bilibili',
+    url: 'https://search.bilibili.com/all?keyword=',
+    icon: 'VideoPlay', // 使用 VideoPlay 图标
+    color: '#00a1d6'
+  },
+  {
+    name: 'YouTube',
+    url: 'https://www.youtube.com/results?search_query=',
+    icon: 'VideoCamera', // 使用 VideoCamera 图标
+    color: '#ff0000'
+  },
+  {
+    name: '下厨房',
+    url: 'https://www.xiachufang.com/search/?keyword=',
+    icon: 'Reading', // 使用 Reading 图标
+    color: '#28b463'
+  },
+  {
+    name: '豆果美食',
+    url: 'https://www.douguo.com/search/recipe/',
+    icon: 'StarFilled', // 使用 StarFilled 图标
+    color: '#f39c12'
+  }
+]

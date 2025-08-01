@@ -14,7 +14,11 @@ export const useRecipeStore = defineStore('recipe', () => {
     difficulty: null,
     servings: null,
     dietaryRestrictions: [],
-    excludeIngredients: []
+    excludeIngredients: [],
+    // 兼容字段
+    time: null,
+    people: null,
+    taste: null
   })
   const generatedRecipes = ref<Recipe[]>([])
   const currentStep = ref(1)
@@ -53,8 +57,8 @@ export const useRecipeStore = defineStore('recipe', () => {
     }
   }
 
-  const updateConstraints = (key: keyof Constraints, value: any) => {
-    (constraints.value as any)[key] = value
+  const updateConstraints = (newConstraints: Constraints) => {
+    constraints.value = { ...newConstraints }
   }
 
   const nextStep = () => {
@@ -118,7 +122,11 @@ export const useRecipeStore = defineStore('recipe', () => {
       difficulty: null,
       servings: null,
       dietaryRestrictions: [],
-      excludeIngredients: []
+      excludeIngredients: [],
+      // 兼容字段
+      time: null,
+      people: null,
+      taste: null
     }
     generatedRecipes.value = []
     currentStep.value = 1

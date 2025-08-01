@@ -1,12 +1,17 @@
 <template>
   <div id="app" class="chefmind-app">
-    <router-view />
+    <ErrorBoundary>
+      <router-view />
+    </ErrorBoundary>
+    <NotificationContainer />
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useThemeStore } from '@/stores/theme'
+import NotificationContainer from '@/components/common/NotificationContainer.vue'
+import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
 
 const themeStore = useThemeStore()
 

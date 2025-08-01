@@ -11,6 +11,38 @@ const routes: RouteRecordRaw[] = [
     meta: {
       title: 'ChefMind 智食谱 - 首页'
     }
+  },
+  {
+    path: '/simple-test',
+    name: 'SimpleTest',
+    component: () => import('@/views/SimpleTest.vue'),
+    meta: {
+      title: 'ChefMind 智食谱 - 简单测试'
+    }
+  },
+  {
+    path: '/ai-test',
+    name: 'AITest',
+    component: () => import('@/views/AITestView.vue'),
+    meta: {
+      title: 'ChefMind 智食谱 - GLM AI功能测试'
+    }
+  },
+  {
+    path: '/constraint-test',
+    name: 'ConstraintTest',
+    component: () => import('@/views/ConstraintTestView.vue'),
+    meta: {
+      title: 'ChefMind 智食谱 - 约束条件测试'
+    }
+  },
+  {
+    path: '/test',
+    name: 'Test',
+    component: () => import('@/views/TestView.vue'),
+    meta: {
+      title: 'ChefMind 智食谱 - 调试页面'
+    }
   }
 ]
 

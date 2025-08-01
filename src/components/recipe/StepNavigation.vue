@@ -8,19 +8,19 @@
         @click="$emit('prev-step')"
         v-if="currentStep > 1"
       >
-        <i class="fas fa-chevron-left"></i>
+        <el-icon><ArrowLeft /></el-icon>
         上一步
       </button>
       
-      <!-- 下一步/生成按钮 -->
+      <!-- 下一步按钮 -->
       <button 
-        v-if="currentStep < 4"
+        v-if="currentStep < 3"
         class="nav-btn next-btn"
         :disabled="!canProceed"
         @click="$emit('next-step')"
       >
         下一步
-        <i class="fas fa-chevron-right"></i>
+        <el-icon><ArrowRight /></el-icon>
       </button>
       
       <!-- 生成菜谱按钮 -->
@@ -30,7 +30,7 @@
         :disabled="!canGenerate"
         @click="$emit('generate-recipes')"
       >
-        <i class="fas fa-magic"></i>
+        <el-icon><MagicStick /></el-icon>
         生成菜谱
       </button>
       
@@ -40,7 +40,7 @@
         @click="$emit('reset')"
         v-if="currentStep > 1"
       >
-        <i class="fas fa-redo"></i>
+        <el-icon><RefreshLeft /></el-icon>
         重新开始
       </button>
     </div>
@@ -53,8 +53,8 @@
       <span v-else-if="currentStep === 2 && !canProceedStep3">
         请至少选择一种烹饪方式继续
       </span>
-      <span v-else-if="currentStep === 3 && !canGenerate">
-        请完善约束条件后生成菜谱
+      <span v-else-if="currentStep === 3">
+        设置完约束条件后点击"生成菜谱"
       </span>
       <span v-else-if="currentStep === 4">
         菜谱生成完成！您可以查看详情或重新开始
@@ -65,6 +65,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { ArrowLeft, ArrowRight, MagicStick, RefreshLeft } from '@element-plus/icons-vue'
 
 // Props
 const props = defineProps<{

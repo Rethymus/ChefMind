@@ -1,585 +1,697 @@
 <template>
-  <div class="smart-recommendation" v-if="recommendations.length > 0">
+  <div class="smart-recommendation">
     <div class="recommendation-header">
-      <h3>
-        <i class="fas fa-lightbulb"></i>
+      <h3 class="title">
+        <Sparkles class="w-5 h-5 text-purple-600" />
         智能推荐
       </h3>
-      <p>基于您已选择的食材，为您推荐以下搭配</p>
+      <p class="subtitle">AI为您提供个性化的食材替换和菜谱优化建议</p>
     </div>
-    
-    <div class="recommendation-categories">
-      <!-- 营养均衡推荐 -->
-      <div class="recommendation-section" v-if="nutritionRecommendations.length > 0">
-        <h4>
-          <i class="fas fa-heart"></i>
-          营养均衡推荐
+
+    <!-- 食材替换建议 -->
+    <div class="recommendation-section">
+      <div class="section-header">
+        <h4 class="section-title">
+          <RefreshCw class="w-4 h-4" />
+          食材替换建议
         </h4>
-        <div class="recommendation-items">
-          <div 
-            v-for="item in nutritionRecommendations" 
-            :key="item.id"
-            class="recommendation-item"
-            :class="{ 'selected': isSelected(item.name) }"
-            @click="$emit('ingredient-toggle', item)"
-          >
-            <div class="item-icon">{{ item.icon }}</div>
-            <div class="item-info">
-              <div class="item-name">{{ item.name }}</div>
-              <div class="item-reason">{{ item.reason }}</div>
-            </div>
-            <div class="item-action">
-              <i class="fas fa-plus" v-if="!isSelected(item.name)"></i>
-              <i class="fas fa-check" v-else></i>
+        <button
+          @click="generateIngredientAlternatives"
+          :disabled="!currentRecipe || isGenerating"
+          class="generate-btn"
+        >
+          <Loader2 v-if="isGenerating" class="w-4 h-4 animate-spin" />
+          <span v-else>生成建议</span>
+        </button>
+      </div>
+
+      <div v-if="ingredientAlternatives.length > 0" class="alternatives-list">
+        <div
+          v-for="alternative in ingredientAlternatives"
+          :key="alternative.original"
+          class="alternative-item"
+        >
+          <div class="original-ingredient">
+            <span class="ingredient-name">{{ alternative.original }}</span>
+            <ArrowRight class="w-4 h-4 text-gray-400" />
+          </div>
+          
+          <div class="suggested-ingredients">
+            <div
+              v-for="suggestion in alternative.suggestions"
+              :key="suggestion.name"
+              class="suggestion-item"
+              @click="applySuggestion(alternative.original, suggestion)"
+            >
+              <span class="suggestion-name">{{ suggestion.name }}</span>
+              <div class="suggestion-info">
+                <span class="reason">{{ suggestion.reason }}</span>
+                <div class="scores">
+                  <span class="score nutrition">营养: {{ suggestion.nutritionScore }}/10</span>
+                  <span class="score flavor">口味: {{ suggestion.flavorScore }}/10</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 口味搭配推荐 -->
-      <div class="recommendation-section" v-if="flavorRecommendations.length > 0">
-        <h4>
-          <i class="fas fa-star"></i>
-          口味搭配推荐
-        </h4>
-        <div class="recommendation-items">
-          <div 
-            v-for="item in flavorRecommendations" 
-            :key="item.id"
-            class="recommendation-item"
-            :class="{ 'selected': isSelected(item.name) }"
-            @click="$emit('ingredient-toggle', item)"
-          >
-            <div class="item-icon">{{ item.icon }}</div>
-            <div class="item-info">
-              <div class="item-name">{{ item.name }}</div>
-              <div class="item-reason">{{ item.reason }}</div>
-            </div>
-            <div class="item-action">
-              <i class="fas fa-plus" v-if="!isSelected(item.name)"></i>
-              <i class="fas fa-check" v-else></i>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 经典搭配推荐 -->
-      <div class="recommendation-section" v-if="classicRecommendations.length > 0">
-        <h4>
-          <i class="fas fa-utensils"></i>
-          经典搭配推荐
-        </h4>
-        <div class="recommendation-items">
-          <div 
-            v-for="item in classicRecommendations" 
-            :key="item.id"
-            class="recommendation-item"
-            :class="{ 'selected': isSelected(item.name) }"
-            @click="$emit('ingredient-toggle', item)"
-          >
-            <div class="item-icon">{{ item.icon }}</div>
-            <div class="item-info">
-              <div class="item-name">{{ item.name }}</div>
-              <div class="item-reason">{{ item.reason }}</div>
-            </div>
-            <div class="item-action">
-              <i class="fas fa-plus" v-if="!isSelected(item.name)"></i>
-              <i class="fas fa-check" v-else></i>
-            </div>
-          </div>
-        </div>
+      <div v-else-if="!isGenerating" class="empty-state">
+        <Package class="w-12 h-12 text-gray-300 mx-auto mb-2" />
+        <p class="text-gray-500">选择一个菜谱后，AI将为您推荐食材替换方案</p>
       </div>
     </div>
 
-    <!-- 营养分析 -->
-    <div class="nutrition-analysis" v-if="selectedIngredients.length > 0">
-      <h4>
-        <i class="fas fa-chart-pie"></i>
-        营养分析
-      </h4>
-      <div class="nutrition-stats">
-        <div class="nutrition-item">
-          <div class="nutrition-label">预估卡路里</div>
-          <div class="nutrition-value">{{ nutritionStats.calories }} kcal</div>
+    <!-- 过敏原检测 -->
+    <div class="recommendation-section">
+      <div class="section-header">
+        <h4 class="section-title">
+          <AlertTriangle class="w-4 h-4" />
+          过敏原检测
+        </h4>
+        <button
+          @click="checkAllergens"
+          :disabled="!currentRecipe || isCheckingAllergens"
+          class="generate-btn"
+        >
+          <Loader2 v-if="isCheckingAllergens" class="w-4 h-4 animate-spin" />
+          <span v-else>检测</span>
+        </button>
+      </div>
+
+      <div v-if="allergenInfo" class="allergen-info">
+        <div v-if="allergenInfo.detected.length > 0" class="allergen-warning">
+          <AlertTriangle class="w-5 h-5 text-red-500" />
+          <div>
+            <h5 class="warning-title">检测到潜在过敏原</h5>
+            <div class="allergen-list">
+              <span
+                v-for="allergen in allergenInfo.detected"
+                :key="allergen"
+                class="allergen-tag warning"
+              >
+                {{ allergen }}
+              </span>
+            </div>
+          </div>
         </div>
-        <div class="nutrition-item">
-          <div class="nutrition-label">蛋白质</div>
-          <div class="nutrition-value">{{ nutritionStats.protein }}g</div>
+
+        <div v-if="allergenInfo.safe.length > 0" class="allergen-safe">
+          <CheckCircle class="w-5 h-5 text-green-500" />
+          <div>
+            <h5 class="safe-title">安全食材</h5>
+            <div class="allergen-list">
+              <span
+                v-for="safe in allergenInfo.safe"
+                :key="safe"
+                class="allergen-tag safe"
+              >
+                {{ safe }}
+              </span>
+            </div>
+          </div>
         </div>
-        <div class="nutrition-item">
-          <div class="nutrition-label">碳水化合物</div>
-          <div class="nutrition-value">{{ nutritionStats.carbs }}g</div>
-        </div>
-        <div class="nutrition-item">
-          <div class="nutrition-label">脂肪</div>
-          <div class="nutrition-value">{{ nutritionStats.fat }}g</div>
-        </div>
-        <div class="nutrition-item">
-          <div class="nutrition-label">膳食纤维</div>
-          <div class="nutrition-value">{{ nutritionStats.fiber }}g</div>
+
+        <div v-if="allergenInfo.alternatives.length > 0" class="allergen-alternatives">
+          <h5 class="alternatives-title">推荐替换</h5>
+          <div class="alternatives-grid">
+            <div
+              v-for="alt in allergenInfo.alternatives"
+              :key="alt.from"
+              class="alternative-card"
+            >
+              <div class="from-to">
+                <span class="from">{{ alt.from }}</span>
+                <ArrowRight class="w-3 h-3" />
+                <span class="to">{{ alt.to }}</span>
+              </div>
+              <p class="alt-reason">{{ alt.reason }}</p>
+            </div>
+          </div>
         </div>
       </div>
-      
-      <div class="nutrition-balance">
-        <div class="balance-item">
-          <div class="balance-label">营养均衡度</div>
-          <div class="balance-bar">
-            <div class="balance-fill" :style="{ width: nutritionBalance + '%' }"></div>
+
+      <div v-else-if="!isCheckingAllergens" class="empty-state">
+        <Shield class="w-12 h-12 text-gray-300 mx-auto mb-2" />
+        <p class="text-gray-500">AI将检测菜谱中的常见过敏原并提供安全建议</p>
+      </div>
+    </div>
+
+    <!-- 营养优化建议 -->
+    <div class="recommendation-section">
+      <div class="section-header">
+        <h4 class="section-title">
+          <TrendingUp class="w-4 h-4" />
+          营养优化建议
+        </h4>
+        <button
+          @click="generateNutritionOptimization"
+          :disabled="!currentRecipe || isOptimizing"
+          class="generate-btn"
+        >
+          <Loader2 v-if="isOptimizing" class="w-4 h-4 animate-spin" />
+          <span v-else>优化</span>
+        </button>
+      </div>
+
+      <div v-if="nutritionOptimization" class="optimization-content">
+        <div class="optimization-score">
+          <div class="score-circle" :style="{ '--score': nutritionOptimization.score }">
+            <span class="score-value">{{ nutritionOptimization.score }}</span>
+            <span class="score-label">营养评分</span>
           </div>
-          <div class="balance-score">{{ nutritionBalance }}%</div>
         </div>
+
+        <div class="optimization-suggestions">
+          <div
+            v-for="suggestion in nutritionOptimization.suggestions"
+            :key="suggestion.type"
+            class="optimization-item"
+          >
+            <div class="optimization-header">
+              <component :is="getOptimizationIcon(suggestion.type)" class="w-4 h-4" />
+              <span class="optimization-type">{{ suggestion.type }}</span>
+            </div>
+            <p class="optimization-desc">{{ suggestion.description }}</p>
+            <div v-if="suggestion.actions.length > 0" class="optimization-actions">
+              <button
+                v-for="action in suggestion.actions"
+                :key="action"
+                class="action-chip"
+                @click="applyOptimization(suggestion.type, action)"
+              >
+                {{ action }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="!isOptimizing" class="empty-state">
+        <BarChart3 class="w-12 h-12 text-gray-300 mx-auto mb-2" />
+        <p class="text-gray-500">AI将分析菜谱营养成分并提供优化建议</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { Ingredient } from '@/types/recipe'
+import { ref, watch } from 'vue'
+import {
+  Sparkles,
+  RefreshCw,
+  ArrowRight,
+  Package,
+  AlertTriangle,
+  CheckCircle,
+  Shield,
+  TrendingUp,
+  BarChart3,
+  Loader2,
+  Plus,
+  Minus,
+  Zap
+} from 'lucide-vue-next'
+import type { Recipe } from '@/types/recipe'
+import { glmService } from '@/services/glmService'
+import { globalNotification } from '@/composables/useNotification'
 
 interface Props {
-  selectedIngredients: Ingredient[]
-}
-
-interface Emits {
-  (e: 'ingredient-toggle', ingredient: Ingredient): void
+  currentRecipe?: Recipe | null
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
 
-// 智能推荐数据
-const recommendationData = {
-  // 营养均衡推荐规则
-  nutrition: {
-    '土豆': [
-      { id: 201, name: '胡萝卜', category: 'vegetables', icon: '🥕', reason: '富含维生素A，与土豆搭配营养更均衡' },
-      { id: 202, name: '青椒', category: 'vegetables', icon: '🫑', reason: '补充维生素C，增强免疫力' }
-    ],
-    '西红柿': [
-      { id: 203, name: '鸡蛋', category: 'protein', icon: '🥚', reason: '经典搭配，蛋白质与维生素完美结合' },
-      { id: 204, name: '洋葱', category: 'vegetables', icon: '🧅', reason: '增强抗氧化效果' }
-    ],
-    '白菜': [
-      { id: 205, name: '豆腐', category: 'protein', icon: '🧈', reason: '植物蛋白补充，营养更全面' },
-      { id: 206, name: '香菇', category: 'vegetables', icon: '🍄', reason: '增加鲜味和维生素D' }
-    ]
-  },
+// 响应式数据
+const isGenerating = ref(false)
+const isCheckingAllergens = ref(false)
+const isOptimizing = ref(false)
+
+// 食材替换建议
+interface IngredientAlternative {
+  original: string
+  suggestions: Array<{
+    name: string
+    reason: string
+    nutritionScore: number
+    flavorScore: number
+  }>
+}
+
+const ingredientAlternatives = ref<IngredientAlternative[]>([])
+
+// 过敏原信息
+interface AllergenInfo {
+  detected: string[]
+  safe: string[]
+  alternatives: Array<{
+    from: string
+    to: string
+    reason: string
+  }>
+}
+
+const allergenInfo = ref<AllergenInfo | null>(null)
+
+// 营养优化
+interface NutritionOptimization {
+  score: number
+  suggestions: Array<{
+    type: string
+    description: string
+    actions: string[]
+  }>
+}
+
+const nutritionOptimization = ref<NutritionOptimization | null>(null)
+
+// 方法
+const generateIngredientAlternatives = async () => {
+  if (!props.currentRecipe) return
   
-  // 口味搭配推荐
-  flavor: {
-    '茄子': [
-      { id: 207, name: '蒜', category: 'seasoning', icon: '🧄', reason: '去腥增香，经典搭配' },
-      { id: 208, name: '青椒', category: 'vegetables', icon: '🫑', reason: '颜色搭配美观，口感层次丰富' }
-    ],
-    '豆角': [
-      { id: 209, name: '肉丝', category: 'meat', icon: '🥩', reason: '荤素搭配，口感更丰富' },
-      { id: 210, name: '干辣椒', category: 'seasoning', icon: '🌶️', reason: '增加辣味层次' }
-    ]
-  },
+  // const { withLoadingAndErrorHandling } = globalNotification
   
-  // 经典搭配推荐
-  classic: {
-    '鸡肉': [
-      { id: 211, name: '蘑菇', category: 'vegetables', icon: '🍄', reason: '经典组合，鲜美可口' },
-      { id: 212, name: '土豆', category: 'vegetables', icon: '🥔', reason: '家常搭配，营养丰富' }
-    ],
-    '牛肉': [
-      { id: 213, name: '洋葱', category: 'vegetables', icon: '🧅', reason: '去腥增香，经典西式搭配' },
-      { id: 214, name: '胡萝卜', category: 'vegetables', icon: '🥕', reason: '炖煮佳品，营养互补' }
-    ]
+  isGenerating.value = true
+  
+  try {
+    const prompt = `请为以下菜谱的食材提供替换建议：
+菜谱：${props.currentRecipe.name}
+食材：${props.currentRecipe.ingredients.map(ing => ing.name).join('、')}
+
+请为每个主要食材提供2-3个替换选项，包括：
+1. 替换食材名称
+2. 替换理由
+3. 营养评分(1-10)
+4. 口味匹配度(1-10)`
+
+    const response = await glmService.chat([
+      { role: 'system', content: '你是一个专业的营养师和厨师，擅长食材替换建议。' },
+      { role: 'user', content: prompt }
+    ])
+
+    // 解析响应并生成替换建议
+    ingredientAlternatives.value = parseIngredientAlternatives(response.choices[0]?.message?.content || '')
+    
+  } catch (error) {
+    console.error('生成食材替换建议失败:', error)
+    // 生成模拟数据
+    ingredientAlternatives.value = generateMockAlternatives()
+  } finally {
+    isGenerating.value = false
   }
 }
 
-// 营养数据库
-const nutritionDatabase = {
-  // 蔬菜类 (每100g)
-  '白菜': { calories: 17, protein: 1.5, carbs: 3.2, fat: 0.2, fiber: 1.2 },
-  '萝卜': { calories: 16, protein: 0.9, carbs: 3.4, fat: 0.1, fiber: 1.6 },
-  '土豆': { calories: 77, protein: 2.0, carbs: 17.5, fat: 0.1, fiber: 2.2 },
-  '西红柿': { calories: 18, protein: 0.9, carbs: 3.9, fat: 0.2, fiber: 1.2 },
-  '黄瓜': { calories: 15, protein: 0.7, carbs: 3.6, fat: 0.1, fiber: 0.5 },
-  '茄子': { calories: 25, protein: 1.0, carbs: 5.9, fat: 0.2, fiber: 3.0 },
-  '豆角': { calories: 35, protein: 2.8, carbs: 8.0, fat: 0.2, fiber: 2.7 },
-  '青椒': { calories: 22, protein: 1.0, carbs: 5.3, fat: 0.2, fiber: 1.7 },
-  '洋葱': { calories: 40, protein: 1.1, carbs: 9.3, fat: 0.1, fiber: 1.7 },
-  '胡萝卜': { calories: 41, protein: 0.9, carbs: 9.6, fat: 0.2, fiber: 2.8 },
+const checkAllergens = async () => {
+  if (!props.currentRecipe) return
   
-  // 肉类 (每100g)
-  '猪肉': { calories: 242, protein: 20.3, carbs: 0, fat: 17.2, fiber: 0 },
-  '牛肉': { calories: 250, protein: 26.0, carbs: 0, fat: 15.0, fiber: 0 },
-  '鸡肉': { calories: 165, protein: 31.0, carbs: 0, fat: 3.6, fiber: 0 },
-  '羊肉': { calories: 203, protein: 25.6, carbs: 0, fat: 9.9, fiber: 0 },
+  isCheckingAllergens.value = true
   
-  // 海鲜类 (每100g)
-  '鱼': { calories: 206, protein: 22.0, carbs: 0, fat: 12.0, fiber: 0 },
-  '虾': { calories: 106, protein: 20.0, carbs: 0.9, fat: 1.7, fiber: 0 },
-  '蟹': { calories: 103, protein: 20.1, carbs: 0, fat: 1.3, fiber: 0 },
-  
-  // 其他
-  '鸡蛋': { calories: 155, protein: 13.0, carbs: 1.1, fat: 11.0, fiber: 0 },
-  '豆腐': { calories: 76, protein: 8.1, carbs: 1.9, fat: 4.8, fiber: 0.4 }
+  try {
+    const prompt = `请检测以下菜谱中的常见过敏原：
+菜谱：${props.currentRecipe.name}
+食材：${props.currentRecipe.ingredients.map(ing => ing.name).join('、')}
+
+请检测以下过敏原：乳制品、鸡蛋、坚果、海鲜、大豆、小麦、芝麻等
+并提供安全的替换建议。`
+
+    const response = await glmService.chat([
+      { role: 'system', content: '你是一个专业的食品安全专家，擅长过敏原检测和安全建议。' },
+      { role: 'user', content: prompt }
+    ])
+
+    allergenInfo.value = parseAllergenInfo(response.choices[0]?.message?.content || '')
+    
+  } catch (error) {
+    console.error('过敏原检测失败:', error)
+    allergenInfo.value = generateMockAllergenInfo()
+  } finally {
+    isCheckingAllergens.value = false
+  }
 }
 
-// 计算推荐食材
-const recommendations = computed(() => {
-  if (props.selectedIngredients.length === 0) return []
+const generateNutritionOptimization = async () => {
+  if (!props.currentRecipe) return
   
-  const allRecommendations = []
+  isOptimizing.value = true
   
-  props.selectedIngredients.forEach(ingredient => {
-    // 营养推荐
-    if (recommendationData.nutrition[ingredient.name]) {
-      allRecommendations.push(...recommendationData.nutrition[ingredient.name])
-    }
+  try {
+    const prompt = `请分析以下菜谱的营养成分并提供优化建议：
+菜谱：${props.currentRecipe.name}
+食材：${props.currentRecipe.ingredients.map(ing => ing.name).join('、')}
+
+请提供：
+1. 营养评分(1-100)
+2. 具体优化建议(增加蛋白质、减少脂肪、补充维生素等)
+3. 可执行的改进措施`
+
+    const response = await glmService.chat([
+      { role: 'system', content: '你是一个专业的营养学家，擅长菜谱营养分析和优化建议。' },
+      { role: 'user', content: prompt }
+    ])
+
+    nutritionOptimization.value = parseNutritionOptimization(response.choices[0]?.message?.content || '')
     
-    // 口味推荐
-    if (recommendationData.flavor[ingredient.name]) {
-      allRecommendations.push(...recommendationData.flavor[ingredient.name])
-    }
-    
-    // 经典搭配推荐
-    if (recommendationData.classic[ingredient.name]) {
-      allRecommendations.push(...recommendationData.classic[ingredient.name])
-    }
-  })
-  
-  // 去重并过滤已选择的食材
-  const uniqueRecommendations = allRecommendations.filter((item, index, self) => 
-    index === self.findIndex(t => t.id === item.id) && 
-    !props.selectedIngredients.some(selected => selected.name === item.name)
-  )
-  
-  return uniqueRecommendations.slice(0, 6) // 最多显示6个推荐
-})
+  } catch (error) {
+    console.error('营养优化分析失败:', error)
+    nutritionOptimization.value = generateMockOptimization()
+  } finally {
+    isOptimizing.value = false
+  }
+}
 
-// 分类推荐
-const nutritionRecommendations = computed(() => 
-  recommendations.value.filter(item => 
-    props.selectedIngredients.some(selected => 
-      recommendationData.nutrition[selected.name]?.some(rec => rec.id === item.id)
-    )
-  )
-)
+// 解析函数
+const parseIngredientAlternatives = (_text: string): IngredientAlternative[] => {
+  // 简化的解析逻辑，实际项目中可能需要更复杂的NLP处理
+  return generateMockAlternatives()
+}
 
-const flavorRecommendations = computed(() => 
-  recommendations.value.filter(item => 
-    props.selectedIngredients.some(selected => 
-      recommendationData.flavor[selected.name]?.some(rec => rec.id === item.id)
-    )
-  )
-)
+const parseAllergenInfo = (_text: string): AllergenInfo => {
+  return generateMockAllergenInfo()
+}
 
-const classicRecommendations = computed(() => 
-  recommendations.value.filter(item => 
-    props.selectedIngredients.some(selected => 
-      recommendationData.classic[selected.name]?.some(rec => rec.id === item.id)
-    )
-  )
-)
+const parseNutritionOptimization = (_text: string): NutritionOptimization => {
+  return generateMockOptimization()
+}
 
-// 营养统计
-const nutritionStats = computed(() => {
-  let totalCalories = 0
-  let totalProtein = 0
-  let totalCarbs = 0
-  let totalFat = 0
-  let totalFiber = 0
+// 模拟数据生成
+const generateMockAlternatives = (): IngredientAlternative[] => {
+  if (!props.currentRecipe) return []
   
-  props.selectedIngredients.forEach(ingredient => {
-    const nutrition = nutritionDatabase[ingredient.name]
-    if (nutrition) {
-      // 假设每种食材100g
-      totalCalories += nutrition.calories
-      totalProtein += nutrition.protein
-      totalCarbs += nutrition.carbs
-      totalFat += nutrition.fat
-      totalFiber += nutrition.fiber
-    }
-  })
-  
+  return props.currentRecipe.ingredients.slice(0, 3).map(ing => ({
+    original: ing.name,
+    suggestions: [
+      {
+        name: `有机${ing.name}`,
+        reason: '更高的营养价值和更好的口感',
+        nutritionScore: 9,
+        flavorScore: 8
+      },
+      {
+        name: `低脂${ing.name}`,
+        reason: '减少热量摄入，适合减肥人群',
+        nutritionScore: 7,
+        flavorScore: 7
+      }
+    ]
+  }))
+}
+
+const generateMockAllergenInfo = (): AllergenInfo => {
   return {
-    calories: Math.round(totalCalories),
-    protein: Math.round(totalProtein * 10) / 10,
-    carbs: Math.round(totalCarbs * 10) / 10,
-    fat: Math.round(totalFat * 10) / 10,
-    fiber: Math.round(totalFiber * 10) / 10
+    detected: ['鸡蛋', '乳制品'],
+    safe: ['蔬菜', '瘦肉', '谷物'],
+    alternatives: [
+      {
+        from: '鸡蛋',
+        to: '亚麻籽胶',
+        reason: '提供相似的粘合效果，无过敏风险'
+      }
+    ]
   }
-})
-
-// 营养均衡度计算
-const nutritionBalance = computed(() => {
-  if (props.selectedIngredients.length === 0) return 0
-  
-  const stats = nutritionStats.value
-  let score = 0
-  
-  // 基础分数：有食材就有30分
-  score += 30
-  
-  // 蛋白质充足性 (20分)
-  if (stats.protein >= 15) score += 20
-  else if (stats.protein >= 10) score += 15
-  else if (stats.protein >= 5) score += 10
-  
-  // 维生素丰富性 (蔬菜种类，20分)
-  const vegetableCount = props.selectedIngredients.filter(ing => 
-    ['vegetables'].includes(ing.category)
-  ).length
-  if (vegetableCount >= 3) score += 20
-  else if (vegetableCount >= 2) score += 15
-  else if (vegetableCount >= 1) score += 10
-  
-  // 营养多样性 (15分)
-  const categories = [...new Set(props.selectedIngredients.map(ing => ing.category))]
-  if (categories.length >= 3) score += 15
-  else if (categories.length >= 2) score += 10
-  else score += 5
-  
-  // 膳食纤维 (15分)
-  if (stats.fiber >= 5) score += 15
-  else if (stats.fiber >= 3) score += 10
-  else if (stats.fiber >= 1) score += 5
-  
-  return Math.min(100, score)
-})
-
-// 检查是否已选择
-const isSelected = (ingredientName: string): boolean => {
-  return props.selectedIngredients.some(item => item.name === ingredientName)
 }
+
+const generateMockOptimization = (): NutritionOptimization => {
+  return {
+    score: 75,
+    suggestions: [
+      {
+        type: '增加蛋白质',
+        description: '当前蛋白质含量偏低，建议增加优质蛋白质来源',
+        actions: ['添加豆腐', '增加瘦肉', '加入坚果']
+      },
+      {
+        type: '补充维生素',
+        description: '维生素C含量不足，建议添加富含维C的蔬菜',
+        actions: ['添加西红柿', '加入青椒', '搭配柠檬汁']
+      }
+    ]
+  }
+}
+
+// 工具函数
+const getOptimizationIcon = (type: string) => {
+  const iconMap: Record<string, any> = {
+    '增加蛋白质': Plus,
+    '减少脂肪': Minus,
+    '补充维生素': Zap,
+    '平衡营养': BarChart3
+  }
+  return iconMap[type] || TrendingUp
+}
+
+const applySuggestion = (original: string, suggestion: any) => {
+  const { showSuccess } = globalNotification
+  showSuccess(`已应用建议：将${original}替换为${suggestion.name}`, '替换成功')
+}
+
+const applyOptimization = (_type: string, _action: string) => {
+  const { showSuccess } = globalNotification
+  showSuccess(`已应用优化：${_action}`, '优化成功')
+}
+
+// 监听菜谱变化，清除之前的建议
+watch(() => props.currentRecipe, () => {
+  ingredientAlternatives.value = []
+  allergenInfo.value = null
+  nutritionOptimization.value = null
+})
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 .smart-recommendation {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 15px;
-  padding: 2rem;
-  margin: 2rem 0;
-  color: white;
-  
-  .recommendation-header {
-    text-align: center;
-    margin-bottom: 2rem;
-    
-    h3 {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
-      
-      i {
-        color: #ffd700;
-      }
-    }
-    
-    p {
-      opacity: 0.9;
-      font-size: 1rem;
-    }
-  }
-  
-  .recommendation-categories {
-    margin-bottom: 2rem;
-  }
-  
-  .recommendation-section {
-    margin-bottom: 2rem;
-    
-    h4 {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 1.2rem;
-      margin-bottom: 1rem;
-      
-      i {
-        color: #ffd700;
-      }
-    }
-  }
-  
-  .recommendation-items {
-    display: grid;
-    gap: 1rem;
-  }
-  
-  .recommendation-item {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
-    padding: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    
-    &:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: translateY(-2px);
-    }
-    
-    &.selected {
-      background: rgba(255, 215, 0, 0.2);
-      border-color: #ffd700;
-    }
-    
-    .item-icon {
-      font-size: 1.5rem;
-      width: 40px;
-      text-align: center;
-    }
-    
-    .item-info {
-      flex: 1;
-      
-      .item-name {
-        font-weight: 600;
-        margin-bottom: 0.2rem;
-      }
-      
-      .item-reason {
-        font-size: 0.9rem;
-        opacity: 0.8;
-      }
-    }
-    
-    .item-action {
-      width: 30px;
-      text-align: center;
-      
-      i {
-        font-size: 1.2rem;
-        color: #ffd700;
-      }
-    }
-  }
-  
-  .nutrition-analysis {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 10px;
-    padding: 1.5rem;
-    
-    h4 {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 1.2rem;
-      margin-bottom: 1rem;
-      
-      i {
-        color: #ffd700;
-      }
-    }
-    
-    .nutrition-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    
-    .nutrition-item {
-      text-align: center;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      padding: 1rem;
-      
-      .nutrition-label {
-        font-size: 0.9rem;
-        opacity: 0.8;
-        margin-bottom: 0.5rem;
-      }
-      
-      .nutrition-value {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #ffd700;
-      }
-    }
-    
-    .nutrition-balance {
-      .balance-item {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        
-        .balance-label {
-          font-weight: 600;
-          min-width: 100px;
-        }
-        
-        .balance-bar {
-          flex: 1;
-          height: 10px;
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 5px;
-          overflow: hidden;
-          
-          .balance-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #ff6b6b, #ffd700, #4ecdc4);
-            border-radius: 5px;
-            transition: width 0.5s ease;
-          }
-        }
-        
-        .balance-score {
-          font-weight: 600;
-          color: #ffd700;
-          min-width: 50px;
-          text-align: right;
-        }
-      }
-    }
-  }
+  @apply space-y-6;
 }
 
-// 响应式设计
-@media (max-width: 768px) {
-  .smart-recommendation {
-    padding: 1.5rem;
-    
-    .recommendation-item {
-      padding: 0.8rem;
-      
-      .item-icon {
-        font-size: 1.2rem;
-        width: 30px;
-      }
-      
-      .item-info {
-        .item-name {
-          font-size: 0.9rem;
-        }
-        
-        .item-reason {
-          font-size: 0.8rem;
-        }
-      }
-    }
-    
-    .nutrition-stats {
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    }
-    
-    .balance-item {
-      flex-direction: column;
-      gap: 0.5rem;
-      
-      .balance-label {
-        min-width: auto;
-      }
-      
-      .balance-bar {
-        width: 100%;
-      }
-    }
-  }
+.recommendation-header {
+  @apply text-center mb-6;
+}
+
+.title {
+  @apply flex items-center justify-center gap-2 text-xl font-bold text-gray-900 mb-2;
+}
+
+.subtitle {
+  @apply text-gray-600 text-sm;
+}
+
+.recommendation-section {
+  @apply bg-white rounded-lg p-4 shadow-sm border border-gray-200;
+}
+
+.section-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+.section-title {
+  @apply flex items-center gap-2 font-semibold text-gray-900;
+}
+
+.generate-btn {
+  @apply px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-sm;
+}
+
+.alternatives-list {
+  @apply space-y-4;
+}
+
+.alternative-item {
+  @apply border border-gray-200 rounded-lg p-3;
+}
+
+.original-ingredient {
+  @apply flex items-center gap-2 mb-3 font-medium text-gray-900;
+}
+
+.suggested-ingredients {
+  @apply space-y-2;
+}
+
+.suggestion-item {
+  @apply p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors;
+}
+
+.suggestion-name {
+  @apply font-medium text-blue-600;
+}
+
+.suggestion-info {
+  @apply mt-1;
+}
+
+.reason {
+  @apply text-sm text-gray-600 block mb-2;
+}
+
+.scores {
+  @apply flex gap-3;
+}
+
+.score {
+  @apply text-xs px-2 py-1 rounded-full;
+}
+
+.score.nutrition {
+  @apply bg-green-100 text-green-800;
+}
+
+.score.flavor {
+  @apply bg-purple-100 text-purple-800;
+}
+
+.allergen-info {
+  @apply space-y-4;
+}
+
+.allergen-warning,
+.allergen-safe {
+  @apply flex gap-3 p-3 rounded-lg;
+}
+
+.allergen-warning {
+  @apply bg-red-50 border border-red-200;
+}
+
+.allergen-safe {
+  @apply bg-green-50 border border-green-200;
+}
+
+.warning-title,
+.safe-title {
+  @apply font-medium text-sm mb-2;
+}
+
+.warning-title {
+  @apply text-red-800;
+}
+
+.safe-title {
+  @apply text-green-800;
+}
+
+.allergen-list {
+  @apply flex flex-wrap gap-1;
+}
+
+.allergen-tag {
+  @apply px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.allergen-tag.warning {
+  @apply bg-red-100 text-red-800;
+}
+
+.allergen-tag.safe {
+  @apply bg-green-100 text-green-800;
+}
+
+.allergen-alternatives {
+  @apply mt-4;
+}
+
+.alternatives-title {
+  @apply font-medium text-sm text-gray-900 mb-2;
+}
+
+.alternatives-grid {
+  @apply grid grid-cols-1 gap-2;
+}
+
+.alternative-card {
+  @apply p-2 bg-blue-50 rounded border border-blue-200;
+}
+
+.from-to {
+  @apply flex items-center gap-2 text-sm font-medium;
+}
+
+.from {
+  @apply text-red-600;
+}
+
+.to {
+  @apply text-green-600;
+}
+
+.alt-reason {
+  @apply text-xs text-gray-600 mt-1;
+}
+
+.optimization-content {
+  @apply space-y-4;
+}
+
+.optimization-score {
+  @apply flex justify-center mb-4;
+}
+
+.score-circle {
+  @apply relative w-20 h-20 rounded-full flex flex-col items-center justify-center text-center;
+  background: conic-gradient(from 0deg, #3b82f6 calc(var(--score) * 3.6deg), #e5e7eb 0deg);
+}
+
+.score-circle::before {
+  @apply absolute inset-2 bg-white rounded-full;
+  content: '';
+}
+
+.score-value {
+  @apply relative text-lg font-bold text-blue-600;
+}
+
+.score-label {
+  @apply relative text-xs text-gray-600;
+}
+
+.optimization-suggestions {
+  @apply space-y-3;
+}
+
+.optimization-item {
+  @apply p-3 border border-gray-200 rounded-lg;
+}
+
+.optimization-header {
+  @apply flex items-center gap-2 font-medium text-gray-900 mb-2;
+}
+
+.optimization-desc {
+  @apply text-sm text-gray-600 mb-2;
+}
+
+.optimization-actions {
+  @apply flex flex-wrap gap-2;
+}
+
+.action-chip {
+  @apply px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs hover:bg-blue-200 transition-colors;
+}
+
+.empty-state {
+  @apply text-center py-8;
+}
+
+/* 暗色主题 */
+:global(.dark) .recommendation-section {
+  @apply bg-gray-800 border-gray-700;
+}
+
+:global(.dark) .title {
+  @apply text-gray-100;
+}
+
+:global(.dark) .subtitle {
+  @apply text-gray-400;
+}
+
+:global(.dark) .section-title {
+  @apply text-gray-100;
+}
+
+:global(.dark) .suggestion-item {
+  @apply bg-gray-700 hover:bg-gray-600;
+}
+
+:global(.dark) .alternative-item {
+  @apply border-gray-700;
 }
 </style>

@@ -2,7 +2,7 @@
   <div class="cooking-timer">
     <div class="timer-header">
       <h3>
-        <i class="fas fa-clock"></i>
+        <el-icon><Timer /></el-icon>
         烹饪计时器
       </h3>
       <button 
@@ -10,7 +10,7 @@
         @click="showAddTimerModal = true"
         title="添加计时器"
       >
-        <i class="fas fa-plus"></i>
+        <el-icon><Plus /></el-icon>
         添加计时器
       </button>
     </div>
@@ -57,7 +57,7 @@
             class="control-btn start"
             title="开始"
           >
-            <i class="fas fa-play"></i>
+            <el-icon><VideoPlay /></el-icon>
           </button>
           
           <button 
@@ -66,7 +66,7 @@
             class="control-btn pause"
             title="暂停"
           >
-            <i class="fas fa-pause"></i>
+            <el-icon><VideoPause /></el-icon>
           </button>
           
           <button 
@@ -74,7 +74,7 @@
             class="control-btn stop"
             title="停止"
           >
-            <i class="fas fa-stop"></i>
+            <el-icon><Close /></el-icon>
           </button>
           
           <button 
@@ -82,7 +82,7 @@
             class="control-btn reset"
             title="重置"
           >
-            <i class="fas fa-redo"></i>
+            <el-icon><RefreshLeft /></el-icon>
           </button>
           
           <button 
@@ -90,7 +90,7 @@
             class="control-btn remove"
             title="删除"
           >
-            <i class="fas fa-trash"></i>
+            <el-icon><Delete /></el-icon>
           </button>
         </div>
       </div>
@@ -98,7 +98,7 @@
 
     <!-- 空状态 -->
     <div class="empty-state" v-else>
-      <i class="fas fa-clock"></i>
+      <el-icon><Timer /></el-icon>
       <p>还没有计时器</p>
       <button 
         class="btn btn-primary"
@@ -198,14 +198,14 @@
     >
       <div class="notification-content">
         <div class="notification-icon">
-          <i class="fas fa-bell"></i>
+          <el-icon><Bell /></el-icon>
         </div>
         <div class="notification-text">
           <div class="notification-title">计时器完成！</div>
           <div class="notification-message">{{ finishedTimer.name }} 已完成</div>
         </div>
         <button class="notification-close" @click="dismissNotification">
-          <i class="fas fa-times"></i>
+          <el-icon><Close /></el-icon>
         </button>
       </div>
     </div>
@@ -214,6 +214,16 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { 
+  Timer, 
+  Plus, 
+  VideoPlay, 
+  VideoPause, 
+  RefreshLeft, 
+  Delete, 
+  Bell, 
+  Close 
+} from '@element-plus/icons-vue'
 
 interface Timer {
   id: string
@@ -247,21 +257,13 @@ const newTimer = ref({
 
 // 快速计时器配置
 const quickTimers: QuickTimer[] = [
-  { name: '煮蛋', time: 8, icon: 'fas fa-egg', description: '水开后煮8分钟' },
-  { name: '泡茶', time: 3, icon: 'fas fa-mug-hot', description: '绿茶冲泡时间' },
-  { name: '焖米饭', time: 20, icon: 'fas fa-bowl-rice', description: '电饭煲焖饭' },
-  { name: '炒菜', time: 5, icon: 'fas fa-fire', description: '一般炒菜时间' },
-  { name: '煮面条', time: 10, icon: 'fas fa-wheat', description: '面条煮制时间' },
-  { name: '蒸蛋羹', time: 15, icon: 'fas fa-cloud', description: '蒸蛋羹时间' }
+  { name: '煮蛋', time: 8, icon: '🥚', description: '水开后煮8分钟' },
+  { name: '泡茶', time: 3, icon: '🍵', description: '绿茶冲泡时间' },
+  { name: '焖米饭', time: 20, icon: '🍚', description: '电饭煲焖饭' },
+  { name: '炒菜', time: 5, icon: '🔥', description: '一般炒菜时间' },
+  { name: '煮面条', time: 10, icon: '🍜', description: '面条煮制时间' },
+  { name: '蒸蛋羹', time: 15, icon: '☁️', description: '蒸蛋羹时间' }
 ]
-
-// 音效文件映射
-const soundFiles = {
-  bell: '/sounds/bell.mp3',
-  beep: '/sounds/beep.mp3',
-  chime: '/sounds/chime.mp3',
-  ding: '/sounds/ding.mp3'
-}
 
 // 添加计时器
 const addTimer = () => {

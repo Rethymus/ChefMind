@@ -194,16 +194,16 @@ const sortedRecipes = computed(() => {
   
   switch (sortBy.value) {
     case 'time':
-      return sorted.sort((a, b) => a.time - b.time)
+      return sorted.sort((a, b) => (a.time || 0) - (b.time || 0))
     case 'difficulty':
       return sorted.sort((a, b) => a.difficulty - b.difficulty)
     case 'nutrition':
-      return sorted.sort((a, b) => b.nutrition - a.nutrition)
+      return sorted.sort((a, b) => (b.nutrition?.calories || 0) - (a.nutrition?.calories || 0))
     default:
       // 推荐度排序（综合评分）
       return sorted.sort((a, b) => {
-        const scoreA = (a.nutrition + (6 - a.difficulty)) / 2
-        const scoreB = (b.nutrition + (6 - b.difficulty)) / 2
+        const scoreA = ((a.nutrition?.calories || 0) / 100 + (6 - a.difficulty)) / 2
+        const scoreB = ((b.nutrition?.calories || 0) / 100 + (6 - b.difficulty)) / 2
         return scoreB - scoreA
       })
   }

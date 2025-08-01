@@ -68,7 +68,7 @@
             v-for="option in difficultyOptions"
             :key="option.value"
             class="constraint-item"
-            :class="{ selected: constraints.difficulty === option.value }"
+            :class="{ selected: getDifficultySelected(option.value) }"
             @click="updateConstraint('difficulty', option.value)"
           >
             <div class="option-icon">
@@ -188,15 +188,15 @@ import {
   Star,
   Lightning,
   Coffee,
-  Fire
+  Warning
 } from '@element-plus/icons-vue'
 
 interface Props {
   constraints: Constraints
 }
 
-interface Emits {
-  (e: 'constraint-update', constraints: Constraints): void
+type Emits = {
+  'constraint-update': [constraints: Constraints]
 }
 
 const props = defineProps<Props>()
@@ -298,10 +298,30 @@ const getDifficultyIcon = (difficulty: string) => {
   const iconMap = {
     easy: Star,
     medium: Lightning,
-    hard: Fire,
+    hard: Warning,
     any: TrendCharts
   }
   return iconMap[difficulty as keyof typeof iconMap] || Star
+}
+
+// 检查难度是否被选中
+const getDifficultySelected = (value: string) => {
+  // 特殊处理 'any' 选项（对应 difficulty: null）
+  if (value === 'any') {
+    return props.constraints.difficulty === null
+  }
+  
+  // 检查数字类型的难度值
+  if (props.constraints.difficulty !== undefined && props.constraints.difficulty !== null) {
+    const difficultyMap: Record<number, string> = {
+      1: 'easy',
+      3: 'medium',
+      5: 'hard'
+    }
+    return difficultyMap[props.constraints.difficulty] === value
+  }
+  
+  return false
 }
 
 // 获取口味图标
@@ -309,7 +329,7 @@ const getTasteIcon = (taste: string) => {
   const iconMap = {
     light: Coffee,
     medium: Food,
-    strong: Fire
+    strong: Warning
   }
   return iconMap[taste as keyof typeof iconMap] || Food
 }
@@ -317,23 +337,133 @@ const getTasteIcon = (taste: string) => {
 // 更新约束条件
 const updateConstraint = (type: keyof Constraints, value: string) => {
   const newConstraints = { ...props.constraints }
-  newConstraints[type] = newConstraints[type] === value ? null : value
+  
+  // 检查是否是取消选择（点击已选中的项目）
+  let isDeselecting = false
+  
+  if (type === 'difficulty') {
+    // 特殊处理难度的取消选择逻辑
+    isDeselecting = getDifficultySelected(value)
+  } else {
+    isDeselecting = props.constraints[type] === value
+  }
+  
+  if (isDeselecting) {
+    // 取消选择 - 清空相关字段
+    clearConstraintFields(newConstraints, type)
+  } else {
+    // 新选择 - 设置相关字段
+    setConstraintFields(newConstraints, type, value)
+  }
+  
   emit('constraint-update', newConstraints)
+}
+
+// 清空约束条件字段
+const clearConstraintFields = (constraints: Constraints, type: keyof Constraints) => {
+  switch (type) {
+    case 'time':
+      constraints.cookingTime = null
+      constraints.time = null
+      break
+    case 'people':
+      constraints.servings = null
+      constraints.people = null
+      break
+    case 'difficulty':
+      constraints.difficulty = null
+      break
+    case 'taste':
+      constraints.taste = null
+      break
+    default:
+      (constraints as any)[type] = null
+  }
+}
+
+// 设置约束条件字段
+const setConstraintFields = (constraints: Constraints, type: keyof Constraints, value: string) => {
+  switch (type) {
+    case 'time':
+      setTimeConstraint(constraints, value)
+      break
+    case 'people':
+      setPeopleConstraint(constraints, value)
+      break
+    case 'difficulty':
+      setDifficultyConstraint(constraints, value)
+      break
+    case 'taste':
+      constraints.taste = value
+      break
+    default:
+      (constraints as any)[type] = value
+  }
+}
+
+// 设置时间约束
+const setTimeConstraint = (constraints: Constraints, value: string) => {
+  if (value === 'unlimited') {
+    constraints.cookingTime = null
+    constraints.time = value
+  } else {
+    constraints.cookingTime = parseInt(value)
+    constraints.time = value
+  }
+}
+
+// 设置人数约束
+const setPeopleConstraint = (constraints: Constraints, value: string) => {
+  const servingsMap: Record<string, number> = {
+    '1-2': 2,
+    '3-4': 4, 
+    '5-6': 6,
+    '6+': 8
+  }
+  constraints.servings = servingsMap[value] || null
+  constraints.people = value
+}
+
+// 设置难度约束
+const setDifficultyConstraint = (constraints: Constraints, value: string) => {
+  const difficultyMap: Record<string, number | null> = {
+    'easy': 1,
+    'medium': 3,
+    'hard': 5,
+    'any': null
+  }
+  constraints.difficulty = difficultyMap[value] ?? null
 }
 
 // 获取选中项的标签
 const getSelectedLabel = (type: keyof Constraints): string => {
+  // 特殊处理难度字段
+  if (type === 'difficulty') {
+    if (props.constraints.difficulty === null) {
+      return difficultyOptions.find(opt => opt.value === 'any')?.label || ''
+    } else if (props.constraints.difficulty !== undefined && props.constraints.difficulty !== null) {
+      const difficultyMap: Record<number, string> = {
+        1: 'easy',
+        3: 'medium',
+        5: 'hard'
+      }
+      const difficultyValue = difficultyMap[props.constraints.difficulty]
+      return difficultyOptions.find(opt => opt.value === difficultyValue)?.label || ''
+    }
+    return ''
+  }
+  
+  // 处理其他字段
   const value = props.constraints[type]
   if (!value) return ''
   
   const optionsMap = {
     time: timeOptions,
     people: peopleOptions,
-    difficulty: difficultyOptions,
     taste: tasteOptions
   }
   
-  const option = optionsMap[type].find(opt => opt.value === value)
+  const option = optionsMap[type as keyof typeof optionsMap]?.find((opt: any) => opt.value === value)
   return option?.label || ''
 }
 
@@ -358,10 +488,10 @@ const smartSuggestions = computed(() => {
     suggestions.push('推荐制作大份量菜品，可以批量处理')
   }
   
-  if (props.constraints.difficulty === 'easy') {
-    suggestions.push('选择基础烹饪方式，如炒、煮、蒸')
-  } else if (props.constraints.difficulty === 'hard') {
-    suggestions.push('可以尝试复合烹饪技法，提升菜品层次')
+  if (props.constraints.difficulty === 1) {
+    return 'easy'
+  } else if (props.constraints.difficulty === 5) {
+    return 'hard'
   }
   
   if (props.constraints.taste === 'light') {

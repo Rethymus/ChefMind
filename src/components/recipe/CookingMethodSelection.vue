@@ -132,7 +132,6 @@ import {
   Star,
   Grid,
   Check,
-  Fire,
   Coffee,
   Cloudy,
   Sunny,
@@ -163,7 +162,7 @@ const recommendations = ref<Recommendation[]>([])
 
 // 图标映射
 const iconMap = {
-  Fire,
+  Fire: Lightning, // 使用 Lightning 替代 Fire
   Mug: Coffee,
   Cloudy,
   Sunny,
@@ -175,7 +174,7 @@ const iconMap = {
 
 // 获取方法图标
 const getMethodIcon = (iconName: string) => {
-  return iconMap[iconName as keyof typeof iconMap] || Fire
+  return iconMap[iconName as keyof typeof iconMap] || Lightning
 }
 
 // 检查方法是否已选择

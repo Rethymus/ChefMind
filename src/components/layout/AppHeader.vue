@@ -4,12 +4,12 @@
       <div class="header-content">
         <!-- Logo区域 -->
         <div class="logo-section">
-          <router-link to="/" class="logo-link">
+          <div class="logo-link" @click="handleLogoClick">
             <el-icon class="logo-icon" :size="32">
-              <Restaurant />
+              <Dish />
             </el-icon>
             <h1 class="logo-text">ChefMind 智食谱</h1>
-          </router-link>
+          </div>
         </div>
         
         <!-- 导航菜单 -->
@@ -96,9 +96,9 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
+import { useRecipeStore } from '@/stores/recipe'
 import { ElMessage } from 'element-plus'
 import {
-  Restaurant,
   House,
   Collection,
   InfoFilled,
@@ -108,11 +108,13 @@ import {
   Sunny,
   Moon,
   Menu,
-  Close
+  Close,
+  Dish
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const themeStore = useThemeStore()
+const recipeStore = useRecipeStore()
 const showMobileMenu = ref(false)
 
 // 导航菜单项
@@ -133,6 +135,18 @@ const navItems = [
     icon: InfoFilled
   }
 ]
+
+// 处理Logo点击 - 重新开始
+const handleLogoClick = () => {
+  // 重置菜谱store状态
+  recipeStore.$reset()
+  
+  // 跳转到首页
+  router.push('/')
+  
+  // 显示提示信息
+  ElMessage.success('已重新开始，可以开始制作新的菜谱')
+}
 
 // 处理用户操作
 const handleProfile = () => {

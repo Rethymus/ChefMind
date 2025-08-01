@@ -2,7 +2,7 @@
   <div class="shopping-list">
     <div class="shopping-header">
       <h3>
-        <i class="fas fa-shopping-cart"></i>
+        <el-icon><ShoppingCart /></el-icon>
         智能购物清单
       </h3>
       <div class="header-actions">
@@ -11,14 +11,14 @@
           @click="generateFromRecipes"
           :disabled="!hasSelectedRecipes"
         >
-          <i class="fas fa-magic"></i>
+          <el-icon><MagicStick /></el-icon>
           从菜谱生成
         </button>
         <button 
           class="add-item-btn"
           @click="showAddItemModal = true"
         >
-          <i class="fas fa-plus"></i>
+          <el-icon><Plus /></el-icon>
           手动添加
         </button>
       </div>
@@ -102,7 +102,7 @@
                   @change="updateItem(item)"
                 >
                 <label :for="'item-' + item.id" class="checkbox-label">
-                  <i class="fas fa-check"></i>
+                  <el-icon><Check /></el-icon>
                 </label>
               </div>
 
@@ -114,12 +114,12 @@
                     ¥{{ item.estimatedPrice }}
                   </span>
                   <span class="urgent-tag" v-if="item.urgent">
-                    <i class="fas fa-exclamation"></i>
+                    <el-icon><Warning /></el-icon>
                     急需
                   </span>
                 </div>
                 <div class="item-note" v-if="item.note">
-                  <i class="fas fa-sticky-note"></i>
+                  <el-icon><Document /></el-icon>
                   {{ item.note }}
                 </div>
               </div>
@@ -130,21 +130,21 @@
                   @click="editItem(item)"
                   title="编辑"
                 >
-                  <i class="fas fa-edit"></i>
+                  <el-icon><Edit /></el-icon>
                 </button>
                 <button 
                   class="action-btn urgent"
                   @click="toggleUrgent(item)"
                   :title="item.urgent ? '取消急需' : '标记急需'"
                 >
-                  <i class="fas fa-exclamation"></i>
+                  <el-icon><Warning /></el-icon>
                 </button>
                 <button 
                   class="action-btn delete"
                   @click="removeItem(item.id)"
                   title="删除"
                 >
-                  <i class="fas fa-trash"></i>
+                  <el-icon><Delete /></el-icon>
                 </button>
               </div>
             </div>
@@ -159,28 +159,28 @@
           @click="clearCompleted"
           v-if="completedItems > 0"
         >
-          <i class="fas fa-broom"></i>
+          <el-icon><Brush /></el-icon>
           清除已购买
         </button>
         <button 
           class="action-button export"
           @click="exportList"
         >
-          <i class="fas fa-download"></i>
+          <el-icon><Download /></el-icon>
           导出清单
         </button>
         <button 
           class="action-button share"
           @click="shareList"
         >
-          <i class="fas fa-share"></i>
+          <el-icon><Share /></el-icon>
           分享清单
         </button>
         <button 
           class="action-button clear-all"
           @click="clearAll"
         >
-          <i class="fas fa-trash-alt"></i>
+          <el-icon><Delete /></el-icon>
           清空清单
         </button>
       </div>
@@ -189,7 +189,7 @@
     <!-- 空状态 -->
     <div class="empty-state" v-else>
       <div class="empty-icon">
-        <i class="fas fa-shopping-cart"></i>
+        <el-icon><ShoppingCart /></el-icon>
       </div>
       <h3>购物清单为空</h3>
       <p>您可以从菜谱自动生成购物清单，或手动添加商品</p>
@@ -199,14 +199,14 @@
           @click="generateFromRecipes"
           :disabled="!hasSelectedRecipes"
         >
-          <i class="fas fa-magic"></i>
+          <el-icon><MagicStick /></el-icon>
           从菜谱生成
         </button>
         <button 
           class="btn btn-secondary"
           @click="showAddItemModal = true"
         >
-          <i class="fas fa-plus"></i>
+          <el-icon><Plus /></el-icon>
           手动添加
         </button>
       </div>
@@ -305,6 +305,19 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRecipeStore } from '@/stores/recipe'
+import { 
+  ShoppingCart, 
+  MagicStick, 
+  Plus, 
+  Check, 
+  Warning, 
+  Document, 
+  Edit, 
+  Delete, 
+  Brush, 
+  Download, 
+  Share
+} from '@element-plus/icons-vue'
 
 interface ShoppingItem {
   id: string
@@ -345,15 +358,15 @@ const itemForm = ref({
 
 // 分类配置
 const categories: Category[] = [
-  { id: 'all', name: '全部', icon: 'fas fa-list' },
-  { id: 'vegetables', name: '蔬菜类', icon: 'fas fa-carrot' },
-  { id: 'meat', name: '肉类', icon: 'fas fa-drumstick-bite' },
-  { id: 'seafood', name: '海鲜类', icon: 'fas fa-fish' },
-  { id: 'dairy', name: '乳制品', icon: 'fas fa-cheese' },
-  { id: 'grains', name: '谷物类', icon: 'fas fa-wheat' },
-  { id: 'seasonings', name: '调料类', icon: 'fas fa-pepper-hot' },
-  { id: 'utensils', name: '厨具类', icon: 'fas fa-utensils' },
-  { id: 'others', name: '其他', icon: 'fas fa-ellipsis-h' }
+  { id: 'all', name: '全部', icon: '📋' },
+  { id: 'vegetables', name: '蔬菜类', icon: '🥕' },
+  { id: 'meat', name: '肉类', icon: '🍖' },
+  { id: 'seafood', name: '海鲜类', icon: '🐟' },
+  { id: 'dairy', name: '乳制品', icon: '🧀' },
+  { id: 'grains', name: '谷物类', icon: '🌾' },
+  { id: 'seasonings', name: '调料类', icon: '🌶️' },
+  { id: 'utensils', name: '厨具类', icon: '🍴' },
+  { id: 'others', name: '其他', icon: '📦' }
 ]
 
 // 计算属性
@@ -416,19 +429,19 @@ const generateFromRecipes = () => {
 
         if (existingItem) {
           // 累加数量
-          existingItem.quantity += parseFloat(ingredient.amount) || 1
+          existingItem.quantity += parseFloat(ingredient.amount || '0') || 1
         } else {
           // 添加新食材
           const newItem: ShoppingItem = {
             id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
             name: ingredient.name,
-            quantity: parseFloat(ingredient.amount) || 1,
+            quantity: parseFloat(ingredient.amount || '0') || 1,
             unit: ingredient.unit || '个',
             category: getCategoryByIngredient(ingredient.name),
             completed: false,
             urgent: false,
             estimatedPrice: getEstimatedPrice(ingredient.name),
-            fromRecipe: recipe.title
+            fromRecipe: recipe.name
           }
           shoppingItems.value.push(newItem)
         }
@@ -532,7 +545,7 @@ const saveItem = () => {
 }
 
 // 更新商品
-const updateItem = (item: ShoppingItem) => {
+const updateItem = (_item: ShoppingItem) => {
   saveToStorage()
 }
 

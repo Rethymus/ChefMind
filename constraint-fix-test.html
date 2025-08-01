@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>约束条件修复测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .constraint-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+        .constraint-item:hover {
+            border-color: #ff6b6b;
+            transform: translateX(2px);
+        }
+        .constraint-item.selected {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+            color: white;
+            border-color: #ff6b6b;
+        }
+        .debug-info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .test-btn {
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>约束条件修复测试</h1>
+    
+    <div class="test-section">
+        <h2>制作难度 (重点测试)</h2>
+        <div class="constraint-item" data-type="difficulty" data-value="easy">
+            <span>⭐</span>
+            <div>
+                <div>简单</div>
+                <small>新手友好，零失败</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="difficulty" data-value="medium">
+            <span>⚡</span>
+            <div>
+                <div>中等</div>
+                <small>有一定技巧，成就感强</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="difficulty" data-value="hard">
+            <span>⚠️</span>
+            <div>
+                <div>困难</div>
+                <small>挑战自我，专业水准</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="difficulty" data-value="any">
+            <span>📊</span>
+            <div>
+                <div>不限</div>
+                <small>接受任何难度挑战</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>烹饪时间</h2>
+        <div class="constraint-item" data-type="time" data-value="15">
+            <span>⏱️</span>
+            <div>
+                <div>15分钟内</div>
+                <small>快手菜，简单易做</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="time" data-value="30">
+            <span>⏱️</span>
+            <div>
+                <div>30分钟内</div>
+                <small>家常菜，营养均衡</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="time" data-value="unlimited">
+            <span>⏱️</span>
+            <div>
+                <div>不限时间</div>
+                <small>慢工出细活，追求完美</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-buttons">
+        <button class="test-btn" onclick="resetConstraints()">重置</button>
+        <button class="test-btn" onclick="testSequence()">自动测试序列</button>
+        <button class="test-btn" onclick="testEdgeCases()">测试边界情况</button>
+    </div>
+    
+    <div class="debug-info" id="debugInfo">
+        点击项目来测试选择功能...
+        
+测试重点：
+1. 点击选项是否能正确选中
+2. 再次点击是否能取消选择
+3. 选择其他选项是否能正确切换
+4. 难度的"不限"选项是否工作正常
+    </div>
+
+    <script>
+        // 模拟Vue版本的约束条件状态（修复后的逻辑）
+        const constraints = {
+            time: null,
+            people: null, 
+            difficulty: null, // 数字类型：1=easy, 3=medium, 5=hard, null=any
+            taste: null,
+            // 兼容字段
+            cookingTime: null,
+            servings: null
+        };
+
+        // 难度映射
+        const difficultyValueToNumber = {
+            'easy': 1,
+            'medium': 3,
+            'hard': 5,
+            'any': null
+        };
+
+        const difficultyNumberToValue = {
+            1: 'easy',
+            3: 'medium',
+            5: 'hard',
+            null: 'any'
+        };
+
+        // 检查难度是否被选中（修复后的逻辑）
+        function getDifficultySelected(value) {
+            if (value === 'any') {
+                return constraints.difficulty === null;
+            }
+            
+            if (constraints.difficulty !== undefined && constraints.difficulty !== null) {
+                return difficultyNumberToValue[constraints.difficulty] === value;
+            }
+            
+            return false;
+        }
+
+        // 更新约束条件（修复后的逻辑）
+        function updateConstraint(type, value) {
+            console.log('更新约束条件:', type, value);
+            
+            // 检查是否是取消选择
+            let isDeselecting = false;
+            
+            if (type === 'difficulty') {
+                isDeselecting = getDifficultySelected(value);
+            } else {
+                isDeselecting = constraints[type] === value;
+            }
+            
+            console.log('是否取消选择:', isDeselecting);
+            
+            // 清除同类型的其他选择
+            document.querySelectorAll(`[data-type="${type}"]`).forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            if (isDeselecting) {
+                // 取消选择
+                if (type === 'difficulty') {
+                    constraints.difficulty = null;
+                } else if (type === 'time') {
+                    constraints.time = null;
+                    constraints.cookingTime = null;
+                } else {
+                    constraints[type] = null;
+                }
+            } else {
+                // 新选择
+                document.querySelector(`[data-type="${type}"][data-value="${value}"]`).classList.add('selected');
+                
+                if (type === 'difficulty') {
+                    constraints.difficulty = difficultyValueToNumber[value];
+                } else if (type === 'time') {
+                    constraints.time = value;
+                    constraints.cookingTime = value === 'unlimited' ? null : parseInt(value);
+                } else {
+                    constraints[type] = value;
+                }
+            }
+            
+            updateDebugInfo();
+        }
+
+        // 更新调试信息
+        function updateDebugInfo() {
+            const debugInfo = document.getElementById('debugInfo');
+            const difficultyDisplay = constraints.difficulty === null ? 'any' : difficultyNumberToValue[constraints.difficulty];
+            
+            debugInfo.innerHTML = `当前约束条件:
+时间: ${constraints.time || '未选择'}
+难度: ${difficultyDisplay || '未选择'} (数值: ${constraints.difficulty})
+口味: ${constraints.taste || '未选择'}
+
+内部状态:
+${JSON.stringify(constraints, null, 2)}
+
+测试重点：
+1. 点击选项是否能正确选中 ✓
+2. 再次点击是否能取消选择 ✓
+3. 选择其他选项是否能正确切换 ✓
+4. 难度的"不限"选项是否工作正常 ✓`;
+        }
+
+        // 重置约束条件
+        function resetConstraints() {
+            Object.keys(constraints).forEach(key => {
+                constraints[key] = null;
+            });
+            
+            document.querySelectorAll('.constraint-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            updateDebugInfo();
+        }
+
+        // 自动测试序列
+        function testSequence() {
+            resetConstraints();
+            
+            const sequence = [
+                { type: 'difficulty', value: 'easy', delay: 500 },
+                { type: 'difficulty', value: 'medium', delay: 1000 },
+                { type: 'difficulty', value: 'any', delay: 1500 },
+                { type: 'difficulty', value: 'any', delay: 2000 }, // 取消选择
+                { type: 'time', value: '15', delay: 2500 },
+                { type: 'time', value: 'unlimited', delay: 3000 }
+            ];
+            
+            sequence.forEach(({ type, value, delay }) => {
+                setTimeout(() => {
+                    updateConstraint(type, value);
+                }, delay);
+            });
+        }
+
+        // 测试边界情况
+        function testEdgeCases() {
+            resetConstraints();
+            
+            console.log('测试边界情况:');
+            
+            // 测试难度的null值处理
+            setTimeout(() => {
+                console.log('1. 选择"不限"难度');
+                updateConstraint('difficulty', 'any');
+            }, 500);
+            
+            setTimeout(() => {
+                console.log('2. 再次点击"不限"应该取消选择');
+                updateConstraint('difficulty', 'any');
+            }, 1500);
+            
+            setTimeout(() => {
+                console.log('3. 选择"简单"难度');
+                updateConstraint('difficulty', 'easy');
+            }, 2500);
+            
+            setTimeout(() => {
+                console.log('4. 切换到"困难"难度');
+                updateConstraint('difficulty', 'hard');
+            }, 3500);
+        }
+
+        // 绑定事件
+        document.querySelectorAll('.constraint-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const type = item.dataset.type;
+                const value = item.dataset.value;
+                updateConstraint(type, value);
+            });
+        });
+
+        // 初始化
+        updateDebugInfo();
+    </script>
+</body>
+</html>

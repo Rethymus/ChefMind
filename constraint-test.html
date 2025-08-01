@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>约束条件测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .constraint-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+        .constraint-item:hover {
+            border-color: #ff6b6b;
+        }
+        .constraint-item.selected {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+            color: white;
+            border-color: #ff6b6b;
+        }
+        .debug-info {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>约束条件选择测试</h1>
+    
+    <div class="test-section">
+        <h2>烹饪时间</h2>
+        <div class="constraint-item" data-type="time" data-value="15">
+            <span>⏱️</span>
+            <div>
+                <div>15分钟内</div>
+                <small>快手菜，简单易做</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="time" data-value="30">
+            <span>⏱️</span>
+            <div>
+                <div>30分钟内</div>
+                <small>家常菜，营养均衡</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="time" data-value="60">
+            <span>⏱️</span>
+            <div>
+                <div>1小时内</div>
+                <small>精心制作，口感丰富</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="time" data-value="unlimited">
+            <span>⏱️</span>
+            <div>
+                <div>不限时间</div>
+                <small>慢工出细活，追求完美</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>用餐人数</h2>
+        <div class="constraint-item" data-type="people" data-value="1-2">
+            <span>👤</span>
+            <div>
+                <div>1-2人</div>
+                <small>小份量，精致搭配</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="people" data-value="3-4">
+            <span>👥</span>
+            <div>
+                <div>3-4人</div>
+                <small>家庭聚餐，丰富多样</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="people" data-value="5-6">
+            <span>👨‍👩‍👧‍👦</span>
+            <div>
+                <div>5-6人</div>
+                <small>朋友聚会，分量充足</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="people" data-value="6+">
+            <span>👨‍👩‍👧‍👦</span>
+            <div>
+                <div>6人以上</div>
+                <small>大型聚餐，菜品丰盛</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>制作难度</h2>
+        <div class="constraint-item" data-type="difficulty" data-value="easy">
+            <span>⭐</span>
+            <div>
+                <div>简单</div>
+                <small>新手友好，零失败</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="difficulty" data-value="medium">
+            <span>⚡</span>
+            <div>
+                <div>中等</div>
+                <small>有一定技巧，成就感强</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="difficulty" data-value="hard">
+            <span>⚠️</span>
+            <div>
+                <div>困难</div>
+                <small>挑战自我，专业水准</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="difficulty" data-value="any">
+            <span>📊</span>
+            <div>
+                <div>不限</div>
+                <small>接受任何难度挑战</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>口味偏好</h2>
+        <div class="constraint-item" data-type="taste" data-value="light">
+            <span>☕</span>
+            <div>
+                <div>清淡</div>
+                <small>少油少盐，健康养生</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="taste" data-value="medium">
+            <span>🍽️</span>
+            <div>
+                <div>适中</div>
+                <small>口味均衡，老少皆宜</small>
+            </div>
+        </div>
+        <div class="constraint-item" data-type="taste" data-value="strong">
+            <span>⚠️</span>
+            <div>
+                <div>重口味</div>
+                <small>浓郁香辣，刺激味蕾</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="debug-info" id="debugInfo">
+        点击项目来测试选择功能...
+    </div>
+
+    <script>
+        // 模拟约束条件状态
+        const constraints = {
+            time: null,
+            people: null, 
+            difficulty: null,
+            taste: null
+        };
+
+        // 更新约束条件
+        function updateConstraint(type, value) {
+            console.log('更新约束条件:', type, value);
+            
+            // 清除同类型的其他选择
+            document.querySelectorAll(`[data-type="${type}"]`).forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // 如果点击的是已选中的项目，则取消选择
+            if (constraints[type] === value) {
+                constraints[type] = null;
+            } else {
+                // 选择当前项
+                document.querySelector(`[data-type="${type}"][data-value="${value}"]`).classList.add('selected');
+                constraints[type] = value;
+            }
+            
+            // 更新调试信息
+            updateDebugInfo();
+        }
+
+        // 更新调试信息
+        function updateDebugInfo() {
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.innerHTML = `当前约束条件: ${JSON.stringify(constraints, null, 2)}`;
+        }
+
+        // 绑定事件
+        document.querySelectorAll('.constraint-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const type = item.dataset.type;
+                const value = item.dataset.value;
+                updateConstraint(type, value);
+            });
+        });
+
+        // 初始化调试信息
+        updateDebugInfo();
+    </script>
+</body>
+</html>

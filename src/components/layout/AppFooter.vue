@@ -6,7 +6,7 @@
         <div class="footer-info">
           <div class="logo-section">
             <el-icon class="logo-icon" :size="24">
-              <Restaurant />
+              <Dish />
             </el-icon>
             <span class="logo-text">ChefMind 智食谱</span>
           </div>
@@ -92,7 +92,7 @@
 import { computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
-  Restaurant,
+  Dish,
   Link,
   Share,
   ChatDotRound,
