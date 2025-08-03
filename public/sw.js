@@ -40,6 +40,11 @@ self.addEventListener('activate', (event) => {
 
 // 拦截请求并缓存响应
 self.addEventListener('fetch', (event) => {
+  // 过滤掉不支持的协议请求
+  if (!event.request.url.startsWith('http')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -56,6 +61,11 @@ self.addEventListener('fetch', (event) => {
               return response;
             }
 
+            // 检查请求协议是否支持缓存
+            if (!event.request.url.startsWith('http')) {
+              return response;
+            }
+
             // 克隆响应
             const responseToCache = response.clone();
 
@@ -66,7 +76,16 @@ self.addEventListener('fetch', (event) => {
 
             return response;
           }
-        );
+        ).catch(() => {
+          // 如果网络请求失败，返回离线页面或默认响应
+          return new Response('离线状态', {
+            status: 200,
+            statusText: 'OK',
+            headers: new Headers({
+              'Content-Type': 'text/html'
+            })
+          });
+        });
       })
   );
 });

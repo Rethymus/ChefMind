@@ -1,210 +1,162 @@
+// ChefMind 智食谱 - GLM API服务
+
 /**
- * GLM API 服务
- * 用于与智谱AI GLM模型进行交互
- * 集成缓存和请求去重功能
+ * 调用GLM API
+ * @param prompt 提示词
+ * @param options 可选配置参数
+ * @returns API响应文本
  */
-
-import { apiCache, generateCacheKey, GLM_CACHE_CONFIG } from '@/utils/apiCache'
-
-interface GLMMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
-
-interface GLMRequest {
-  model: string;
-  messages: GLMMessage[];
+export async function callGLM(prompt: string, options?: {
   temperature?: number;
-  max_tokens?: number;
-  stream?: boolean;
-}
-
-interface GLMResponse {
-  id: string;
-  object: string;
-  created: number;
-  model: string;
-  choices: Array<{
-    index: number;
-    message: {
-      role: string;
-      content: string;
-    };
-    finish_reason: string;
-  }>;
-  usage: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
-}
-
-class GLMService {
-  private apiKey: string;
-  private baseURL: string;
-  private model: string;
-
-  constructor() {
-    this.apiKey = import.meta.env.GLM_API_KEY || '';
-    this.baseURL = import.meta.env.GLM_API_BASE_URL || 'https://open.bigmodel.cn/api/paas/v4';
-    this.model = import.meta.env.GLM_MODEL || 'glm-4';
-
-    if (!this.apiKey) {
-      console.warn('GLM API Key 未配置，请检查环境变量 GLM_API_KEY');
+  maxTokens?: number;
+  systemPrompt?: string;
+}): Promise<string> {
+  try {
+    // 使用Vite环境变量
+    const apiKey = import.meta.env.VITE_GLM_API_KEY;
+    const apiBaseUrl = import.meta.env.VITE_GLM_API_BASE_URL || 'https://open.bigmodel.cn/api/paas/v4';
+    const model = import.meta.env.VITE_GLM_MODEL || 'glm-4';
+    
+    if (!apiKey) {
+      console.error('未找到GLM API密钥');
+      throw new Error('未配置GLM API密钥');
     }
-  }
-
-  /**
-   * 发送聊天请求到GLM API
-   */
-  async chat(messages: GLMMessage[], options?: {
-    temperature?: number;
-    max_tokens?: number;
-    stream?: boolean;
-  }): Promise<GLMResponse> {
-    if (!this.apiKey) {
-      throw new Error('GLM API Key 未配置');
-    }
-
-    const requestBody: GLMRequest = {
-      model: this.model,
-      messages,
-      temperature: options?.temperature || 0.7,
-      max_tokens: options?.max_tokens || 1000,
-      stream: options?.stream || false
-    };
-
-    try {
-      const response = await fetch(`${this.baseURL}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        },
-        body: JSON.stringify(requestBody)
+    
+    // GLM API端点
+    const apiUrl = `${apiBaseUrl}/chat/completions`;
+    
+    // 构建消息数组
+    const messages = [];
+    
+    // 如果提供了系统提示词，添加到消息数组
+    if (options?.systemPrompt) {
+      messages.push({
+        role: 'system',
+        content: options.systemPrompt
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`GLM API 请求失败: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('GLM API 调用错误:', error);
-      throw error;
     }
-  }
-
-  /**
-   * 生成菜谱建议（带缓存）
-   */
-  async generateRecipeSuggestion(ingredients: string[], constraints?: string[]): Promise<string> {
-    const cacheKey = generateCacheKey.recipeGeneration(
-      ingredients, 
-      ['生成'], 
-      { constraints }
-    );
-
-    return apiCache.cachedRequest(
-      cacheKey,
-      async () => {
-        const systemMessage: GLMMessage = {
-          role: 'system',
-          content: '你是一个专业的厨师助手，擅长根据用户提供的食材和限制条件生成美味的菜谱建议。请提供详细的制作步骤和营养信息。'
-        };
-
-        const userMessage: GLMMessage = {
-          role: 'user',
-          content: `请根据以下食材生成一个菜谱：
-食材：${ingredients.join('、')}
-${constraints && constraints.length > 0 ? `限制条件：${constraints.join('、')}` : ''}
-
-请提供：
-1. 菜品名称
-2. 详细制作步骤
-3. 预计烹饪时间
-4. 营养价值分析
-5. 小贴士`
-        };
-
-        const response = await this.chat([systemMessage, userMessage]);
-        return response.choices[0]?.message?.content || '抱歉，无法生成菜谱建议';
+    
+    // 添加用户消息
+    messages.push({
+      role: 'user',
+      content: prompt
+    });
+    
+    // 构建请求体
+    const requestBody = {
+      model,
+      messages,
+      temperature: options?.temperature ?? 0.7,
+      top_p: 0.8,
+      max_tokens: options?.maxTokens ?? 4096,
+      stream: false
+    };
+    
+    // 发送请求
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
       },
-      GLM_CACHE_CONFIG.RECIPE_GENERATION
-    );
-  }
-
-  /**
-   * 分析营养成分（带缓存）
-   */
-  async analyzeNutrition(recipe: string): Promise<string> {
-    const cacheKey = `nutrition:analyze:${btoa(recipe).substring(0, 32)}`;
-
-    return apiCache.cachedRequest(
-      cacheKey,
-      async () => {
-        const systemMessage: GLMMessage = {
-          role: 'system',
-          content: '你是一个营养学专家，能够分析菜谱的营养成分和健康价值。'
-        };
-
-        const userMessage: GLMMessage = {
-          role: 'user',
-          content: `请分析以下菜谱的营养成分：
-${recipe}
-
-请提供：
-1. 主要营养成分（蛋白质、碳水化合物、脂肪等）
-2. 维生素和矿物质含量
-3. 热量估算
-4. 健康建议`
-        };
-
-        const response = await this.chat([systemMessage, userMessage]);
-        return response.choices[0]?.message?.content || '抱歉，无法分析营养成分';
-      },
-      GLM_CACHE_CONFIG.NUTRITION_ANALYSIS
-    );
-  }
-
-  /**
-   * 智能推荐相似菜谱（带缓存）
-   */
-  async recommendSimilarRecipes(currentRecipe: string, preferences?: string[]): Promise<string> {
-    const cacheKey = generateCacheKey.recommendation(
-      currentRecipe, 
-      preferences || []
-    );
-
-    return apiCache.cachedRequest(
-      cacheKey,
-      async () => {
-        const systemMessage: GLMMessage = {
-          role: 'system',
-          content: '你是一个菜谱推荐专家，能够根据用户当前的菜谱和偏好推荐相似或互补的菜谱。'
-        };
-
-        const userMessage: GLMMessage = {
-          role: 'user',
-          content: `基于以下菜谱，请推荐3-5个相似或搭配的菜谱：
-当前菜谱：${currentRecipe}
-${preferences && preferences.length > 0 ? `用户偏好：${preferences.join('、')}` : ''}
-
-请为每个推荐提供：
-1. 菜品名称
-2. 推荐理由
-3. 简要制作说明`
-        };
-
-        const response = await this.chat([systemMessage, userMessage]);
-        return response.choices[0]?.message?.content || '抱歉，无法推荐相似菜谱';
-      },
-      GLM_CACHE_CONFIG.RECOMMENDATION
-    );
+      body: JSON.stringify(requestBody),
+      // 添加超时处理
+      signal: AbortSignal.timeout(30000) // 30秒超时
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('GLM API请求失败:', errorText);
+      throw new Error(`GLM API请求失败: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    // 提取响应文本
+    const responseText = data.choices[0].message.content;
+    
+    return responseText;
+  } catch (error) {
+    console.error('调用GLM API失败:', error);
+    
+    // 区分不同类型的错误
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('AI服务请求超时，请稍后再试');
+    } else if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('网络连接错误，请检查您的网络连接');
+    } else {
+      throw new Error('AI服务暂时不可用，请稍后再试');
+    }
   }
 }
 
-// 导出单例实例
-export const glmService = new GLMService();
-export default glmService;
+/**
+ * 批量调用GLM API（用于处理多个请求）
+ * @param prompts 提示词数组
+ * @param options 可选配置参数
+ * @returns API响应文本数组
+ */
+export async function batchCallGLM(prompts: string[], options?: {
+  temperature?: number;
+  maxTokens?: number;
+  systemPrompt?: string;
+  concurrency?: number;
+}): Promise<string[]> {
+  // 默认并发数为2，避免过多请求导致API限流
+  const concurrency = options?.concurrency || 2;
+  const results: string[] = [];
+  
+  // 分批处理请求
+  for (let i = 0; i < prompts.length; i += concurrency) {
+    const batch = prompts.slice(i, i + concurrency);
+    const promises = batch.map(prompt => callGLM(prompt, options));
+    
+    try {
+      // 等待当前批次的所有请求完成
+      const batchResults = await Promise.all(promises);
+      results.push(...batchResults);
+    } catch (error) {
+      console.error('批量调用GLM API失败:', error);
+      // 对于失败的请求，添加空结果
+      batch.forEach(() => results.push(''));
+    }
+    
+    // 如果还有更多批次，添加延迟以避免API限流
+    if (i + concurrency < prompts.length) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+  
+  return results;
+}
+
+/**
+ * 解析JSON响应
+ * @param response GLM API响应文本
+ * @returns 解析后的JSON对象
+ */
+export function parseJsonResponse<T>(response: string): T {
+  try {
+    // 尝试直接解析
+    try {
+      return JSON.parse(response) as T;
+    } catch (e) {
+      // 如果直接解析失败，尝试提取JSON部分
+      const jsonMatch = response.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+      if (!jsonMatch) {
+        throw new Error('无法从AI响应中提取JSON数据');
+      }
+      
+      return JSON.parse(jsonMatch[0]) as T;
+    }
+  } catch (error) {
+    console.error('解析AI响应JSON失败:', error);
+    throw new Error('解析AI生成的数据失败，请重试');
+  }
+}
+
+export default {
+  callGLM,
+  batchCallGLM,
+  parseJsonResponse
+}

@@ -2,23 +2,24 @@
 
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { Ingredient, CookingMethod, Recipe, Constraints } from '@/types/recipe'
-import { recipeService } from '@/services/recipeService'
+import type { Ingredient, CookingMethod, Recipe, UserPreference, HealthConstraint, RecipeGenerationRequest } from '@/types/recipe'
+import aiRecipeService from '@/services/aiRecipeService'
+import recipeService from '@/services/recipeService'
 
 export const useRecipeStore = defineStore('recipe', () => {
   // 状态
   const selectedIngredients = ref<Ingredient[]>([])
   const selectedMethods = ref<CookingMethod[]>([])
-  const constraints = ref<Constraints>({
-    cookingTime: null,
-    difficulty: null,
-    servings: null,
-    dietaryRestrictions: [],
-    excludeIngredients: [],
+  const constraints = ref({
+    cookingTime: null as number | null,
+    difficulty: null as number | null,
+    servings: null as number | null,
+    dietaryRestrictions: [] as string[],
+    excludeIngredients: [] as string[],
     // 兼容字段
-    time: null,
-    people: null,
-    taste: null
+    time: null as number | null,
+    people: null as number | null,
+    taste: null as string | null
   })
   const generatedRecipes = ref<Recipe[]>([])
   const currentStep = ref(1)
@@ -44,7 +45,7 @@ export const useRecipeStore = defineStore('recipe', () => {
     if (index > -1) {
       selectedIngredients.value.splice(index, 1)
     } else {
-      selectedIngredients.value.push({ ...ingredient, selected: true })
+      selectedIngredients.value.push({ ...ingredient })
     }
   }
 
@@ -57,7 +58,7 @@ export const useRecipeStore = defineStore('recipe', () => {
     }
   }
 
-  const updateConstraints = (newConstraints: Constraints) => {
+  const updateConstraints = (newConstraints: typeof constraints.value) => {
     constraints.value = { ...newConstraints }
   }
 
@@ -83,13 +84,36 @@ export const useRecipeStore = defineStore('recipe', () => {
     try {
       isGenerating.value = true
       
-      const request = {
-        ingredients: selectedIngredients.value.map(ing => ing.name),
-        methods: selectedMethods.value.map(method => method.name),
-        constraints: constraints.value
+      // 构建AI菜谱生成请求
+      const requests: RecipeGenerationRequest[] = []
+      
+      // 为每种选择的烹饪方式生成一个菜谱
+      for (const method of selectedMethods.value) {
+        const request: RecipeGenerationRequest = {
+          ingredients: selectedIngredients.value.map(ing => ing.name),
+          cookingMethod: method.name,
+          difficulty: constraints.value.difficulty || undefined,
+          cookingTime: constraints.value.cookingTime || undefined,
+          servings: constraints.value.servings || undefined,
+          dietaryRestrictions: constraints.value.dietaryRestrictions
+        }
+        requests.push(request)
+      }
+      
+      // 如果没有选择烹饪方式，生成一个通用菜谱
+      if (requests.length === 0) {
+        const request: RecipeGenerationRequest = {
+          ingredients: selectedIngredients.value.map(ing => ing.name),
+          difficulty: constraints.value.difficulty || undefined,
+          cookingTime: constraints.value.cookingTime || undefined,
+          servings: constraints.value.servings || undefined,
+          dietaryRestrictions: constraints.value.dietaryRestrictions
+        }
+        requests.push(request)
       }
 
-      const recipes = await recipeService.generateRecipes(request)
+      // 批量生成菜谱
+      const recipes = await aiRecipeService.batchGenerateRecipes(requests)
       generatedRecipes.value = recipes
       currentStep.value = 4
     } catch (error) {
@@ -102,12 +126,15 @@ export const useRecipeStore = defineStore('recipe', () => {
 
   const saveRecipe = async (recipe: Recipe) => {
     try {
-      const success = await recipeService.saveRecipe(recipe)
-      if (success) {
+      // 将菜谱添加到本地收藏列表
+      const existingIndex = savedRecipes.value.findIndex(r => r.id === recipe.id)
+      if (existingIndex === -1) {
         savedRecipes.value.push(recipe)
-        return true
       }
-      return false
+      
+      // 保存到本地存储
+      localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes.value))
+      return true
     } catch (error) {
       console.error('保存菜谱失败:', error)
       return false
@@ -135,10 +162,19 @@ export const useRecipeStore = defineStore('recipe', () => {
 
   const loadSavedRecipes = async () => {
     try {
-      const recipes = await recipeService.getFavoriteRecipes()
-      savedRecipes.value = recipes
+      // 从本地存储加载收藏的菜谱
+      const savedData = localStorage.getItem('savedRecipes')
+      if (savedData) {
+        const recipes = JSON.parse(savedData)
+        savedRecipes.value = recipes.map((recipe: any) => ({
+          ...recipe,
+          createdAt: new Date(recipe.createdAt),
+          updatedAt: recipe.updatedAt ? new Date(recipe.updatedAt) : undefined
+        }))
+      }
     } catch (error) {
       console.error('加载收藏菜谱失败:', error)
+      savedRecipes.value = []
     }
   }
 

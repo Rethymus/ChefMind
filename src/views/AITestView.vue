@@ -200,7 +200,7 @@ import { ref, computed, onMounted } from 'vue'
 import { 
   Loader2 
 } from 'lucide-vue-next'
-import { glmService } from '@/services/glmService'
+import { callGLM } from '@/services/glmService'
 import { recipeService } from '@/services/recipeService'
 import type { Recipe } from '@/types/recipe'
 
@@ -359,9 +359,11 @@ const testRecommendation = async () => {
     isRecommending.value = true
     addLog('智能推荐', `开始推荐相似菜谱`)
     
-    recommendationResult.value = await glmService.recommendSimilarRecipes(
-      currentRecipeForRecommendation.value
-    )
+    const prompt = `请为"${currentRecipeForRecommendation.value}"推荐3-5个相似的菜谱，包括菜名和简短描述。`
+    recommendationResult.value = await callGLM(prompt, {
+      temperature: 0.7,
+      systemPrompt: '你是一个专业的美食推荐助手，请根据用户提供的菜谱推荐相似的菜谱。'
+    })
     apiCallCount.value++
     
     addLog('智能推荐', '推荐完成', true)

@@ -1,4 +1,4 @@
-﻿﻿﻿<template>
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<template>
   <div class="recipe-detail">
     <!-- 菜谱头部信息 -->
     <div class="recipe-header">
@@ -21,7 +21,7 @@
           <div class="rating-group">
             <span class="rating-label">营养评分</span>
             <el-rate
-              v-model="recipe.nutrition"
+              :model-value="getNutritionRating"
               disabled
               show-score
               text-color="#67c23a"
@@ -166,41 +166,76 @@
         营养信息
       </h2>
       <div class="nutrition-content">
-        <div class="nutrition-chart">
-          <div class="chart-placeholder">
-            <el-icon :size="48"><PieChart /></el-icon>
-            <p>营养成分分析图</p>
-            <small>功能开发中...</small>
+      <div class="nutrition-chart">
+          <div class="chart-container">
+            <div class="pie-chart">
+              <div class="pie-segment protein" :style="{ '--percentage': recipe.nutrition.proteinPercentage || 75 }"></div>
+              <div class="pie-segment carbs" :style="{ '--percentage': recipe.nutrition.carbsPercentage || 60 }"></div>
+              <div class="pie-segment fat" :style="{ '--percentage': recipe.nutrition.fatPercentage || 45 }"></div>
+              <div class="pie-segment fiber" :style="{ '--percentage': recipe.nutrition.fiberPercentage || 85 }"></div>
+              <div class="pie-center">
+                <span>营养分析</span>
+                <small>{{ recipe.nutrition.calories || 0 }}卡路里</small>
+                <div class="nutrition-stars">
+                  <el-icon v-for="i in getNutritionRating" :key="i" class="star-icon"><StarFilled /></el-icon>
+                </div>
+              </div>
+            </div>
+            <div class="chart-legend">
+              <div class="legend-item">
+                <span class="legend-color protein"></span>
+                <span class="legend-label">蛋白质 {{ recipe.nutrition.protein }}g</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color carbs"></span>
+                <span class="legend-label">碳水 {{ recipe.nutrition.carbs }}g</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color fat"></span>
+                <span class="legend-label">脂肪 {{ recipe.nutrition.fat }}g</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color fiber"></span>
+                <span class="legend-label">纤维 {{ recipe.nutrition.fiber }}g</span>
+              </div>
+            </div>
           </div>
         </div>
         <div class="nutrition-details">
           <div class="nutrition-item">
-            <span class="nutrition-label">蛋白质</span>
+            <span class="nutrition-label">蛋白质 ({{ recipe.nutrition.protein }}g)</span>
             <div class="nutrition-bar">
-              <div class="bar-fill" style="width: 75%"></div>
+              <div class="bar-fill protein-fill" :style="{ width: `${recipe.nutrition.proteinPercentage || 75}%` }"></div>
             </div>
-            <span class="nutrition-value">75%</span>
+            <span class="nutrition-value">{{ recipe.nutrition.proteinPercentage || 75 }}%</span>
           </div>
           <div class="nutrition-item">
-            <span class="nutrition-label">碳水化合物</span>
+            <span class="nutrition-label">碳水化合物 ({{ recipe.nutrition.carbs }}g)</span>
             <div class="nutrition-bar">
-              <div class="bar-fill" style="width: 60%"></div>
+              <div class="bar-fill carbs-fill" :style="{ width: `${recipe.nutrition.carbsPercentage || 60}%` }"></div>
             </div>
-            <span class="nutrition-value">60%</span>
+            <span class="nutrition-value">{{ recipe.nutrition.carbsPercentage || 60 }}%</span>
           </div>
           <div class="nutrition-item">
-            <span class="nutrition-label">脂肪</span>
+            <span class="nutrition-label">脂肪 ({{ recipe.nutrition.fat }}g)</span>
             <div class="nutrition-bar">
-              <div class="bar-fill" style="width: 45%"></div>
+              <div class="bar-fill fat-fill" :style="{ width: `${recipe.nutrition.fatPercentage || 45}%` }"></div>
             </div>
-            <span class="nutrition-value">45%</span>
+            <span class="nutrition-value">{{ recipe.nutrition.fatPercentage || 45 }}%</span>
           </div>
           <div class="nutrition-item">
-            <span class="nutrition-label">维生素</span>
+            <span class="nutrition-label">膳食纤维 ({{ recipe.nutrition.fiber }}g)</span>
             <div class="nutrition-bar">
-              <div class="bar-fill" style="width: 85%"></div>
+              <div class="bar-fill fiber-fill" :style="{ width: `${recipe.nutrition.fiberPercentage || 85}%` }"></div>
             </div>
-            <span class="nutrition-value">85%</span>
+            <span class="nutrition-value">{{ recipe.nutrition.fiberPercentage || 85 }}%</span>
+          </div>
+          <div class="nutrition-rating-info">
+            <span class="rating-label">营养评分:</span>
+            <div class="rating-stars">
+              <el-icon v-for="i in getNutritionRating" :key="i" class="star-icon"><StarFilled /></el-icon>
+              <el-icon v-for="i in 5 - getNutritionRating" :key="`empty-${i}`" class="star-icon empty"><Star /></el-icon>
+            </div>
           </div>
         </div>
       </div>
@@ -225,7 +260,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { Recipe } from '@/types/recipe'
 import { externalLinks } from '@/data/mockData'
 import { ElMessage } from 'element-plus'
@@ -344,6 +379,14 @@ const handleShare = () => {
 const handlePrint = () => {
   window.print()
 }
+
+// 获取营养评分
+const getNutritionRating = computed(() => {
+  if (props.recipe.nutrition && typeof props.recipe.nutrition === 'object' && 'nutritionRating' in props.recipe.nutrition) {
+    return props.recipe.nutrition.nutritionRating
+  }
+  return 3 // 默认值
+})
 </script>
 
 <style lang="scss" scoped>
@@ -676,6 +719,156 @@ const handlePrint = () => {
     border-top: 1px solid #e9ecef;
     margin-top: 2rem;
   }
+}
+
+/* 营养图表样式 */
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pie-chart {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: #f8f9fa;
+  overflow: hidden;
+}
+
+.pie-segment {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 50%;
+}
+
+.pie-segment.protein {
+  background: #ff6b6b;
+  clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 50% 100%);
+  transform: rotate(0deg);
+  clip-path: polygon(
+    50% 50%,
+    50% 0,
+    calc(50% + 50% * cos(calc(var(--percentage) * 3.6deg))) calc(50% - 50% * sin(calc(var(--percentage) * 3.6deg))),
+    50% 50%
+  );
+}
+
+.pie-segment.carbs {
+  background: #4ecdc4;
+  clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 50% 100%);
+  transform: rotate(90deg);
+  clip-path: polygon(
+    50% 50%,
+    50% 0,
+    calc(50% + 50% * cos(calc(var(--percentage) * 3.6deg))) calc(50% - 50% * sin(calc(var(--percentage) * 3.6deg))),
+    50% 50%
+  );
+}
+
+.pie-segment.fat {
+  background: #ffbe76;
+  clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 50% 100%);
+  transform: rotate(180deg);
+  clip-path: polygon(
+    50% 50%,
+    50% 0,
+    calc(50% + 50% * cos(calc(var(--percentage) * 3.6deg))) calc(50% - 50% * sin(calc(var(--percentage) * 3.6deg))),
+    50% 50%
+  );
+}
+
+.pie-segment.fiber {
+  background: #a29bfe;
+  clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 50% 100%);
+  transform: rotate(270deg);
+  clip-path: polygon(
+    50% 50%,
+    50% 0,
+    calc(50% + 50% * cos(calc(var(--percentage) * 3.6deg))) calc(50% - 50% * sin(calc(var(--percentage) * 3.6deg))),
+    50% 50%
+  );
+}
+
+.pie-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #2c3e50;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  
+  small {
+    font-size: 0.7rem;
+    color: #666;
+    margin-top: 2px;
+  }
+  
+  .nutrition-stars {
+    display: flex;
+    margin-top: 4px;
+    
+    .star-icon {
+      color: #f39c12;
+      font-size: 0.7rem;
+      margin: 0 1px;
+    }
+  }
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  justify-content: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legend-color.protein {
+  background: #ff6b6b;
+}
+
+.legend-color.carbs {
+  background: #4ecdc4;
+}
+
+.legend-color.fat {
+  background: #ffbe76;
+}
+
+.legend-color.fiber {
+  background: #a29bfe;
+}
+
+.legend-label {
+  font-size: 0.8rem;
+  color: #666;
 }
 
 // 暗色主题

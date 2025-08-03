@@ -7,9 +7,25 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
-    component: () => import('@/views/HomeView.vue'),
+    component: () => import('@/views/SimpleHomeView.vue'),
     meta: {
       title: 'ChefMind 智食谱 - 首页'
+    }
+  },
+  {
+    path: '/full',
+    name: 'FullHome',
+    component: () => import('@/views/MainHomeView.vue'),
+    meta: {
+      title: 'ChefMind 智食谱 - 完整版首页'
+    }
+  },
+  {
+    path: '/ai-recipe-test',
+    name: 'AIRecipeTest',
+    component: () => import('@/views/AIRecipeTest.vue'),
+    meta: {
+      title: 'ChefMind 智食谱 - AI菜谱生成测试'
     }
   },
   {
@@ -42,6 +58,14 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/TestView.vue'),
     meta: {
       title: 'ChefMind 智食谱 - 调试页面'
+    }
+  },
+  {
+    path: '/debug',
+    name: 'Debug',
+    component: () => import('@/views/DebugView.vue'),
+    meta: {
+      title: 'ChefMind 智食谱 - 系统调试'
     }
   }
 ]
