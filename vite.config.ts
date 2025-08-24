@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import path from 'path'
+import { fileURLToPath, URL } from 'node:url'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
@@ -16,36 +17,59 @@ export default defineConfig({
         'pinia',
         '@vueuse/core'
       ],
-      dts: true
+      dts: true,
+      eslintrc: {
+        enabled: true
+      }
     }),
     Components({
       resolvers: [ElementPlusResolver()],
       dts: true
     })
   ],
-  optimizeDeps: {
-    exclude: ['@element-plus/icons-vue'] // 排除图标库，避免打包问题
-  },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src')
+      '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
   css: {
     preprocessorOptions: {
       scss: {
-        api: 'modern-compiler' // 使用现代 Sass API
+        additionalData: `@import "@/styles/variables.scss";`
+      }
+    }
+  },
+  build: {
+    target: 'es2015',
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    },
+    rollupOptions: {
+      output: {
+        chunkFileNames: 'js/[name]-[hash].js',
+        entryFileNames: 'js/[name]-[hash].js',
+        assetFileNames: '[ext]/[name]-[hash].[ext]'
       }
     }
   },
   server: {
-    port: 3000,
-    open: true,
-    hmr: true
+    host: '0.0.0.0',
+    port: 5173,
+    open: false,
+    cors: true,
+    strictPort: true
   },
-  build: {
-    outDir: 'dist',
-    sourcemap: false,
-    minify: 'terser'
+  preview: {
+    host: '0.0.0.0',
+    port: 3000,
+    open: false,
+    strictPort: true
   }
 })

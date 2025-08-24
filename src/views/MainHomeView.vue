@@ -9,6 +9,9 @@
         </h1>
         <p class="subtitle">AI驱动的智能烹饪助手，让每一餐都充满创意</p>
       </div>
+      
+      <!-- 用户数据看板 -->
+      <UserDashboard v-if="isLoggedIn" class="dashboard-section" />
 
       <!-- 功能导航 -->
       <div class="feature-tabs">
@@ -359,8 +362,20 @@
 </template>
 
 <script>
+import UserDashboard from '@/components/analytics/UserDashboard.vue'
+import { useUserService } from '@/services/userService'
+
 export default {
   name: 'MainHomeView',
+  components: {
+    UserDashboard
+  },
+  setup() {
+    const userService = useUserService()
+    return {
+      userService
+    }
+  },
   data() {
     return {
       activeTab: 'generator',
@@ -370,29 +385,12 @@ export default {
         { id: 'shopping', name: '购物清单', icon: '🛒' },
         { id: 'nutrition', name: '营养分析', icon: '📊' }
       ],
+      isLoggedIn: true, // 默认为已登录状态，实际应用中应该从用户服务获取
       
-      // 食材数据
-      vegetables: [
-        '白菜', '萝卜', '胡萝卜', '土豆', '番茄', '黄瓜', '茄子', '豆角', '韭菜', '菠菜',
-        '生菜', '芹菜', '大葱', '洋葱', '蒜苗', '青椒', '红椒', '尖椒', '冬瓜', '南瓜',
-        '丝瓜', '苦瓜', '西葫芦', '莲藕', '山药', '竹笋', '豆芽', '韭黄', '蒜苔', '芦笋',
-        '西兰花', '菜花', '包菜', '紫甘蓝', '油菜', '小白菜', '娃娃菜', '芥菜', '荠菜', '苋菜',
-        '空心菜', '茼蒿', '香菜', '薄荷', '罗勒', '迷迭香', '百里香', '牛至', '鼠尾草', '欧芹'
-      ],
-      meats: [
-        '猪肉', '牛肉', '羊肉', '鸡肉', '鸭肉', '鹅肉', '火鸡', '兔肉', '鹿肉', '野猪肉',
-        '猪排骨', '牛排骨', '羊排骨', '鸡翅', '鸡腿', '鸡胸肉', '鸭腿', '鸭胸', '鹅腿', '火鸡腿',
-        '猪蹄', '牛蹄筋', '羊蹄', '鸡爪', '鸭掌', '猪肚', '牛肚', '羊肚', '鸡胗', '鸭胗',
-        '猪肝', '牛肝', '羊肝', '鸡肝', '鸭肝', '猪肾', '牛肾', '羊肾', '猪心', '牛心',
-        '培根', '火腿', '香肠', '腊肉', '咸肉', '熏肉', '肉松', '肉脯', '肉丸', '肉饼'
-      ],
-      staples: [
-        '大米', '小米', '糯米', '黑米', '红米', '紫米', '香米', '泰国香米', '印度香米', '日本大米',
-        '面粉', '全麦面粉', '玉米面', '荞麦面', '燕麦', '大麦', '小麦', '高粱', '薏米', '藜麦',
-        '面条', '挂面', '拉面', '乌冬面', '意大利面', '通心粉', '螺旋面', '蝴蝶面', '天使面', '宽面',
-        '馒头', '包子', '花卷', '烧饼', '油条', '麻花', '煎饼', '薄饼', '春卷皮', '饺子皮',
-        '面包', '吐司', '法棍', '贝果', '可颂', '丹麦酥', '司康饼', '马芬', '纸杯蛋糕', '蛋糕'
-      ],
+      // 食材数据 - 从本地服务获取
+      vegetables: [],
+      meats: [],
+      staples: [],
       
       cookingMethods: ['炒', '煮', '蒸', '炖', '烤', '炸', '煎', '焖', '烧', '拌', '腌', '熏', '卤', '涮'],
       flavors: ['清淡', '麻辣', '酸甜', '咸鲜', '香辣', '蒜香', '葱香', '姜味', '酱香', '糖醋'],
@@ -468,10 +466,24 @@ export default {
     },
     
     async validateIngredient(ingredient) {
-      // 模拟AI验证
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const invalidIngredients = ['石头', '塑料', '金属', '玻璃', '纸张'];
-      return !invalidIngredients.includes(ingredient);
+      try {
+        // 使用AI服务验证食材
+        const aiService = this.userService.getAIService();
+        if (!aiService) {
+          // 如果AI服务不可用，使用基本验证
+          const invalidIngredients = ['石头', '塑料', '金属', '玻璃', '纸张'];
+          return !invalidIngredients.includes(ingredient);
+        }
+        
+        const prompt = `请判断"${ingredient}"是否是有效的食材。只回答"是"或"否"。`;
+        const response = await aiService.generateText(prompt);
+        return response.includes('是');
+      } catch (error) {
+        console.error('AI验证食材失败:', error);
+        // 降级到基本验证
+        const invalidIngredients = ['石头', '塑料', '金属', '玻璃', '纸张'];
+        return !invalidIngredients.includes(ingredient);
+      }
     },
     
     async generateRecipes() {
@@ -479,14 +491,75 @@ export default {
       
       this.isGenerating = true;
       
-      // 模拟AI生成过程
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // 确保生成至少2个不同烹饪方式的食谱
+      try {
+        // 使用AI服务生成食谱
+        const aiService = this.userService.getAIService();
+        if (!aiService) {
+          throw new Error('AI服务不可用');
+        }
+        
+        // 构建AI提示
+        const ingredients = this.selectedIngredients.join('、');
+        const methods = this.selectedMethods.length > 0 ? this.selectedMethods.join('、') : '任意';
+        const flavors = this.selectedFlavors.length > 0 ? this.selectedFlavors.join('、') : '家常';
+        
+        const prompt = `请为我推荐3-4个食谱，要求：
+食材：${ingredients}
+烹饪方式：${methods}
+口味偏好：${flavors}
+
+请以JSON格式返回，包含以下字段：
+- name: 食谱名称
+- description: 简短描述
+- cookingTime: 烹饪时间
+- difficulty: 难度(简单/中等/困难)
+- servings: 份量
+- rating: 评分(3-5)
+- ingredients: 详细食材清单数组
+- steps: 制作步骤数组
+- tips: 烹饪小贴士
+
+返回格式：[{...}, {...}, {...}]`;
+
+        const response = await aiService.generateText(prompt);
+        
+        // 解析AI响应
+        let recipes = [];
+        try {
+          // 尝试解析JSON
+          const jsonMatch = response.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            recipes = JSON.parse(jsonMatch[0]);
+          } else {
+            throw new Error('无法解析AI响应');
+          }
+        } catch (parseError) {
+          console.error('解析AI响应失败:', parseError);
+          // 使用备用生成逻辑
+          recipes = this.generateFallbackRecipes();
+        }
+        
+        // 为每个食谱添加ID
+        this.recommendedRecipes = recipes.map((recipe, index) => ({
+          ...recipe,
+          id: index + 1
+        }));
+        
+      } catch (error) {
+        console.error('AI生成食谱失败:', error);
+        // 使用备用生成逻辑
+        this.recommendedRecipes = this.generateFallbackRecipes();
+      } finally {
+        this.isGenerating = false;
+      }
+    },
+    
+    generateFallbackRecipes() {
+      // 备用食谱生成逻辑
       const availableMethods = this.selectedMethods.length > 0 ? this.selectedMethods : ['炒', '煮', '蒸'];
       const recipesToGenerate = Math.max(2, Math.min(availableMethods.length, 4));
       
-      this.recommendedRecipes = [];
+      const recipes = [];
       const usedMethods = [];
       
       for (let i = 0; i < recipesToGenerate; i++) {
@@ -500,14 +573,14 @@ export default {
         const mainIngredients = this.selectedIngredients.slice(0, 3);
         const recipeName = `${method}${mainIngredients.join('、')}`;
         
-        this.recommendedRecipes.push({
+        recipes.push({
           id: i + 1,
           name: recipeName,
           description: `精选${mainIngredients.join('、')}，采用${method}的方式制作`,
           cookingTime: `${15 + Math.floor(Math.random() * 30)}分钟`,
           difficulty: ['简单', '中等', '困难'][Math.floor(Math.random() * 3)],
           servings: `${2 + Math.floor(Math.random() * 4)}人份`,
-          rating: 3 + Math.floor(Math.random() * 3), // 3-5星
+          rating: 3 + Math.floor(Math.random() * 3),
           ingredients: [
             ...mainIngredients.map(ing => `${ing} 适量`),
             '盐 适量',
@@ -526,7 +599,7 @@ export default {
         });
       }
       
-      this.isGenerating = false;
+      return recipes;
     },
     
     openRecipeModal(recipe) {
@@ -594,17 +667,105 @@ export default {
     },
     
     // 营养分析方法
-    analyzeNutrition() {
+    async analyzeNutrition() {
       if (this.nutritionInput.trim()) {
-        // 模拟营养分析
-        this.nutritionResult = {
-          calories: Math.floor(Math.random() * 40) + 60,
-          protein: Math.floor(Math.random() * 30) + 50,
-          carbs: Math.floor(Math.random() * 35) + 45,
-          fat: Math.floor(Math.random() * 25) + 35
-        };
+        try {
+          // 使用AI服务进行营养分析
+          const aiService = this.userService.getAIService();
+          if (!aiService) {
+            throw new Error('AI服务不可用');
+          }
+          
+          const prompt = `请分析以下食物的营养成分，返回百分比形式的营养评估：
+食物：${this.nutritionInput}
+
+请以JSON格式返回，包含以下字段（数值为0-100的百分比）：
+- calories: 热量评估百分比
+- protein: 蛋白质含量百分比  
+- carbs: 碳水化合物含量百分比
+- fat: 脂肪含量百分比
+
+返回格式：{"calories": 数值, "protein": 数值, "carbs": 数值, "fat": 数值}`;
+
+          const response = await aiService.generateText(prompt);
+          
+          // 解析AI响应
+          try {
+            const jsonMatch = response.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              this.nutritionResult = JSON.parse(jsonMatch[0]);
+            } else {
+              throw new Error('无法解析AI响应');
+            }
+          } catch (parseError) {
+            console.error('解析营养分析结果失败:', parseError);
+            // 使用备用分析逻辑
+            this.nutritionResult = this.generateFallbackNutrition();
+          }
+          
+        } catch (error) {
+          console.error('AI营养分析失败:', error);
+          // 使用备用分析逻辑
+          this.nutritionResult = this.generateFallbackNutrition();
+        }
       }
+    },
+    
+    generateFallbackNutrition() {
+      // 备用营养分析逻辑 - 返回空结果，不提供虚假数据
+      return null;
+    },
+    
+    // 初始化食材数据
+    async initializeIngredients() {
+      try {
+        // 使用AI服务获取常用食材分类
+        const aiService = this.userService.getAIService();
+        if (aiService) {
+          const prompt = `请提供中式烹饪常用的食材分类，分为蔬菜类、肉类、主食类三个类别，每个类别提供15-20种常见食材。
+返回JSON格式：
+{
+  "vegetables": ["食材1", "食材2", ...],
+  "meats": ["食材1", "食材2", ...], 
+  "staples": ["食材1", "食材2", ...]
+}`;
+          
+          const response = await aiService.generateText(prompt);
+          const jsonMatch = response.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const ingredients = JSON.parse(jsonMatch[0]);
+            this.vegetables = ingredients.vegetables || [];
+            this.meats = ingredients.meats || [];
+            this.staples = ingredients.staples || [];
+          }
+        }
+      } catch (error) {
+        console.error('获取食材数据失败:', error);
+        // 使用基础食材数据
+        this.loadBasicIngredients();
+      }
+    },
+    
+    // 加载基础食材数据
+    loadBasicIngredients() {
+      this.vegetables = [
+        '白菜', '萝卜', '胡萝卜', '土豆', '番茄', '黄瓜', '茄子', '豆角', '韭菜', '菠菜',
+        '生菜', '芹菜', '大葱', '洋葱', '蒜苗', '青椒', '红椒', '尖椒', '冬瓜', '南瓜'
+      ];
+      this.meats = [
+        '猪肉', '牛肉', '羊肉', '鸡肉', '鸭肉', '鹅肉', '火鸡', '兔肉', '猪排骨', '牛排骨',
+        '羊排骨', '鸡翅', '鸡腿', '鸡胸肉', '鸭腿', '鸭胸', '鹅腿', '火鸡腿', '猪蹄', '牛蹄筋'
+      ];
+      this.staples = [
+        '大米', '小米', '糯米', '黑米', '红米', '紫米', '香米', '面粉', '全麦面粉', '玉米面',
+        '荞麦面', '燕麦', '大麦', '小麦', '高粱', '薏米', '藜麦', '面条', '挂面', '拉面'
+      ];
     }
+  },
+  
+  async mounted() {
+    // 初始化食材数据
+    await this.initializeIngredients();
   },
   
   beforeUnmount() {
@@ -621,6 +782,10 @@ export default {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 2rem;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.dashboard-section {
+  margin-bottom: 2rem;
 }
 
 .main-content {

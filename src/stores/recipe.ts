@@ -2,9 +2,8 @@
 
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { Ingredient, CookingMethod, Recipe, UserPreference, HealthConstraint, RecipeGenerationRequest } from '@/types/recipe'
+import type { Ingredient, CookingMethod, Recipe, RecipeGenerationRequest } from '@/types/recipe'
 import aiRecipeService from '@/services/aiRecipeService'
-import recipeService from '@/services/recipeService'
 
 export const useRecipeStore = defineStore('recipe', () => {
   // 状态

@@ -3,7 +3,19 @@
 import type { Recipe, UserPreference, HealthConstraint } from '@/types/recipe'
 import { callGLM } from './glmService'
 import { getCachedData, setCachedData } from '@/utils/apiCache'
-import { cookingMethods } from '@/data/mockData'
+// 本地烹饪方法数据定义
+const cookingMethods = [
+  { id: 1, name: '炒', time: 15, difficulty: 2, description: '快速翻炒，保持食材鲜嫩' },
+  { id: 2, name: '煮', time: 20, difficulty: 1, description: '水煮烹饪，营养保留好' },
+  { id: 3, name: '蒸', time: 25, difficulty: 2, description: '蒸汽烹饪，健康清淡' },
+  { id: 4, name: '炖', time: 60, difficulty: 3, description: '慢火炖煮，汤汁浓郁' },
+  { id: 5, name: '烤', time: 30, difficulty: 3, description: '烘烤制作，香味浓郁' },
+  { id: 6, name: '炸', time: 10, difficulty: 4, description: '油炸烹饪，酥脆可口' },
+  { id: 7, name: '煎', time: 12, difficulty: 2, description: '平底锅煎制，外焦内嫩' },
+  { id: 8, name: '焖', time: 40, difficulty: 3, description: '密封焖煮，入味充分' },
+  { id: 9, name: '烧', time: 35, difficulty: 3, description: '红烧制作，色泽诱人' },
+  { id: 10, name: '拌', time: 5, difficulty: 1, description: '凉拌制作，清爽开胃' }
+];
 
 /**
  * 生成唯一ID

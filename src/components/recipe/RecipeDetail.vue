@@ -1,1051 +1,954 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<template>
+﻿﻿<template>
   <div class="recipe-detail">
-    <!-- 菜谱头部信息 -->
-    <div class="recipe-header">
-      <div class="recipe-basic-info">
-        <h1 class="recipe-name">{{ recipe.name }}</h1>
+    <div v-if="recipe" class="recipe-content">
+      <!-- 食谱标题和评分 -->
+      <div class="recipe-header">
+        <h1>{{ recipe.name }}</h1>
+        <div class="recipe-actions">
+          <div class="recipe-rating">
+            <span v-for="i in 5" :key="i" :class="['star', { filled: i <= recipe.rating }]">★</span>
+            <span class="rating-count">({{ recipe.ratingCount || 0 }})</span>
+          </div>
+          <div class="action-buttons">
+            <button class="action-button favorite" :class="{ active: isFavorite }" @click="toggleFavorite">
+              <i class="icon-heart"></i>
+              <span>{{ isFavorite ? '已收藏' : '收藏' }}</span>
+            </button>
+            <button class="action-button share" @click="showShareOptions = true">
+              <i class="icon-share"></i>
+              <span>分享</span>
+            </button>
+            <button class="action-button print" @click="printRecipe">
+              <i class="icon-print"></i>
+              <span>打印</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 食谱图片和描述 -->
+      <div class="recipe-media-section">
+        <div class="recipe-image" :style="{ backgroundImage: `url(${getSmartRecipeImage(recipe)})` }">
+          <div class="recipe-tags" v-if="recipe.tags && recipe.tags.length">
+            <span v-for="(tag, index) in recipe.tags" :key="index" class="recipe-tag">{{ tag }}</span>
+          </div>
+        </div>
         <p class="recipe-description">{{ recipe.description }}</p>
-        
-        <!-- 评分和标签 -->
-        <div class="recipe-ratings">
-          <div class="rating-group">
-            <span class="rating-label">难度等级</span>
-            <el-rate
-              v-model="recipe.difficulty"
-              disabled
-              show-score
-              text-color="#ff9900"
-              :max="5"
-            />
-          </div>
-          <div class="rating-group">
-            <span class="rating-label">营养评分</span>
-            <el-rate
-              :model-value="getNutritionRating"
-              disabled
-              show-score
-              text-color="#67c23a"
-              :max="5"
-            />
+      </div>
+      
+      <!-- 食谱基本信息 -->
+      <div class="recipe-info">
+        <div class="info-item">
+          <div class="info-icon">⏱️</div>
+          <div class="info-content">
+            <div class="info-label">烹饪时间</div>
+            <div class="info-value">{{ recipe.cookingTime }}</div>
           </div>
         </div>
         
-        <!-- 基本信息 -->
-        <div class="recipe-meta">
-          <div class="meta-item">
-            <el-icon><Timer /></el-icon>
-            <span>制作时间：{{ recipe.time }}分钟</span>
-          </div>
-          <div class="meta-item">
-            <el-icon><User /></el-icon>
-            <span>适合人数：{{ recipe.servings }}</span>
-          </div>
-          <div class="meta-item">
-            <el-icon><Calendar /></el-icon>
-            <span>创建时间：{{ recipe.createdAt ? formatDate(recipe.createdAt) : '未知' }}</span>
+        <div class="info-item">
+          <div class="info-icon">📊</div>
+          <div class="info-content">
+            <div class="info-label">难度</div>
+            <div class="info-value">{{ recipe.difficulty }}</div>
           </div>
         </div>
         
-        <!-- 标签 -->
-        <div class="recipe-tags">
-          <el-tag
-            v-for="tag in recipe.tags"
-            :key="tag"
-            type="info"
-            effect="plain"
+        <div class="info-item">
+          <div class="info-icon">🍽️</div>
+          <div class="info-content">
+            <div class="info-label">份量</div>
+            <div class="info-value">{{ recipe.servings || '2人份' }}</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 营养信息 -->
+      <div v-if="recipe.nutritionInfo" class="nutrition-info">
+        <h3 class="section-title">营养信息</h3>
+        <div class="nutrition-grid">
+          <div class="nutrition-item">
+            <div class="nutrition-value">{{ recipe.nutritionInfo.calories }}kcal</div>
+            <div class="nutrition-label">热量</div>
+          </div>
+          
+          <div class="nutrition-item">
+            <div class="nutrition-value">{{ recipe.nutritionInfo.protein }}g</div>
+            <div class="nutrition-label">蛋白质</div>
+          </div>
+          
+          <div class="nutrition-item">
+            <div class="nutrition-value">{{ recipe.nutritionInfo.carbs }}g</div>
+            <div class="nutrition-label">碳水</div>
+          </div>
+          
+          <div class="nutrition-item">
+            <div class="nutrition-value">{{ recipe.nutritionInfo.fat }}g</div>
+            <div class="nutrition-label">脂肪</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 食材列表 -->
+      <div class="ingredients">
+        <h3 class="section-title">食材</h3>
+        <ul class="ingredients-list">
+          <li v-for="(ingredient, index) in recipe.ingredients" :key="index" class="ingredient-item">
+            {{ ingredient }}
+          </li>
+        </ul>
+      </div>
+      
+      <!-- 烹饪步骤 -->
+      <div class="steps">
+        <h3 class="section-title">烹饪步骤</h3>
+        <ol class="steps-list">
+          <li v-for="(step, index) in recipe.steps" :key="index" class="step-item">
+            <div class="step-number">{{ index + 1 }}</div>
+            <div class="step-content">{{ step }}</div>
+          </li>
+        </ol>
+      </div>
+      
+      <!-- 烹饪小贴士 -->
+      <div v-if="recipe.tips" class="tips">
+        <h3 class="section-title">小贴士</h3>
+        <div class="tips-content">
+          {{ recipe.tips }}
+        </div>
+      </div>
+      
+      <!-- 相关食谱 -->
+      <div v-if="relatedRecipes && relatedRecipes.length > 0" class="related-recipes">
+        <h3 class="section-title">相关食谱</h3>
+        <div class="related-grid">
+          <div 
+            v-for="relatedRecipe in relatedRecipes" 
+            :key="relatedRecipe.id"
+            class="related-item"
+            @click="$emit('select-recipe', relatedRecipe)"
           >
-            {{ tag }}
-          </el-tag>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 食材清单 -->
-    <div class="ingredients-section">
-      <h2>
-        <el-icon><ShoppingBag /></el-icon>
-        所需食材 ({{ recipe.ingredients.length }}种)
-      </h2>
-      <div class="ingredients-grid">
-        <div
-          v-for="ingredient in recipe.ingredients"
-          :key="ingredient.id"
-          class="ingredient-item"
-        >
-          <div class="ingredient-icon">
-            <el-icon>
-              <component :is="getCategoryIcon(ingredient.category)" />
-            </el-icon>
-          </div>
-          <span class="ingredient-name">{{ ingredient.name }}</span>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 制作步骤 -->
-    <div class="steps-section">
-      <h2>
-        <el-icon><List /></el-icon>
-        制作步骤
-      </h2>
-      <div class="steps-list">
-        <div
-          v-for="(step, index) in recipe.steps"
-          :key="step.id"
-          class="step-item"
-          :class="{ completed: completedSteps.includes(step.id) }"
-        >
-          <div class="step-number">
-            <span v-if="!completedSteps.includes(step.id)">{{ index + 1 }}</span>
-            <el-icon v-else><Check /></el-icon>
-          </div>
-          <div class="step-content">
-            <h3 class="step-title">{{ step.title }}</h3>
-            <p class="step-description">{{ step.description }}</p>
-            <div v-if="step.tips" class="step-tips">
-              <el-icon><InfoFilled /></el-icon>
-              <span>小贴士：{{ step.tips }}</span>
+            <h4 class="related-title">{{ relatedRecipe.name }}</h4>
+            <div class="related-meta">
+              <span class="related-time">{{ relatedRecipe.cookingTime }}</span>
+              <div class="related-rating">
+                <span v-for="i in 5" :key="i" :class="['star', { filled: i <= relatedRecipe.rating }]">★</span>
+              </div>
             </div>
           </div>
-          <div class="step-actions">
-            <el-button
-              v-if="!completedSteps.includes(step.id)"
-              type="success"
-              size="small"
-              @click="markStepCompleted(step.id)"
-            >
-              完成
-            </el-button>
-            <el-button
-              v-else
-              type="info"
-              size="small"
-              @click="markStepUncompleted(step.id)"
-            >
-              取消
-            </el-button>
+        </div>
+      </div>
+      
+      <!-- 分享和保存按钮 -->
+      <div class="recipe-actions bottom-actions">
+        <button class="action-button shopping-button" @click="addIngredientsToShoppingList">
+          <span class="action-icon">🛒</span>
+          添加到购物清单
+        </button>
+      </div>
+      
+      <!-- 分享选项弹窗 -->
+      <div v-if="showShareOptions" class="share-modal">
+        <div class="share-modal-content">
+          <div class="share-modal-header">
+            <h3>分享食谱</h3>
+            <button class="close-button" @click="showShareOptions = false">×</button>
+          </div>
+          
+          <div class="share-options">
+            <button class="share-option" @click="shareViaWeChat">
+              <span class="share-icon wechat">📱</span>
+              <span>微信</span>
+            </button>
+            
+            <button class="share-option" @click="shareViaWeibo">
+              <span class="share-icon weibo">🔴</span>
+              <span>微博</span>
+            </button>
+            
+            <button class="share-option" @click="shareViaQQ">
+              <span class="share-icon qq">💬</span>
+              <span>QQ</span>
+            </button>
+            
+            <button class="share-option" @click="copyToClipboard">
+              <span class="share-icon link">🔗</span>
+              <span>复制链接</span>
+            </button>
+            
+            <button class="share-option" @click="generateQRCode">
+              <span class="share-icon qrcode">📊</span>
+              <span>二维码</span>
+            </button>
+          </div>
+          
+          <div v-if="qrCodeUrl" class="qrcode-container">
+            <img :src="qrCodeUrl" alt="分享二维码" class="qrcode-image" />
+            <button class="download-qrcode" @click="downloadQRCode">下载二维码</button>
           </div>
         </div>
       </div>
     </div>
     
-    <!-- 外部资源链接 -->
-    <div class="external-links-section">
-      <h2>
-        <el-icon><Link /></el-icon>
-        相关资源
-      </h2>
-      <p class="section-description">点击下方链接查看更多制作教程和用户分享</p>
-      <div class="external-links">
-        <a
-          v-for="link in externalLinks"
-          :key="link.name"
-          :href="getSearchUrl(link.url, recipe.name)"
-          target="_blank"
-          class="external-link"
-          :style="{ '--link-color': link.color }"
-        >
-          <div class="link-icon">
-            <el-icon>
-              <component :is="getLinkIcon(link.icon)" />
-            </el-icon>
-          </div>
-          <div class="link-content">
-            <span class="link-name">{{ link.name }}</span>
-            <span class="link-desc">查看{{ recipe.name }}相关内容</span>
-          </div>
-          <el-icon class="link-arrow"><ArrowRight /></el-icon>
-        </a>
-      </div>
-    </div>
-    
-    <!-- 营养信息 -->
-    <div class="nutrition-section">
-      <h2>
-        <el-icon><DataAnalysis /></el-icon>
-        营养信息
-      </h2>
-      <div class="nutrition-content">
-      <div class="nutrition-chart">
-          <div class="chart-container">
-            <div class="pie-chart">
-              <div class="pie-segment protein" :style="{ '--percentage': recipe.nutrition.proteinPercentage || 75 }"></div>
-              <div class="pie-segment carbs" :style="{ '--percentage': recipe.nutrition.carbsPercentage || 60 }"></div>
-              <div class="pie-segment fat" :style="{ '--percentage': recipe.nutrition.fatPercentage || 45 }"></div>
-              <div class="pie-segment fiber" :style="{ '--percentage': recipe.nutrition.fiberPercentage || 85 }"></div>
-              <div class="pie-center">
-                <span>营养分析</span>
-                <small>{{ recipe.nutrition.calories || 0 }}卡路里</small>
-                <div class="nutrition-stars">
-                  <el-icon v-for="i in getNutritionRating" :key="i" class="star-icon"><StarFilled /></el-icon>
-                </div>
-              </div>
-            </div>
-            <div class="chart-legend">
-              <div class="legend-item">
-                <span class="legend-color protein"></span>
-                <span class="legend-label">蛋白质 {{ recipe.nutrition.protein }}g</span>
-              </div>
-              <div class="legend-item">
-                <span class="legend-color carbs"></span>
-                <span class="legend-label">碳水 {{ recipe.nutrition.carbs }}g</span>
-              </div>
-              <div class="legend-item">
-                <span class="legend-color fat"></span>
-                <span class="legend-label">脂肪 {{ recipe.nutrition.fat }}g</span>
-              </div>
-              <div class="legend-item">
-                <span class="legend-color fiber"></span>
-                <span class="legend-label">纤维 {{ recipe.nutrition.fiber }}g</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="nutrition-details">
-          <div class="nutrition-item">
-            <span class="nutrition-label">蛋白质 ({{ recipe.nutrition.protein }}g)</span>
-            <div class="nutrition-bar">
-              <div class="bar-fill protein-fill" :style="{ width: `${recipe.nutrition.proteinPercentage || 75}%` }"></div>
-            </div>
-            <span class="nutrition-value">{{ recipe.nutrition.proteinPercentage || 75 }}%</span>
-          </div>
-          <div class="nutrition-item">
-            <span class="nutrition-label">碳水化合物 ({{ recipe.nutrition.carbs }}g)</span>
-            <div class="nutrition-bar">
-              <div class="bar-fill carbs-fill" :style="{ width: `${recipe.nutrition.carbsPercentage || 60}%` }"></div>
-            </div>
-            <span class="nutrition-value">{{ recipe.nutrition.carbsPercentage || 60 }}%</span>
-          </div>
-          <div class="nutrition-item">
-            <span class="nutrition-label">脂肪 ({{ recipe.nutrition.fat }}g)</span>
-            <div class="nutrition-bar">
-              <div class="bar-fill fat-fill" :style="{ width: `${recipe.nutrition.fatPercentage || 45}%` }"></div>
-            </div>
-            <span class="nutrition-value">{{ recipe.nutrition.fatPercentage || 45 }}%</span>
-          </div>
-          <div class="nutrition-item">
-            <span class="nutrition-label">膳食纤维 ({{ recipe.nutrition.fiber }}g)</span>
-            <div class="nutrition-bar">
-              <div class="bar-fill fiber-fill" :style="{ width: `${recipe.nutrition.fiberPercentage || 85}%` }"></div>
-            </div>
-            <span class="nutrition-value">{{ recipe.nutrition.fiberPercentage || 85 }}%</span>
-          </div>
-          <div class="nutrition-rating-info">
-            <span class="rating-label">营养评分:</span>
-            <div class="rating-stars">
-              <el-icon v-for="i in getNutritionRating" :key="i" class="star-icon"><StarFilled /></el-icon>
-              <el-icon v-for="i in 5 - getNutritionRating" :key="`empty-${i}`" class="star-icon empty"><Star /></el-icon>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 操作按钮 -->
-    <div class="action-buttons">
-      <el-button type="primary" size="large" @click="handleSave">
-        <el-icon><Star /></el-icon>
-        收藏菜谱
-      </el-button>
-      <el-button size="large" @click="handleShare">
-        <el-icon><Share /></el-icon>
-        分享菜谱
-      </el-button>
-      <el-button size="large" @click="handlePrint">
-        <el-icon><Printer /></el-icon>
-        打印菜谱
-      </el-button>
+    <div v-else class="no-recipe">
+      <div class="no-recipe-icon">🍽️</div>
+      <h3>请选择一个食谱查看详情</h3>
+      <p>或者使用食谱生成器创建新的食谱</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { Recipe } from '@/types/recipe'
-import { externalLinks } from '@/data/mockData'
-import { ElMessage } from 'element-plus'
-import {
-  Timer,
-  User,
-  Calendar,
-  ShoppingBag,
-  List,
-  Check,
-  Link,
-  ArrowRight,
-  DataAnalysis,
-  PieChart,
-  Star,
-  Share,
-  Printer,
-  Apple,
-  Chicken,
-  Bowl,
-  Coffee,
-  VideoPlay,
-  VideoCamera,
-  Reading,
-  StarFilled,
-  InfoFilled
-} from '@element-plus/icons-vue'
+import { defineProps, defineEmits, ref } from 'vue'
+import { shoppingListService } from '@/services/shoppingListService'
+import { getSmartRecipeImage } from '@/utils/imageUtils'
 
-interface Props {
-  recipe: Recipe
-}
-
-interface Emits {
-  (e: 'save', recipe: Recipe): void
-  (e: 'close'): void
-}
-
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
-
-const completedSteps = ref<number[]>([])
-
-// 获取分类图标
-const getCategoryIcon = (category: string) => {
-  const iconMap = {
-    vegetables: Apple,
-    meat: Chicken,
-    seafood: Apple, // 替换为Apple图标，因为Fish图标不存在
-    staple: Bowl,
-    seasoning: Coffee
+const props = defineProps({
+  recipe: {
+    type: Object,
+    default: null
+  },
+  relatedRecipes: {
+    type: Array,
+    default: () => []
   }
-  return iconMap[category as keyof typeof iconMap] || Apple
+})
+
+const emit = defineEmits(['select-recipe', 'notification'])
+
+// 收藏状态
+const isFavorite = ref(false)
+const showShareOptions = ref(false)
+
+// 检查食谱是否已收藏
+const checkIfFavorite = () => {
+  if (!props.recipe) return false
+  
+  const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]')
+  return savedRecipes.some((r: any) => r.id === props.recipe.id)
 }
 
-// 获取链接图标
-const getLinkIcon = (iconName: string) => {
-  const iconMap = {
-    VideoPlay: VideoPlay,
-    VideoCamera: VideoCamera,
-    Reading: Reading,
-    StarFilled: StarFilled // 使用 StarFilled 图标
+// 切换收藏状态
+const toggleFavorite = () => {
+  if (!props.recipe) return
+  
+  const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]')
+  const existingIndex = savedRecipes.findIndex((r: any) => r.id === props.recipe.id)
+  
+  if (existingIndex === -1) {
+    // 添加到收藏
+    savedRecipes.push(props.recipe)
+    localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes))
+    isFavorite.value = true
+    emit('notification', {
+      type: 'success',
+      title: '收藏成功',
+      message: '食谱已添加到收藏夹'
+    })
+  } else {
+    // 从收藏中移除
+    savedRecipes.splice(existingIndex, 1)
+    localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes))
+    isFavorite.value = false
+    emit('notification', {
+      type: 'info',
+      title: '已取消收藏',
+      message: '食谱已从收藏夹中移除'
+    })
   }
-  return iconMap[iconName as keyof typeof iconMap] || Link
 }
 
-// 格式化日期
-const formatDate = (date: Date): string => {
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+
+// 监听食谱变化，更新收藏状态
+const updateFavoriteStatus = () => {
+  if (props.recipe) {
+    isFavorite.value = checkIfFavorite()
+  }
+}
+
+// 初始化时检查收藏状态
+updateFavoriteStatus()
+
+// 分享相关变量
+const qrCodeUrl = ref('')
+
+// 分享到微信
+const shareViaWeChat = () => {
+  // 实际应用中可能需要调用微信SDK
+  emit('notification', {
+    type: 'info',
+    title: '微信分享',
+    message: '请在微信中打开此页面进行分享'
   })
 }
 
-// 生成搜索URL
-const getSearchUrl = (baseUrl: string, recipeName: string): string => {
-  return baseUrl + encodeURIComponent(recipeName)
+// 分享到微博
+const shareViaWeibo = () => {
+  const url = encodeURIComponent(window.location.href)
+  const title = encodeURIComponent(props.recipe?.name || '美味食谱')
+  window.open(`http://service.weibo.com/share/share.php?url=${url}&title=${title}`, '_blank')
 }
 
-// 标记步骤完成
-const markStepCompleted = (stepId: number) => {
-  if (!completedSteps.value.includes(stepId)) {
-    completedSteps.value.push(stepId)
-  }
+// 分享到QQ
+const shareViaQQ = () => {
+  const url = encodeURIComponent(window.location.href)
+  const title = encodeURIComponent(props.recipe?.name || '美味食谱')
+  window.open(`http://connect.qq.com/widget/shareqq/index.html?url=${url}&title=${title}`, '_blank')
 }
 
-// 标记步骤未完成
-const markStepUncompleted = (stepId: number) => {
-  const index = completedSteps.value.indexOf(stepId)
-  if (index > -1) {
-    completedSteps.value.splice(index, 1)
-  }
-}
-
-// 处理保存
-const handleSave = () => {
-  emit('save', props.recipe)
-}
-
-// 处理分享
-const handleShare = () => {
-  if (navigator.share) {
-    navigator.share({
-      title: props.recipe.name,
-      text: props.recipe.description,
-      url: window.location.href
-    })
+// 复制链接到剪贴板
+const copyToClipboard = () => {
+  const url = window.location.href
+  
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        emit('notification', {
+          type: 'success',
+          title: '复制成功',
+          message: '链接已复制到剪贴板'
+        })
+        showShareOptions.value = false
+      })
+      .catch(err => {
+        console.error('复制失败:', err)
+        fallbackCopyToClipboard(url)
+      })
   } else {
-    // 复制到剪贴板
-    navigator.clipboard.writeText(window.location.href)
-    ElMessage.success('链接已复制到剪贴板')
+    fallbackCopyToClipboard(url)
   }
 }
 
-// 处理打印
-const handlePrint = () => {
-  window.print()
+// 复制链接的回退方法
+const fallbackCopyToClipboard = (text: string) => {
+  const textArea = document.createElement('textarea')
+  textArea.value = text
+  textArea.style.position = 'fixed'
+  document.body.appendChild(textArea)
+  textArea.focus()
+  textArea.select()
+  
+  try {
+    document.execCommand('copy')
+    emit('notification', {
+      type: 'success',
+      title: '复制成功',
+      message: '链接已复制到剪贴板'
+    })
+    showShareOptions.value = false
+  } catch (err) {
+    console.error('复制失败:', err)
+    emit('notification', {
+      type: 'error',
+      title: '复制失败',
+      message: '无法复制链接，请手动复制'
+    })
+  }
+  
+  document.body.removeChild(textArea)
 }
 
-// 获取营养评分
-const getNutritionRating = computed(() => {
-  if (props.recipe.nutrition && typeof props.recipe.nutrition === 'object' && 'nutritionRating' in props.recipe.nutrition) {
-    return props.recipe.nutrition.nutritionRating
+// 生成二维码
+const generateQRCode = () => {
+  const url = window.location.href
+  // 使用在线二维码生成服务
+  qrCodeUrl.value = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`
+}
+
+// 下载二维码
+const downloadQRCode = () => {
+  if (!qrCodeUrl.value) return
+  
+  const link = document.createElement('a')
+  link.href = qrCodeUrl.value
+  link.download = `${props.recipe?.name || '食谱'}-二维码.png`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+// 打印食谱
+const printRecipe = () => {
+  if (!props.recipe) return;
+  window.print();
+}
+
+// 添加食材到购物清单
+const addIngredientsToShoppingList = async () => {
+  if (!props.recipe || !props.recipe.ingredients || props.recipe.ingredients.length === 0) return;
+  
+  try {
+    await shoppingListService.addIngredientsFromRecipe(
+      props.recipe.id,
+      props.recipe.name,
+      props.recipe.ingredients
+    );
+    
+    emit('notification', {
+      type: 'success',
+      title: '添加成功',
+      message: '食材已添加到购物清单'
+    });
+  } catch (error) {
+    console.error('添加食材到购物清单失败:', error);
+    emit('notification', {
+      type: 'error',
+      title: '添加失败',
+      message: '无法添加食材到购物清单，请稍后再试'
+    });
   }
-  return 3 // 默认值
-})
+}
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 .recipe-detail {
-  max-width: 800px;
-  margin: 0 auto;
-  
-  .recipe-header {
-    margin-bottom: 2rem;
-    
-    .recipe-name {
-      font-size: 2rem;
-      color: #2c3e50;
-      margin-bottom: 0.5rem;
-    }
-    
-    .recipe-description {
-      color: #666;
-      font-size: 1.1rem;
-      line-height: 1.6;
-      margin-bottom: 1.5rem;
-    }
-    
-    .recipe-ratings {
-      display: flex;
-      gap: 2rem;
-      margin-bottom: 1.5rem;
-      
-      .rating-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        
-        .rating-label {
-          font-size: 0.9rem;
-          color: #666;
-          font-weight: 500;
-        }
-      }
-    }
-    
-    .recipe-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-      margin-bottom: 1rem;
-      
-      .meta-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #666;
-        
-        .el-icon {
-          color: #ff6b6b;
-        }
-      }
-    }
-    
-    .recipe-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-  }
-  
-  .ingredients-section,
-  .steps-section,
-  .external-links-section,
-  .nutrition-section {
-    margin-bottom: 2rem;
-    
-    h2 {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: #2c3e50;
-      font-size: 1.3rem;
-      margin-bottom: 1rem;
-      
-      .el-icon {
-        color: #ff6b6b;
-      }
-    }
-    
-    .section-description {
-      color: #666;
-      margin-bottom: 1rem;
-    }
-  }
-  
-  .ingredients-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
-    
-    .ingredient-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.8rem;
-      background: #f8f9fa;
-      border-radius: 8px;
-      border: 1px solid #e9ecef;
-      
-      .ingredient-icon {
-        color: #ff6b6b;
-      }
-      
-      .ingredient-name {
-        font-weight: 500;
-      }
-    }
-  }
-  
-  .steps-list {
-    .step-item {
-      display: flex;
-      gap: 1rem;
-      padding: 1.5rem;
-      background: white;
-      border: 2px solid #e9ecef;
-      border-radius: 12px;
-      margin-bottom: 1rem;
-      transition: all 0.3s ease;
-      
-      &:hover {
-        border-color: #ff6b6b;
-        box-shadow: 0 5px 15px rgba(255, 107, 107, 0.1);
-      }
-      
-      &.completed {
-        background: #f0f9ff;
-        border-color: #4ecdc4;
-        
-        .step-number {
-          background: #4ecdc4;
-          color: white;
-        }
-      }
-      
-      .step-number {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: #ff6b6b;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        flex-shrink: 0;
-      }
-      
-      .step-content {
-        flex: 1;
-        
-        .step-title {
-          font-size: 1.1rem;
-          color: #2c3e50;
-          margin-bottom: 0.5rem;
-        }
-        
-        .step-description {
-          color: #666;
-          line-height: 1.6;
-          margin-bottom: 0.5rem;
-        }
-        
-        .step-tips {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          color: #f39c12;
-          font-size: 0.9rem;
-          
-          .el-icon {
-            color: #f39c12;
-          }
-        }
-      }
-      
-      .step-actions {
-        display: flex;
-        align-items: flex-start;
-      }
-    }
-  }
-  
-  .external-links {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-    
-    .external-link {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1rem;
-      background: white;
-      border: 2px solid #e9ecef;
-      border-radius: 12px;
-      text-decoration: none;
-      color: inherit;
-      transition: all 0.3s ease;
-      
-      &:hover {
-        border-color: var(--link-color);
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        
-        .link-icon {
-          color: var(--link-color);
-        }
-      }
-      
-      .link-icon {
-        font-size: 1.5rem;
-        color: #666;
-        transition: color 0.3s ease;
-      }
-      
-      .link-content {
-        flex: 1;
-        
-        .link-name {
-          display: block;
-          font-weight: 600;
-          color: #2c3e50;
-          margin-bottom: 0.2rem;
-        }
-        
-        .link-desc {
-          display: block;
-          font-size: 0.9rem;
-          color: #666;
-        }
-      }
-      
-      .link-arrow {
-        color: #ccc;
-        transition: color 0.3s ease;
-      }
-      
-      &:hover .link-arrow {
-        color: var(--link-color);
-      }
-    }
-  }
-  
-  .nutrition-section {
-    .nutrition-content {
-      display: grid;
-      grid-template-columns: 1fr 2fr;
-      gap: 2rem;
-      
-      .nutrition-chart {
-        .chart-placeholder {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          height: 200px;
-          background: #f8f9fa;
-          border-radius: 12px;
-          color: #666;
-          
-          .el-icon {
-            margin-bottom: 1rem;
-          }
-          
-          p {
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-          }
-          
-          small {
-            color: #999;
-          }
-        }
-      }
-      
-      .nutrition-details {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        
-        .nutrition-item {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          
-          .nutrition-label {
-            width: 80px;
-            font-size: 0.9rem;
-            color: #666;
-          }
-          
-          .nutrition-bar {
-            flex: 1;
-            height: 8px;
-            background: #e9ecef;
-            border-radius: 4px;
-            overflow: hidden;
-            
-            .bar-fill {
-              height: 100%;
-              background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
-              transition: width 0.3s ease;
-            }
-          }
-          
-          .nutrition-value {
-            width: 40px;
-            text-align: right;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: #2c3e50;
-          }
-        }
-      }
-    }
-  }
-  
-  .action-buttons {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    padding: 2rem 0;
-    border-top: 1px solid #e9ecef;
-    margin-top: 2rem;
-  }
-}
-
-/* 营养图表样式 */
-.chart-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.pie-chart {
+  background-color: var(--bg-color);
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   position: relative;
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  background: #f8f9fa;
-  overflow: hidden;
 }
 
-.pie-segment {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  transform-origin: 50% 50%;
-}
-
-.pie-segment.protein {
-  background: #ff6b6b;
-  clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 50% 100%);
-  transform: rotate(0deg);
-  clip-path: polygon(
-    50% 50%,
-    50% 0,
-    calc(50% + 50% * cos(calc(var(--percentage) * 3.6deg))) calc(50% - 50% * sin(calc(var(--percentage) * 3.6deg))),
-    50% 50%
-  );
-}
-
-.pie-segment.carbs {
-  background: #4ecdc4;
-  clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 50% 100%);
-  transform: rotate(90deg);
-  clip-path: polygon(
-    50% 50%,
-    50% 0,
-    calc(50% + 50% * cos(calc(var(--percentage) * 3.6deg))) calc(50% - 50% * sin(calc(var(--percentage) * 3.6deg))),
-    50% 50%
-  );
-}
-
-.pie-segment.fat {
-  background: #ffbe76;
-  clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 50% 100%);
-  transform: rotate(180deg);
-  clip-path: polygon(
-    50% 50%,
-    50% 0,
-    calc(50% + 50% * cos(calc(var(--percentage) * 3.6deg))) calc(50% - 50% * sin(calc(var(--percentage) * 3.6deg))),
-    50% 50%
-  );
-}
-
-.pie-segment.fiber {
-  background: #a29bfe;
-  clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 50% 100%);
-  transform: rotate(270deg);
-  clip-path: polygon(
-    50% 50%,
-    50% 0,
-    calc(50% + 50% * cos(calc(var(--percentage) * 3.6deg))) calc(50% - 50% * sin(calc(var(--percentage) * 3.6deg))),
-    50% 50%
-  );
-}
-
-.pie-center {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80px;
-  height: 80px;
-  background: white;
-  border-radius: 50%;
+.recipe-header {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #2c3e50;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  
-  small {
-    font-size: 0.7rem;
-    color: #666;
-    margin-top: 2px;
-  }
-  
-  .nutrition-stars {
-    display: flex;
-    margin-top: 4px;
-    
-    .star-icon {
-      color: #f39c12;
-      font-size: 0.7rem;
-      margin: 0 1px;
-    }
-  }
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
-.chart-legend {
+.recipe-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--heading-color);
+  margin: 0;
+}
+
+.recipe-rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.star {
+  color: var(--border-color);
+  font-size: 20px;
+}
+
+.star.filled {
+  color: var(--warning-color);
+}
+
+.rating-text {
+  font-size: 14px;
+  color: var(--text-color-secondary);
+  margin-left: 5px;
+}
+
+.recipe-media-section {
+  margin-bottom: 30px;
+}
+
+.recipe-image {
+  height: 300px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  position: relative;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.recipe-tags {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.8rem;
+  gap: 8px;
+}
+
+.recipe-tag {
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.recipe-description {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-color);
+  margin-bottom: 20px;
+  padding: 0 5px;
+}
+
+.recipe-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+  background-color: var(--bg-color-secondary);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.info-icon {
+  font-size: 24px;
+  color: var(--primary-color);
+}
+
+.info-label {
+  font-size: 14px;
+  color: var(--text-color-secondary);
+  margin-bottom: 5px;
+}
+
+.info-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--heading-color);
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--heading-color);
+  margin: 0 0 20px 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.nutrition-info {
+  margin-bottom: 30px;
+}
+
+.nutrition-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 15px;
+}
+
+.nutrition-item {
+  background-color: var(--bg-color-secondary);
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+}
+
+.nutrition-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 5px;
+}
+
+.nutrition-label {
+  font-size: 14px;
+  color: var(--text-color-secondary);
+}
+
+.ingredients, .steps, .tips {
+  margin-bottom: 30px;
+}
+
+.ingredients-list {
+  list-style-type: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.ingredient-item {
+  background-color: var(--bg-color-secondary);
+  border-radius: 8px;
+  padding: 12px 15px;
+  font-size: 15px;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+}
+
+.ingredient-item::before {
+  content: '•';
+  margin-right: 10px;
+  color: var(--primary-color);
+  font-size: 18px;
+}
+
+.steps-list {
+  list-style-type: none;
+  padding: 0;
+  counter-reset: step-counter;
+}
+
+.step-item {
+  display: flex;
+  margin-bottom: 20px;
+  gap: 15px;
+}
+
+.step-number {
+  background-color: var(--primary-color);
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.step-content {
+  background-color: var(--bg-color-secondary);
+  border-radius: 8px;
+  padding: 15px;
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-color);
+}
+
+.tips-content {
+  background-color: var(--bg-color-secondary);
+  border-radius: 8px;
+  padding: 20px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-color);
+  border-left: 4px solid var(--warning-color);
+}
+
+.related-recipes {
+  margin-bottom: 30px;
+}
+
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.related-item {
+  background-color: var(--bg-color-secondary);
+  border-radius: 8px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.related-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.related-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--heading-color);
+  margin: 0 0 10px 0;
+}
+
+.related-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.related-time {
+  font-size: 14px;
+  color: var(--text-color-secondary);
+}
+
+.related-rating .star {
+  font-size: 14px;
+}
+
+.recipe-actions {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.bottom-actions {
+  margin-top: 30px;
   justify-content: center;
 }
 
-.legend-item {
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.action-button {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 15px;
 }
 
-.legend-color {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
+.action-button.favorite {
+  background-color: var(--bg-color-secondary);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
 }
 
-.legend-color.protein {
-  background: #ff6b6b;
+.action-button.favorite.active {
+  background-color: var(--warning-color);
+  color: white;
+  border: none;
 }
 
-.legend-color.carbs {
-  background: #4ecdc4;
+.action-button.favorite:hover {
+  background-color: var(--warning-color-light);
 }
 
-.legend-color.fat {
-  background: #ffbe76;
+.action-button.share {
+  background-color: var(--success-color);
+  color: white;
+  border: none;
 }
 
-.legend-color.fiber {
-  background: #a29bfe;
+.action-button.share:hover {
+  background-color: var(--success-color-dark);
 }
 
-.legend-label {
-  font-size: 0.8rem;
-  color: #666;
+.action-button.print {
+  background-color: var(--bg-color-secondary);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
 }
 
-// 暗色主题
-:global(.dark) .recipe-detail {
-  .recipe-header {
-    .recipe-name {
-      color: #f9fafb;
-    }
-    
-    .recipe-description {
-      color: #d1d5db;
-    }
-    
-    .rating-label {
-      color: #d1d5db;
-    }
-    
-    .meta-item {
-      color: #d1d5db;
-    }
+.action-button.print:hover {
+  background-color: var(--hover-color);
+}
+
+.shopping-button {
+  background-color: var(--info-color, #3498db);
+  color: white;
+  border: none;
+  font-size: 16px;
+  padding: 15px 30px;
+}
+
+.shopping-button:hover {
+  background-color: var(--info-color-dark, #2980b9);
+}
+
+/* 分享弹窗样式 */
+.share-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.share-modal-content {
+  background-color: var(--bg-color);
+  border-radius: 12px;
+  padding: 25px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.share-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.share-modal-header h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--heading-color);
+  margin: 0;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--text-color-secondary);
+  cursor: pointer;
+}
+
+.share-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.share-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 15px 10px;
+  border-radius: 8px;
+  background-color: var(--bg-color-secondary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.share-option:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.share-icon {
+  font-size: 24px;
+}
+
+.share-icon.wechat {
+  color: #07C160;
+}
+
+.share-icon.weibo {
+  color: #E6162D;
+}
+
+.share-icon.qq {
+  color: #12B7F5;
+}
+
+.share-icon.link {
+  color: var(--primary-color);
+}
+
+.share-icon.qrcode {
+  color: var(--text-color);
+}
+
+.qrcode-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.qrcode-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.download-qrcode {
+  padding: 10px 20px;
+  border-radius: 8px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.download-qrcode:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.action-icon {
+  font-size: 18px;
+}
+
+.no-recipe {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+}
+
+.no-recipe-icon {
+  font-size: 60px;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.no-recipe h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--heading-color);
+  margin: 0 0 10px 0;
+}
+
+.no-recipe p {
+  font-size: 16px;
+  color: var(--text-color-secondary);
+  margin: 0;
+}
+
+@media print {
+  .recipe-actions, .related-recipes {
+    display: none;
   }
   
-  .ingredients-section,
-  .steps-section,
-  .external-links-section,
-  .nutrition-section {
-    h2 {
-      color: #f9fafb;
-    }
-    
-    .section-description {
-      color: #d1d5db;
-    }
-  }
-  
-  .ingredient-item {
-    background: #374151;
-    border-color: #4b5563;
-    color: #f9fafb;
-  }
-  
-  .step-item {
-    background: #374151;
-    border-color: #4b5563;
-    
-    .step-title {
-      color: #f9fafb;
-    }
-    
-    .step-description {
-      color: #d1d5db;
-    }
-  }
-  
-  .external-link {
-    background: #374151;
-    border-color: #4b5563;
-    
-    .link-name {
-      color: #f9fafb;
-    }
-    
-    .link-desc {
-      color: #d1d5db;
-    }
-  }
-  
-  .nutrition-chart .chart-placeholder {
-    background: #374151;
-    color: #d1d5db;
-  }
-  
-  .nutrition-item {
-    .nutrition-label {
-      color: #d1d5db;
-    }
-    
-    .nutrition-bar {
-      background: #4b5563;
-    }
-    
-    .nutrition-value {
-      color: #f9fafb;
-    }
-  }
-  
-  .action-buttons {
-    border-top-color: #4b5563;
+  .recipe-detail {
+    box-shadow: none;
+    padding: 0;
   }
 }
 
-// 响应式设计
 @media (max-width: 768px) {
   .recipe-detail {
-    .recipe-header {
-      .recipe-name {
-        font-size: 1.5rem;
-      }
-      
-      .recipe-ratings {
-        gap: 1rem;
-      }
-      
-      .recipe-meta {
-        gap: 1rem;
-      }
-    }
-    
-    .ingredients-grid {
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    }
-    
-    .step-item {
-      flex-direction: column;
-      gap: 1rem;
-      
-      .step-number {
-        align-self: flex-start;
-      }
-    }
-    
-    .external-links {
-      grid-template-columns: 1fr;
-    }
-    
-    .nutrition-content {
-      grid-template-columns: 1fr;
-    }
-    
-    .action-buttons {
-      flex-direction: column;
-    }
+    padding: 20px;
   }
-}
-
-@media (max-width: 480px) {
-  .recipe-detail {
-    .recipe-header {
-      .recipe-name {
-        font-size: 1.3rem;
-      }
-      
-      .recipe-ratings {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-      
-      .recipe-meta {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-    }
-    
-    .ingredients-grid {
-      grid-template-columns: 1fr;
-    }
-    
-    .step-item {
-      padding: 1rem;
-    }
+  
+  .recipe-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
-}
-
-// 打印样式
-@media print {
-  .recipe-detail {
-    .action-buttons {
-      display: none;
-    }
-    
-    .external-links-section {
-      display: none;
-    }
-    
-    .step-actions {
-      display: none;
-    }
+  
+  .recipe-title {
+    font-size: 24px;
+  }
+  
+  .recipe-info {
+    grid-template-columns: 1fr;
+  }
+  
+  .ingredients-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .recipe-actions {
+    flex-direction: column;
+  }
+  
+  .action-button {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>

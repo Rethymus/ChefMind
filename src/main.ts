@@ -8,6 +8,7 @@ import 'element-plus/theme-chalk/dark/css-vars.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import 'animate.css'
 import './styles/global.scss'
+import './styles/print.scss'
 
 const app = createApp(App)
 

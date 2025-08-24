@@ -145,8 +145,131 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import type { Ingredient, IngredientCategory } from '@/types/recipe'
-import { ingredientCategories } from '@/data/mockData'
 import { Microphone, Mute, Check, CircleCheck, Close } from '@element-plus/icons-vue'
+
+// 本地食材数据定义
+const ingredientCategories: IngredientCategory[] = [
+  {
+    id: 'vegetables',
+    name: '蔬菜',
+    icon: '🥬',
+    items: [
+      { id: 'cabbage', name: '白菜', icon: '🥬', category: 'vegetables' },
+      { id: 'carrot', name: '胡萝卜', icon: '🥕', category: 'vegetables' },
+      { id: 'tomato', name: '西红柿', icon: '🍅', category: 'vegetables' },
+      { id: 'onion', name: '洋葱', icon: '🧅', category: 'vegetables' },
+      { id: 'potato', name: '土豆', icon: '🥔', category: 'vegetables' },
+      { id: 'broccoli', name: '西兰花', icon: '🥦', category: 'vegetables' },
+      { id: 'spinach', name: '菠菜', icon: '🥬', category: 'vegetables' },
+      { id: 'lettuce', name: '生菜', icon: '🥬', category: 'vegetables' },
+      { id: 'cucumber', name: '黄瓜', icon: '🥒', category: 'vegetables' },
+      { id: 'pepper', name: '青椒', icon: '🫑', category: 'vegetables' },
+      { id: 'eggplant', name: '茄子', icon: '🍆', category: 'vegetables' },
+      { id: 'corn', name: '玉米', icon: '🌽', category: 'vegetables' },
+      { id: 'mushroom', name: '蘑菇', icon: '🍄', category: 'vegetables' },
+      { id: 'garlic', name: '大蒜', icon: '🧄', category: 'vegetables' },
+      { id: 'ginger', name: '生姜', icon: '🫚', category: 'vegetables' },
+      { id: 'celery', name: '芹菜', icon: '🥬', category: 'vegetables' },
+      { id: 'radish', name: '萝卜', icon: '🥕', category: 'vegetables' },
+      { id: 'bean-sprouts', name: '豆芽', icon: '🌱', category: 'vegetables' }
+    ]
+  },
+  {
+    id: 'meat',
+    name: '肉类',
+    icon: '🥩',
+    items: [
+      { id: 'pork', name: '猪肉', icon: '🥩', category: 'meat' },
+      { id: 'beef', name: '牛肉', icon: '🥩', category: 'meat' },
+      { id: 'chicken', name: '鸡肉', icon: '🍗', category: 'meat' },
+      { id: 'duck', name: '鸭肉', icon: '🦆', category: 'meat' },
+      { id: 'lamb', name: '羊肉', icon: '🥩', category: 'meat' },
+      { id: 'fish', name: '鱼肉', icon: '🐟', category: 'meat' },
+      { id: 'shrimp', name: '虾', icon: '🦐', category: 'meat' },
+      { id: 'crab', name: '螃蟹', icon: '🦀', category: 'meat' },
+      { id: 'bacon', name: '培根', icon: '🥓', category: 'meat' },
+      { id: 'sausage', name: '香肠', icon: '🌭', category: 'meat' },
+      { id: 'ham', name: '火腿', icon: '🍖', category: 'meat' },
+      { id: 'salmon', name: '三文鱼', icon: '🐟', category: 'meat' },
+      { id: 'tuna', name: '金枪鱼', icon: '🐟', category: 'meat' },
+      { id: 'squid', name: '鱿鱼', icon: '🦑', category: 'meat' },
+      { id: 'scallop', name: '扇贝', icon: '🦪', category: 'meat' }
+    ]
+  },
+  {
+    id: 'grains',
+    name: '谷物',
+    icon: '🌾',
+    items: [
+      { id: 'rice', name: '大米', icon: '🍚', category: 'grains' },
+      { id: 'wheat', name: '小麦', icon: '🌾', category: 'grains' },
+      { id: 'noodles', name: '面条', icon: '🍜', category: 'grains' },
+      { id: 'bread', name: '面包', icon: '🍞', category: 'grains' },
+      { id: 'oats', name: '燕麦', icon: '🌾', category: 'grains' },
+      { id: 'quinoa', name: '藜麦', icon: '🌾', category: 'grains' },
+      { id: 'barley', name: '大麦', icon: '🌾', category: 'grains' },
+      { id: 'corn-flour', name: '玉米粉', icon: '🌽', category: 'grains' },
+      { id: 'pasta', name: '意大利面', icon: '🍝', category: 'grains' },
+      { id: 'dumpling-wrapper', name: '饺子皮', icon: '🥟', category: 'grains' }
+    ]
+  },
+  {
+    id: 'dairy',
+    name: '乳制品',
+    icon: '🥛',
+    items: [
+      { id: 'milk', name: '牛奶', icon: '🥛', category: 'dairy' },
+      { id: 'cheese', name: '奶酪', icon: '🧀', category: 'dairy' },
+      { id: 'yogurt', name: '酸奶', icon: '🥛', category: 'dairy' },
+      { id: 'butter', name: '黄油', icon: '🧈', category: 'dairy' },
+      { id: 'cream', name: '奶油', icon: '🥛', category: 'dairy' },
+      { id: 'ice-cream', name: '冰淇淋', icon: '🍦', category: 'dairy' },
+      { id: 'mozzarella', name: '马苏里拉', icon: '🧀', category: 'dairy' },
+      { id: 'cheddar', name: '切达奶酪', icon: '🧀', category: 'dairy' }
+    ]
+  },
+  {
+    id: 'fruits',
+    name: '水果',
+    icon: '🍎',
+    items: [
+      { id: 'apple', name: '苹果', icon: '🍎', category: 'fruits' },
+      { id: 'banana', name: '香蕉', icon: '🍌', category: 'fruits' },
+      { id: 'orange', name: '橙子', icon: '🍊', category: 'fruits' },
+      { id: 'grape', name: '葡萄', icon: '🍇', category: 'fruits' },
+      { id: 'strawberry', name: '草莓', icon: '🍓', category: 'fruits' },
+      { id: 'watermelon', name: '西瓜', icon: '🍉', category: 'fruits' },
+      { id: 'pineapple', name: '菠萝', icon: '🍍', category: 'fruits' },
+      { id: 'mango', name: '芒果', icon: '🥭', category: 'fruits' },
+      { id: 'peach', name: '桃子', icon: '🍑', category: 'fruits' },
+      { id: 'pear', name: '梨', icon: '🍐', category: 'fruits' },
+      { id: 'cherry', name: '樱桃', icon: '🍒', category: 'fruits' },
+      { id: 'kiwi', name: '猕猴桃', icon: '🥝', category: 'fruits' },
+      { id: 'lemon', name: '柠檬', icon: '🍋', category: 'fruits' },
+      { id: 'lime', name: '青柠', icon: '🍋', category: 'fruits' },
+      { id: 'avocado', name: '牛油果', icon: '🥑', category: 'fruits' }
+    ]
+  },
+  {
+    id: 'seasonings',
+    name: '调料',
+    icon: '🧂',
+    items: [
+      { id: 'salt', name: '盐', icon: '🧂', category: 'seasonings' },
+      { id: 'sugar', name: '糖', icon: '🍯', category: 'seasonings' },
+      { id: 'soy-sauce', name: '生抽', icon: '🥢', category: 'seasonings' },
+      { id: 'dark-soy-sauce', name: '老抽', icon: '🥢', category: 'seasonings' },
+      { id: 'vinegar', name: '醋', icon: '🍶', category: 'seasonings' },
+      { id: 'cooking-wine', name: '料酒', icon: '🍶', category: 'seasonings' },
+      { id: 'sesame-oil', name: '香油', icon: '🫗', category: 'seasonings' },
+      { id: 'chili-oil', name: '辣椒油', icon: '🌶️', category: 'seasonings' },
+      { id: 'pepper', name: '胡椒粉', icon: '🧂', category: 'seasonings' },
+      { id: 'star-anise', name: '八角', icon: '⭐', category: 'seasonings' },
+      { id: 'cinnamon', name: '桂皮', icon: '🌿', category: 'seasonings' },
+      { id: 'bay-leaves', name: '香叶', icon: '🍃', category: 'seasonings' }
+    ]
+  }
+]
 
 // Props
 interface Props {

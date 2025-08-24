@@ -307,7 +307,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRecipeStore } from '@/stores/recipe'
-import { ElCard, ElProgress, ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElSelect, ElOption, ElIcon } from 'element-plus'
+import { ElIcon } from 'element-plus'
 import { DataAnalysis, PieChart, Sunny, TrendCharts, Food, Drizzling, User, Setting, Warning, Aim } from '@element-plus/icons-vue'
 
 interface NutrientInfo {

@@ -1,228 +1,143 @@
 <template>
-  <div class="error-boundary">
-    <div v-if="hasError" class="error-container">
+  <div>
+    <div v-if="error" class="error-boundary">
       <div class="error-content">
-        <el-icon class="error-icon" size="64" color="#f56c6c">
-          <Warning />
-        </el-icon>
-        <h2 class="error-title">页面出现错误</h2>
-        <p class="error-message">{{ errorMessage }}</p>
+        <div class="error-icon">⚠️</div>
+        <h2 class="error-title">哎呀，出错了</h2>
+        <p class="error-message">{{ error.message }}</p>
         <div class="error-actions">
-          <el-button type="primary" @click="retry">
-            <el-icon><Refresh /></el-icon>
-            重试
-          </el-button>
-          <el-button @click="reportError">
-            <el-icon><Document /></el-icon>
-            报告错误
-          </el-button>
+          <button class="error-button" @click="resetError">重试</button>
+          <button class="error-button" @click="goHome">返回首页</button>
         </div>
-        <details v-if="errorDetails && showDetails" class="error-details">
-          <summary>错误详情</summary>
-          <pre>{{ errorDetails }}</pre>
+        <details class="error-details">
+          <summary>查看详细错误信息</summary>
+          <pre>{{ error.stack }}</pre>
         </details>
-        <el-button 
-          text 
-          @click="showDetails = !showDetails"
-          class="toggle-details"
-        >
-          {{ showDetails ? '隐藏' : '显示' }}详情
-        </el-button>
       </div>
     </div>
-    <div v-else>
-      <slot />
-    </div>
+    <slot v-else></slot>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onErrorCaptured, nextTick } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Warning, Refresh, Document } from '@element-plus/icons-vue'
+import { ref, onErrorCaptured } from 'vue'
+import { useRouter } from 'vue-router'
 
-interface Props {
-  fallback?: string
-  onError?: (error: Error, instance: any) => void
-}
+const router = useRouter()
+const error = ref<Error | null>(null)
 
-const props = withDefaults(defineProps<Props>(), {
-  fallback: '组件加载失败，请重试'
+// 捕获子组件中的错误
+onErrorCaptured((err) => {
+  error.value = err as Error
+  console.error('组件错误被捕获:', err)
+  return false // 阻止错误继续传播
 })
 
-const hasError = ref(false)
-const errorMessage = ref('')
-const errorDetails = ref('')
-const showDetails = ref(false)
-
-// 捕获子组件错误
-onErrorCaptured((error: Error, instance: any, info: string) => {
-  hasError.value = true
-  errorMessage.value = error.message || props.fallback
-  errorDetails.value = `错误信息: ${error.message}\n错误位置: ${info}\n堆栈信息: ${error.stack}`
-  
-  // 调用外部错误处理
-  props.onError?.(error, instance)
-  
-  // 记录错误到控制台
-  console.error('组件错误:', error, instance, info)
-  
-  // 阻止错误继续向上传播
-  return false
-})
-
-// 重试功能
-const retry = async () => {
-  hasError.value = false
-  errorMessage.value = ''
-  errorDetails.value = ''
-  showDetails.value = false
-  
-  // 等待下一个tick，让组件重新渲染
-  await nextTick()
-  
-  ElMessage.success('正在重试...')
+// 重置错误状态
+const resetError = () => {
+  error.value = null
 }
 
-// 报告错误功能
-const reportError = () => {
-  const errorInfo = {
-    message: errorMessage.value,
-    details: errorDetails.value,
-    timestamp: new Date().toISOString(),
-    userAgent: navigator.userAgent,
-    url: window.location.href
-  }
-  
-  // 这里可以发送错误报告到服务器
-  console.log('错误报告:', errorInfo)
-  
-  // 复制错误信息到剪贴板
-  navigator.clipboard?.writeText(JSON.stringify(errorInfo, null, 2))
-    .then(() => {
-      ElMessage.success('错误信息已复制到剪贴板')
-    })
-    .catch(() => {
-      ElMessage.info('请手动复制错误信息')
-    })
+// 返回首页
+const goHome = () => {
+  resetError()
+  router.push('/')
 }
 </script>
 
 <style lang="scss" scoped>
 .error-boundary {
-  width: 100%;
-  height: 100%;
-}
-
-.error-container {
   display: flex;
-  align-items: center;
   justify-content: center;
-  min-height: 400px;
-  padding: 2rem;
-  background: #fafafa;
-  border-radius: 12px;
-  border: 1px solid #f0f0f0;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  background-color: #f8f9fa;
 }
 
 .error-content {
-  text-align: center;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 30px;
   max-width: 500px;
+  width: 100%;
+  text-align: center;
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.error-title {
+  font-size: 24px;
+  color: #f56c6c;
+  margin-bottom: 15px;
+}
+
+.error-message {
+  color: #606266;
+  margin-bottom: 20px;
+}
+
+.error-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.error-button {
+  background: #409eff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background 0.3s;
   
-  .error-icon {
-    margin-bottom: 1rem;
-    animation: pulse 2s infinite;
-  }
-  
-  .error-title {
-    color: #2c3e50;
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-  }
-  
-  .error-message {
-    color: #666;
-    font-size: 1rem;
-    margin-bottom: 2rem;
-    line-height: 1.6;
-  }
-  
-  .error-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-bottom: 1rem;
-  }
-  
-  .error-details {
-    margin-top: 1rem;
-    text-align: left;
-    
-    summary {
-      cursor: pointer;
-      font-weight: 500;
-      color: #666;
-      margin-bottom: 0.5rem;
-    }
-    
-    pre {
-      background: #f5f5f5;
-      padding: 1rem;
-      border-radius: 8px;
-      font-size: 0.8rem;
-      overflow-x: auto;
-      color: #333;
-      border: 1px solid #e0e0e0;
-    }
-  }
-  
-  .toggle-details {
-    margin-top: 1rem;
+  &:hover {
+    background: #66b1ff;
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
+.error-details {
+  text-align: left;
+  margin-top: 20px;
+  
+  summary {
+    cursor: pointer;
+    color: #909399;
+    font-size: 14px;
+    margin-bottom: 10px;
   }
-  50% {
-    opacity: 0.5;
+  
+  pre {
+    background: #f5f7fa;
+    padding: 15px;
+    border-radius: 4px;
+    overflow: auto;
+    font-size: 12px;
+    color: #606266;
+    max-height: 200px;
   }
 }
 
-// 暗色主题
-:global(.dark) .error-container {
-  background: #2c3e50;
-  border-color: #34495e;
+[data-theme="dark"] .error-boundary {
+  background-color: #1a1a1a;
   
-  .error-title {
-    color: #ecf0f1;
+  .error-content {
+    background: #2c2c2c;
   }
   
   .error-message {
-    color: #bdc3c7;
+    color: #c0c4cc;
   }
   
   .error-details pre {
-    background: #34495e;
-    color: #ecf0f1;
-    border-color: #4a5568;
-  }
-}
-
-// 响应式设计
-@media (max-width: 768px) {
-  .error-container {
-    padding: 1rem;
-    min-height: 300px;
-  }
-  
-  .error-content {
-    .error-actions {
-      flex-direction: column;
-      align-items: center;
-    }
+    background: #363636;
+    color: #c0c4cc;
   }
 }
 </style>

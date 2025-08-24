@@ -7,65 +7,65 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
-    component: () => import('@/views/SimpleHomeView.vue'),
+    component: () => import('@/views/HomeView.vue'),
     meta: {
       title: 'ChefMind 智食谱 - 首页'
     }
   },
   {
-    path: '/full',
-    name: 'FullHome',
-    component: () => import('@/views/MainHomeView.vue'),
+    path: '/search',
+    name: 'Search',
+    component: () => import('@/views/SearchView.vue'),
     meta: {
-      title: 'ChefMind 智食谱 - 完整版首页'
+      title: 'ChefMind 智食谱 - 搜索食谱'
     }
   },
   {
-    path: '/ai-recipe-test',
-    name: 'AIRecipeTest',
-    component: () => import('@/views/AIRecipeTest.vue'),
+    path: '/ai',
+    name: 'AI',
+    component: () => import('@/views/AIView.vue'),
     meta: {
-      title: 'ChefMind 智食谱 - AI菜谱生成测试'
+      title: 'ChefMind 智食谱 - AI 智能助手'
     }
   },
   {
-    path: '/simple-test',
-    name: 'SimpleTest',
-    component: () => import('@/views/SimpleTest.vue'),
+    path: '/favorites',
+    name: 'Favorites',
+    component: () => import('@/views/FavoritesView.vue'),
     meta: {
-      title: 'ChefMind 智食谱 - 简单测试'
+      title: 'ChefMind 智食谱 - 我的收藏'
     }
   },
   {
-    path: '/ai-test',
-    name: 'AITest',
-    component: () => import('@/views/AITestView.vue'),
+    path: '/shopping-list',
+    name: 'ShoppingList',
+    component: () => import('@/views/ShoppingListView.vue'),
     meta: {
-      title: 'ChefMind 智食谱 - GLM AI功能测试'
+      title: 'ChefMind 智食谱 - 购物清单'
     }
   },
   {
-    path: '/constraint-test',
-    name: 'ConstraintTest',
-    component: () => import('@/views/ConstraintTestView.vue'),
+    path: '/cooking-guide',
+    name: 'CookingGuide',
+    component: () => import('@/views/CookingGuideView.vue'),
     meta: {
-      title: 'ChefMind 智食谱 - 约束条件测试'
+      title: 'ChefMind 智食谱 - 烹饪指导'
     }
   },
   {
-    path: '/test',
-    name: 'Test',
-    component: () => import('@/views/TestView.vue'),
+    path: '/analytics',
+    name: 'Analytics',
+    component: () => import('@/views/AnalyticsView.vue'),
     meta: {
-      title: 'ChefMind 智食谱 - 调试页面'
+      title: 'ChefMind 智食谱 - 数据分析'
     }
   },
   {
-    path: '/debug',
-    name: 'Debug',
-    component: () => import('@/views/DebugView.vue'),
+    path: '/recipe-detail',
+    name: 'RecipeDetail',
+    component: () => import('@/views/RecipeDetailView.vue'),
     meta: {
-      title: 'ChefMind 智食谱 - 系统调试'
+      title: 'ChefMind 智食谱 - 食谱详情'
     }
   }
 ]

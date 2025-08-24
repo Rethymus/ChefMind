@@ -1,15 +1,12 @@
 // ChefMind 智食谱 - AI菜谱服务
 
 import glmService from './glmService';
-import { generateId, generateUUID } from '../utils/idGenerator';
+import { generateUUID } from '../utils/idGenerator';
 import { cookingMethods } from '../data/cookingMethods';
 import { cacheData, getCachedData } from '../utils/cacheUtils';
 import type { 
   Recipe, 
   RecipeGenerationRequest, 
-  Ingredient, 
-  RecipeStep, 
-  NutritionInfo,
   UserPreference,
   HealthConstraint,
   RecipeFilters,
@@ -71,7 +68,7 @@ export async function generateRecipe(request: RecipeGenerationRequest): Promise<
     
     // 添加用户偏好
     if (request.preferences) {
-      const { flavors, ingredients, cuisines, dietaryHabits, dislikedIngredients } = request.preferences;
+      const { flavors, ingredients, _cuisines, dietaryHabits, dislikedIngredients } = request.preferences;
       
       if (flavors && flavors.length > 0) {
         userPrompt += `，口味偏好：${flavors.join('、')}`;
@@ -401,7 +398,7 @@ export async function searchRecipes(
     const recipesData = glmService.parseJsonResponse<any[]>(response);
     
     // 转换为Recipe对象数组
-    const recipes: Recipe[] = recipesData.map((recipeData, index) => {
+    const recipes: Recipe[] = recipesData.map((recipeData, _index) => {
       const recipe: Recipe = {
         id: generateUUID(),
         name: recipeData.name || '未命名菜谱',

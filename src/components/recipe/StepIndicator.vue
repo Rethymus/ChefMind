@@ -51,7 +51,7 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'step-click', step: number): void
+  (_e: 'step-click', _step: number): void
 }
 
 defineProps<Props>()

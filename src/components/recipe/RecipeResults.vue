@@ -176,7 +176,7 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'save-recipe', recipe: Recipe): void
+  (_e: 'save-recipe', _recipe: Recipe): void
 }
 
 const props = defineProps<Props>()

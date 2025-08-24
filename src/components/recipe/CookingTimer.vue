@@ -225,7 +225,7 @@ import {
   Close 
 } from '@element-plus/icons-vue'
 
-interface Timer {
+interface CookingTimer {
   id: string
   name: string
   description?: string
@@ -244,9 +244,9 @@ interface QuickTimer {
 }
 
 // 响应式数据
-const timers = ref<Timer[]>([])
+const timers = ref<CookingTimer[]>([])
 const showAddTimerModal = ref(false)
-const finishedTimer = ref<Timer | null>(null)
+const finishedTimer = ref<CookingTimer | null>(null)
 const newTimer = ref({
   name: '',
   description: '',
@@ -279,7 +279,7 @@ const addTimer = () => {
     return
   }
   
-  const timer: Timer = {
+  const timer: CookingTimer = {
     id: Date.now().toString(),
     name: newTimer.value.name.trim(),
     description: newTimer.value.description.trim(),
@@ -296,7 +296,7 @@ const addTimer = () => {
 
 // 添加快速计时器
 const addQuickTimer = (quickTimer: QuickTimer) => {
-  const timer: Timer = {
+  const timer: CookingTimer = {
     id: Date.now().toString(),
     name: quickTimer.name,
     description: quickTimer.description,
@@ -311,7 +311,7 @@ const addQuickTimer = (quickTimer: QuickTimer) => {
 }
 
 // 开始计时器
-const startTimer = (timer: Timer) => {
+const startTimer = (timer: CookingTimer) => {
   // 停止其他正在运行的计时器
   timers.value.forEach(t => {
     if (t.id !== timer.id && t.status === 'running') {
@@ -336,7 +336,7 @@ const startTimer = (timer: Timer) => {
 }
 
 // 暂停计时器
-const pauseTimer = (timer: Timer) => {
+const pauseTimer = (timer: CookingTimer) => {
   timer.status = 'paused'
   if (timer.intervalId) {
     clearInterval(timer.intervalId)
@@ -346,7 +346,7 @@ const pauseTimer = (timer: Timer) => {
 }
 
 // 停止计时器
-const stopTimer = (timer: Timer) => {
+const stopTimer = (timer: CookingTimer) => {
   timer.status = 'stopped'
   if (timer.intervalId) {
     clearInterval(timer.intervalId)
@@ -356,7 +356,7 @@ const stopTimer = (timer: Timer) => {
 }
 
 // 重置计时器
-const resetTimer = (timer: Timer) => {
+const resetTimer = (timer: CookingTimer) => {
   timer.status = 'stopped'
   timer.remainingTime = timer.totalTime
   if (timer.intervalId) {
@@ -380,7 +380,7 @@ const removeTimer = (timerId: string) => {
 }
 
 // 计时器完成处理
-const onTimerFinished = (timer: Timer) => {
+const onTimerFinished = (timer: CookingTimer) => {
   // 播放提醒音效
   playSound(timer.sound)
   
@@ -458,7 +458,7 @@ const formatTime = (seconds: number): string => {
 }
 
 // 获取进度百分比
-const getProgressPercentage = (timer: Timer): number => {
+const getProgressPercentage = (timer: CookingTimer): number => {
   if (timer.totalTime === 0) return 0
   return ((timer.totalTime - timer.remainingTime) / timer.totalTime) * 100
 }
@@ -478,7 +478,7 @@ const loadTimersFromStorage = () => {
   if (saved) {
     try {
       const savedTimers = JSON.parse(saved)
-      timers.value = savedTimers.map((timer: Timer) => ({
+      timers.value = savedTimers.map((timer: CookingTimer) => ({
         ...timer,
         status: 'stopped', // 重新加载时重置状态
         remainingTime: timer.totalTime // 重置剩余时间

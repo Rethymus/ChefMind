@@ -2,7 +2,7 @@
   <div class="cooking-method-selection">
     <div class="step-header">
       <h2>选择烹饪方式</h2>
-      <p>根据你的喜好和食材特点，选择最适合的烹饪方法</p>
+      <p>根据你的喜好和食材特点，选择一种或多种烹饪方法</p>
     </div>
     
     <!-- 已选烹饪方式 -->
@@ -124,8 +124,151 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { cookingMethods } from '@/data/mockData'
 import type { CookingMethod } from '@/types/recipe'
+
+// 本地烹饪方法数据定义
+const cookingMethods: CookingMethod[] = [
+  {
+    id: 'stir-fry',
+    name: '炒',
+    description: '大火快炒，保持食材脆嫩',
+    icon: 'Lightning',
+    difficulty: 2,
+    timeRange: '5-15分钟',
+    healthScore: 4,
+    equipment: ['炒锅', '铲子']
+  },
+  {
+    id: 'boil',
+    name: '煮',
+    description: '水煮烹饪，营养健康',
+    icon: 'Cloudy',
+    difficulty: 1,
+    timeRange: '10-30分钟',
+    healthScore: 5,
+    equipment: ['汤锅']
+  },
+  {
+    id: 'steam',
+    name: '蒸',
+    description: '蒸汽烹饪，保持原味',
+    icon: 'Cloudy',
+    difficulty: 1,
+    timeRange: '15-45分钟',
+    healthScore: 5,
+    equipment: ['蒸锅', '蒸笼']
+  },
+  {
+    id: 'stew',
+    name: '炖',
+    description: '小火慢炖，汤汁浓郁',
+    icon: 'Timer',
+    difficulty: 2,
+    timeRange: '30-120分钟',
+    healthScore: 4,
+    equipment: ['炖锅', '砂锅']
+  },
+  {
+    id: 'roast',
+    name: '烤',
+    description: '烤箱烘烤，外酥内嫩',
+    icon: 'Sunny',
+    difficulty: 3,
+    timeRange: '20-60分钟',
+    healthScore: 3,
+    equipment: ['烤箱', '烤盘']
+  },
+  {
+    id: 'deep-fry',
+    name: '炸',
+    description: '油炸烹饪，香脆可口',
+    icon: 'Lightning',
+    difficulty: 3,
+    timeRange: '5-20分钟',
+    healthScore: 2,
+    equipment: ['深锅', '漏勺']
+  },
+  {
+    id: 'pan-fry',
+    name: '煎',
+    description: '平底锅煎制，两面金黄',
+    icon: 'Sunny',
+    difficulty: 2,
+    timeRange: '5-15分钟',
+    healthScore: 3,
+    equipment: ['平底锅', '铲子']
+  },
+  {
+    id: 'braise',
+    name: '焖',
+    description: '密封焖煮，入味透彻',
+    icon: 'Timer',
+    difficulty: 2,
+    timeRange: '20-60分钟',
+    healthScore: 4,
+    equipment: ['焖锅', '锅盖']
+  },
+  {
+    id: 'simmer',
+    name: '烧',
+    description: '调味烧制，色香味俱全',
+    icon: 'Lightning',
+    difficulty: 3,
+    timeRange: '15-45分钟',
+    healthScore: 3,
+    equipment: ['炒锅', '锅盖']
+  },
+  {
+    id: 'mix',
+    name: '拌',
+    description: '凉拌调味，清爽开胃',
+    icon: 'Bowl',
+    difficulty: 1,
+    timeRange: '5-10分钟',
+    healthScore: 5,
+    equipment: ['拌菜盆', '筷子']
+  },
+  {
+    id: 'marinate',
+    name: '腌',
+    description: '调料腌制，提前入味',
+    icon: 'Refrigerator',
+    difficulty: 1,
+    timeRange: '30分钟-24小时',
+    healthScore: 4,
+    equipment: ['腌制盒', '保鲜膜']
+  },
+  {
+    id: 'smoke',
+    name: '熏',
+    description: '烟熏烹饪，独特风味',
+    icon: 'Cloudy',
+    difficulty: 4,
+    timeRange: '30-120分钟',
+    healthScore: 3,
+    equipment: ['熏锅', '木屑']
+  },
+  {
+    id: 'braise-soy',
+    name: '卤',
+    description: '卤水烹饪，香味浓郁',
+    icon: 'Timer',
+    difficulty: 3,
+    timeRange: '45-90分钟',
+    healthScore: 3,
+    equipment: ['卤锅', '卤料包']
+  },
+  {
+    id: 'hot-pot',
+    name: '涮',
+    description: '热水涮煮，鲜嫩爽滑',
+    icon: 'Cloudy',
+    difficulty: 1,
+    timeRange: '1-5分钟',
+    healthScore: 4,
+    equipment: ['火锅', '漏勺']
+  }
+]
 import {
   Operation,
   Plus,
@@ -146,7 +289,7 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'method-toggle', method: CookingMethod): void
+  (_e: 'method-toggle', _method: CookingMethod): void
 }
 
 interface Recommendation {

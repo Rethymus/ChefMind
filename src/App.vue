@@ -1,35 +1,56 @@
 <template>
-  <div id="app" class="chefmind-app">
+  <div id="app">
+    <div class="language-switcher-container">
+      <LanguageSwitcher />
+    </div>
+    <DesktopNavBar />
     <ErrorBoundary>
       <router-view />
     </ErrorBoundary>
     <NotificationContainer />
+    <MobileNavBar />
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useThemeStore } from '@/stores/theme'
-import NotificationContainer from '@/components/common/NotificationContainer.vue'
 import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
+import NotificationContainer from '@/components/common/NotificationContainer.vue'
+import MobileNavBar from '@/components/common/MobileNavBar.vue'
+import DesktopNavBar from '@/components/common/DesktopNavBar.vue'
+import LanguageSwitcher from '@/components/common/LanguageSwitcher.vue'
+import { useThemeStore } from '@/stores/theme'
+import { registerServiceWorker } from '@/utils/performance'
 
+// 初始化主题
 const themeStore = useThemeStore()
-
 onMounted(() => {
-  // 初始化主题
   themeStore.initTheme()
+  
+  // 注册Service Worker用于缓存和离线访问
+  registerServiceWorker()
 })
 </script>
 
-<style lang="scss">
+<style>
+@import '@/styles/global.scss';
+
 #app {
   min-height: 100vh;
-  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  position: relative;
 }
 
-.chefmind-app {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+.language-switcher-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 100;
+}
+
+@media (max-width: 768px) {
+  .language-switcher-container {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
 }
 </style>

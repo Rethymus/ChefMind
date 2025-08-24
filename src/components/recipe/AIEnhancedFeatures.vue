@@ -144,7 +144,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // Emits
-const emit = defineEmits<{
+defineEmits<{
   selectRecipe: [recipe: Recipe]
 }>()
 
@@ -155,9 +155,17 @@ const isAnalyzing = ref(false)
 const isRecommending = ref(false)
 const apiUsageCount = ref(0)
 
-// GLM API状态
+// AI服务状态
 const isGLMAvailable = computed(() => {
-  return !!import.meta.env.GLM_API_KEY
+  // 检查是否有可用的AI服务
+  try {
+    const { useUserService } = require('@/services/userService')
+    const userService = useUserService()
+    const aiService = userService.getAIService()
+    return !!aiService
+  } catch {
+    return false
+  }
 })
 
 const aiStatusClass = computed(() => {
@@ -180,7 +188,7 @@ const aiStatusText = computed(() => {
   if (isGLMAvailable.value) {
     return 'GLM AI已连接 - 智能功能已启用'
   } else {
-    return '使用模拟数据 - 请配置GLM API密钥以启用完整AI功能'
+    return '请配置AI API密钥以启用完整AI功能'
   }
 })
 
