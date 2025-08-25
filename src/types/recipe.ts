@@ -2,6 +2,19 @@
  * 食谱相关类型定义
  */
 
+// 食材分类
+export type IngredientCategory =
+  | '蔬菜'
+  | '肉类'
+  | '海鲜'
+  | '蛋奶'
+  | '谷物'
+  | '调料'
+  | '水果'
+  | '坚果'
+  | '豆类'
+  | '其他'
+
 // 食材分析结果
 export interface IngredientAnalysisResult {
   name: string
@@ -68,6 +81,18 @@ export interface RecipeGenerationResult {
   }
 }
 
+// 食谱生成请求
+export interface RecipeGenerationRequest {
+  ingredients: string[]
+  cookingMethods?: string[]
+  servings?: number
+  cookingTime?: string
+  difficulty?: string
+  dietaryRestrictions?: string[]
+  healthGoals?: string[]
+  preferences?: UserPreference
+}
+
 // 个性化推荐
 export interface PersonalizedRecommendation {
   id: string
@@ -82,16 +107,82 @@ export interface PersonalizedRecommendation {
   reasonForRecommendation: string
 }
 
+// 用户偏好
+export interface UserPreference {
+  dietaryRestrictions?: string[]
+  favoriteIngredients?: string[]
+  dislikedIngredients?: string[]
+  cookingLevel?: 'beginner' | 'intermediate' | 'advanced'
+  preferredCuisine?: string[]
+  healthGoals?: string[]
+  allergies?: string[]
+}
+
+// 健康约束
+export interface HealthConstraint {
+  maxCalories?: number
+  minProtein?: number
+  maxSodium?: number
+  isVegetarian?: boolean
+  isVegan?: boolean
+  isGlutenFree?: boolean
+  isDairyFree?: boolean
+}
+
+// 食谱过滤器
+export interface RecipeFilters {
+  ingredients?: string[]
+  cookingTime?: { min?: number; max?: number }
+  difficulty?: string[]
+  tags?: string[]
+  dietaryRestrictions?: string[]
+  healthGoals?: string[]
+}
+
+// 食谱搜索结果
+export interface RecipeSearchResult {
+  recipes: Recipe[]
+  total: number
+  page: number
+  pageSize: number
+  filters?: RecipeFilters
+}
+
+// 食谱评分
+export interface RecipeRating {
+  recipeId: string
+  userId: string
+  rating: number
+  review?: string
+  createdAt: Date
+}
+
+// 食谱评论
+export interface RecipeComment {
+  id: string
+  recipeId: string
+  userId: string
+  content: string
+  rating?: number
+  createdAt: Date
+  updatedAt?: Date
+  likes: number
+  replies?: RecipeComment[]
+}
+
 // 烹饪方式
 export interface CookingMethod {
+  id?: string
   label: string
   value: string
+  name?: string
   icon?: string
   description?: string
 }
 
 // 食材
 export interface Ingredient {
+  id?: string
   name: string
   amount?: number
   unit?: string
@@ -126,12 +217,31 @@ export interface FlavorPreference {
   value: string
 }
 
-// 营养信息
+// 营养信息（扩展版本）
+export interface NutritionInfo {
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  fiber?: number
+  sugar?: number
+  saturatedFat?: number
+  unsaturatedFat?: number
+  cholesterol?: number
+  sodium?: number
+  potassium?: number
+  calcium?: number
+  iron?: number
+  vitaminA?: number
+  vitaminC?: number
+  vitaminD?: number
+}
+
+// 营养信息（基础版本）
 export interface Nutrition {
   calories: number
   protein: number
-  carbs?: number
-  carbohydrates?: number
+  carbs: number
   fat: number
   fiber?: number
   sugar?: number
@@ -149,7 +259,7 @@ export interface RecipeStep {
 
 // 食谱
 export interface Recipe {
-  id?: string
+  id: string
   title: string
   name?: string
   description: string
@@ -158,9 +268,11 @@ export interface Recipe {
   instructions?: string[]
   steps?: string[] | RecipeStep[]
   cookingTime: string
+  time?: number // 兼容旧字段
   servings: number
-  difficulty: string
+  difficulty: string | number
   cookingMethods: string[]
+  method?: CookingMethod // 兼容旧字段
   kitchenware?: string[]
   dietaryRestrictions?: string[]
   healthGoals?: string[]
@@ -169,15 +281,19 @@ export interface Recipe {
   spiceLevel?: string
   sweetnessLevel?: string
   nutrition?: Nutrition
+  nutritionInfo?: NutritionInfo // 扩展营养信息
   cookingTips?: string[]
   tags?: string[]
   rating?: number
   createdAt?: Date
   updatedAt?: Date
   userId?: string
+  authorId?: string
   isPublic?: boolean
   source?: string
   notes?: string
+  cuisine?: string // 菜系
+  healthBenefits?: string[] // 健康益处
   autoCompletedIngredients?: string[] // 自动补充的食材列表
 }
 
@@ -199,6 +315,10 @@ export interface RecipeGenerationParams {
   userId?: string
   language?: string
   autoCompleteIngredients?: boolean // 是否自动补充食材
+
+  // 新增字段用于支持菜品名称请求
+  dishName?: string // 菜品名称（当请求类型为菜品复现时使用）
+  requestType?: 'ingredient_based' | 'dish_recreation' // 请求类型
 }
 
 // 食材验证结果
@@ -206,4 +326,36 @@ export interface IngredientValidationResult {
   isValid: boolean
   reason?: string
   alternatives?: string[]
+}
+
+// 购物清单项目
+export interface ShoppingItem {
+  id: string
+  name: string
+  quantity: number
+  unit: string
+  category: string
+  completed: boolean
+  createdAt: Date
+  updatedAt: Date
+  estimatedPrice?: number
+}
+
+// 用户类型
+export interface User {
+  id: string
+  username: string
+  email: string
+  avatar: string
+  preferences?: UserPreference
+}
+
+// 事件分析接口
+export interface UserEvent {
+  id: string
+  userId?: string
+  eventType: string
+  eventData: Record<string, string | number | boolean>
+  timestamp: Date
+  sessionId: string
 }

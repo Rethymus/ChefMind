@@ -1,12 +1,12 @@
 import type { BaseAIProvider } from './baseProvider'
-import type { 
-  Recipe, 
-  RecipeGenerationParams, 
+import type {
+  Recipe,
+  RecipeGenerationParams,
   IngredientValidationResult,
   RecipeGenerationResult,
   IngredientAnalysisResult,
   NutritionAnalysisResult,
-  PersonalizedRecommendation
+  PersonalizedRecommendation,
 } from '@/types/recipe'
 import { callGLM, parseJsonResponse } from '@/services/glmService'
 
@@ -17,7 +17,8 @@ export class GLMProvider implements BaseAIProvider {
 
   constructor(apiKey?: string, baseURL: string = 'https://open.bigmodel.cn/api/paas/v4/') {
     this.apiKey = apiKey || import.meta.env.VITE_GLM_API_KEY || ''
-    this.baseURL = baseURL || import.meta.env.VITE_GLM_API_URL || 'https://open.bigmodel.cn/api/paas/v4/'
+    this.baseURL =
+      baseURL || import.meta.env.VITE_GLM_API_URL || 'https://open.bigmodel.cn/api/paas/v4/'
     this.model = import.meta.env.VITE_GLM_MODEL || 'glm-4'
   }
 
@@ -25,7 +26,7 @@ export class GLMProvider implements BaseAIProvider {
     try {
       // 将图片转换为base64
       const base64Image = await this.fileToBase64(imageFile)
-      
+
       // 构建提示词
       const prompt = `
       请分析这张食材图片，并以JSON格式返回以下信息：
@@ -59,7 +60,7 @@ export class GLMProvider implements BaseAIProvider {
       // 调用GLM API
       const response = await callGLM(prompt, {
         temperature: 0.3,
-        maxTokens: 1000
+        maxTokens: 1000,
       })
 
       // 解析JSON响应
@@ -77,10 +78,10 @@ export class GLMProvider implements BaseAIProvider {
           carbs: 0,
           fat: 0,
           fiber: 0,
-          vitamins: []
+          vitamins: [],
         },
         freshness: 0.5,
-        suggestions: ['无法识别食材，请尝试更清晰的图片']
+        suggestions: ['无法识别食材，请尝试更清晰的图片'],
       }
     }
   }
@@ -120,7 +121,7 @@ export class GLMProvider implements BaseAIProvider {
       // 调用GLM API
       const response = await callGLM(prompt, {
         temperature: 0.3,
-        maxTokens: 1000
+        maxTokens: 1000,
       })
 
       // 解析JSON响应
@@ -141,9 +142,9 @@ export class GLMProvider implements BaseAIProvider {
           isVegetarian: false,
           isVegan: false,
           isGlutenFree: false,
-          allergens: []
+          allergens: [],
         },
-        recommendations: ['无法分析营养成分']
+        recommendations: ['无法分析营养成分'],
       }
     }
   }
@@ -151,7 +152,7 @@ export class GLMProvider implements BaseAIProvider {
   async generateRecipe(params: RecipeGenerationParams): Promise<Recipe> {
     try {
       console.log('GLM生成食谱，参数:', params)
-      
+
       // 处理自动补充食材
       let autoCompleteInstructions = ''
       if (params.autoCompleteIngredients) {
@@ -160,25 +161,51 @@ export class GLMProvider implements BaseAIProvider {
         在返回的JSON中，请添加一个"autoCompletedIngredients"字段，列出所有自动添加的食材。
         `
       }
-      
-      // 构建提示词
-      const prompt = `
-      请根据以下食材和要求，生成一个详细的食谱，并以JSON格式返回：
-      
-      食材: ${params.ingredients.join(', ')}
-      ${params.cookingMethods && params.cookingMethods.length > 0 ? `烹饪方式: ${params.cookingMethods.join(', ')}` : ''}
-      ${params.noMethodRestriction ? '不限制烹饪方式（请选择最适合的烹饪方式）' : ''}
-      ${params.kitchenware && params.kitchenware.length > 0 ? `厨具: ${params.kitchenware.join(', ')}` : ''}
-      ${params.dietaryRestrictions && params.dietaryRestrictions.length > 0 ? `饮食限制: ${params.dietaryRestrictions.join(', ')}` : ''}
-      ${params.healthGoals && params.healthGoals.length > 0 ? `健康目标: ${params.healthGoals.join(', ')}` : ''}
-      ${params.allergies && params.allergies.length > 0 ? `过敏原: ${params.allergies.join(', ')}` : ''}
-      ${params.flavorPreferences && params.flavorPreferences.length > 0 ? `口味偏好: ${params.flavorPreferences.join(', ')}` : ''}
-      ${params.spiceLevel ? `辣度: ${params.spiceLevel}` : ''}
-      ${params.sweetnessLevel ? `甜度: ${params.sweetnessLevel}` : ''}
-      ${params.servings ? `份量: ${params.servings}人份` : ''}
-      ${params.cookingTime ? `制作时间: ${params.cookingTime}` : ''}
-      ${params.difficulty ? `难度: ${params.difficulty}` : ''}
-      ${autoCompleteInstructions}
+
+      // 检查请求类型并构建不同的提示词
+      let prompt = ''
+
+      if (params.requestType === 'dish_recreation' && params.dishName) {
+        // 菜品复现模式
+        prompt = `
+        请为"${params.dishName}"这道菜生成一个详细的制作食谱。请注意这是一道具体的菜品，不是食材。
+        
+        请分析这道菜的特点，推断出所需的食材和制作方法，并以JSON格式返回完整的食谱：
+        
+        菜品名称: ${params.dishName}
+        ${params.servings ? `份量: ${params.servings}人份` : ''}
+        ${params.cookingTime ? `制作时间: ${params.cookingTime}` : ''}
+        ${params.difficulty ? `难度: ${params.difficulty}` : ''}
+        ${autoCompleteInstructions}
+        
+        请确保：
+        1. 准确还原这道菜的传统做法
+        2. 提供详细的食材清单（包括用量）
+        3. 详细的制作步骤
+        4. 相关的烹饪技巧和注意事项
+        `
+      } else {
+        // 传统食材基础模式
+        prompt = `
+        请根据以下食材和要求，生成一个详细的食谱，并以JSON格式返回：
+        
+        食材: ${params.ingredients.join(', ')}
+        ${params.cookingMethods && params.cookingMethods.length > 0 ? `烹饪方式: ${params.cookingMethods.join(', ')}` : ''}
+        ${params.noMethodRestriction ? '不限制烹饪方式（请选择最适合的烹饪方式）' : ''}
+        ${params.kitchenware && params.kitchenware.length > 0 ? `厨具: ${params.kitchenware.join(', ')}` : ''}
+        ${params.dietaryRestrictions && params.dietaryRestrictions.length > 0 ? `饮食限制: ${params.dietaryRestrictions.join(', ')}` : ''}
+        ${params.healthGoals && params.healthGoals.length > 0 ? `健康目标: ${params.healthGoals.join(', ')}` : ''}
+        ${params.allergies && params.allergies.length > 0 ? `过敏原: ${params.allergies.join(', ')}` : ''}
+        ${params.flavorPreferences && params.flavorPreferences.length > 0 ? `口味偏好: ${params.flavorPreferences.join(', ')}` : ''}
+        ${params.spiceLevel ? `辣度: ${params.spiceLevel}` : ''}
+        ${params.sweetnessLevel ? `甜度: ${params.sweetnessLevel}` : ''}
+        ${params.servings ? `份量: ${params.servings}人份` : ''}
+        ${params.cookingTime ? `制作时间: ${params.cookingTime}` : ''}
+        ${params.difficulty ? `难度: ${params.difficulty}` : ''}
+        `
+      }
+
+      prompt += `
       
       请严格按照以下JSON格式返回食谱：
       {
@@ -215,20 +242,25 @@ export class GLMProvider implements BaseAIProvider {
       // 调用GLM API
       const response = await callGLM(prompt, {
         temperature: 0.7,
-        maxTokens: 2000
+        maxTokens: 2000,
       })
 
       // 解析JSON响应
       const recipeResult = parseJsonResponse<Recipe>(response)
-      
+
       // 确保返回的对象符合Recipe接口
+      const recipeTitle = recipeResult.title || '未命名食谱'
       const recipe: Recipe = {
-        title: recipeResult.title || '未命名食谱',
-        description: recipeResult.description || `使用${params.ingredients.join('、')}制作的美味食谱`,
+        id: 'glm-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+        title: recipeTitle,
+        name: recipeTitle,
+        description:
+          recipeResult.description || `使用${params.ingredients.join('、')}制作的美味食谱`,
         ingredients: recipeResult.ingredients || params.ingredients.map(i => `${i} 适量`),
         instructions: recipeResult.instructions || ['准备食材', '烹饪', '装盘'],
         steps: recipeResult.steps || recipeResult.instructions || ['准备食材', '烹饪', '装盘'],
         cookingTime: recipeResult.cookingTime || params.cookingTime || '30分钟内',
+        time: parseInt(recipeResult.cookingTime?.replace(/\D/g, '') || '30'),
         servings: recipeResult.servings || params.servings || 2,
         difficulty: recipeResult.difficulty || params.difficulty || '中等',
         cookingMethods: recipeResult.cookingMethods || params.cookingMethods || ['炒'],
@@ -243,36 +275,43 @@ export class GLMProvider implements BaseAIProvider {
           calories: 0,
           protein: 0,
           carbs: 0,
-          fat: 0
+          fat: 0,
         },
         cookingTips: recipeResult.cookingTips || [
           '食材最好新鲜，可以提前准备好',
-          '注意火候控制，避免食材过熟或不熟'
+          '注意火候控制，避免食材过熟或不熟',
         ],
         tags: recipeResult.tags || this.generateTags(params),
-        autoCompletedIngredients: recipeResult.autoCompletedIngredients || []
+        autoCompletedIngredients: recipeResult.autoCompletedIngredients || [],
       }
-      
+
       // 如果启用了自动补充食材但没有返回自动补充的食材列表，尝试推断
-      if (params.autoCompleteIngredients && (!recipe.autoCompletedIngredients || recipe.autoCompletedIngredients.length === 0)) {
+      if (
+        params.autoCompleteIngredients &&
+        (!recipe.autoCompletedIngredients || recipe.autoCompletedIngredients.length === 0)
+      ) {
         recipe.autoCompletedIngredients = this.inferAutoCompletedIngredients(
           params.ingredients,
           recipe.ingredients
         )
       }
-      
+
       return recipe
     } catch (error) {
       console.error('GLM生成食谱失败:', error)
-      
+
       // 返回一个基本的食谱作为备选
+      const fallbackTitle = `${params.ingredients[0] || '食材'}食谱`
       return {
-        title: `${params.ingredients[0] || '食材'}食谱`,
+        id: 'glm-fallback-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+        title: fallbackTitle,
+        name: fallbackTitle,
         description: `使用${params.ingredients.join('、')}制作的美味食谱`,
         ingredients: params.ingredients.map(i => `${i} 适量`),
         instructions: ['准备食材', '烹饪', '装盘'],
         steps: ['准备食材', '烹饪', '装盘'],
         cookingTime: params.cookingTime || '30分钟内',
+        time: parseInt(params.cookingTime?.replace(/\D/g, '') || '30'),
         servings: params.servings || 2,
         difficulty: params.difficulty || '中等',
         cookingMethods: params.cookingMethods || ['炒'],
@@ -280,48 +319,79 @@ export class GLMProvider implements BaseAIProvider {
           calories: 0,
           protein: 0,
           carbs: 0,
-          fat: 0
+          fat: 0,
         },
-        cookingTips: [
-          '食材最好新鲜，可以提前准备好',
-          '注意火候控制，避免食材过熟或不熟'
-        ],
+        cookingTips: ['食材最好新鲜，可以提前准备好', '注意火候控制，避免食材过熟或不熟'],
         tags: this.generateTags(params),
-        autoCompletedIngredients: []
+        autoCompletedIngredients: [],
       }
     }
   }
 
   // 推断自动补充的食材
-  private inferAutoCompletedIngredients(originalIngredients: string[], allIngredients: (string | any)[]): string[] {
+  private inferAutoCompletedIngredients(
+    originalIngredients: string[],
+    allIngredients: (string | any)[]
+  ): string[] {
     try {
       // 将复杂对象转换为字符串
-      const allIngredientsStr = allIngredients.map(ing => 
+      const allIngredientsStr = allIngredients.map(ing =>
         typeof ing === 'string' ? ing : ing.name
       )
-      
+
       // 找出新增的食材
       const newIngredients = allIngredientsStr.filter(ing => {
         // 检查原始食材列表中是否包含当前食材
-        const isOriginal = originalIngredients.some(original => 
-          ing.includes(original) || original.includes(ing)
+        const isOriginal = originalIngredients.some(
+          original => ing.includes(original) || original.includes(ing)
         )
         return !isOriginal
       })
-      
+
       // 常见调料列表，用于过滤
       const commonSeasonings = [
-        '盐', '糖', '白糖', '酱油', '生抽', '老抽', '醋', '料酒', '香油', '食用油',
-        '花椒', '八角', '桂皮', '香叶', '葱', '姜', '蒜', '辣椒', '胡椒粉',
-        '五香粉', '十三香', '鸡精', '味精', '蚝油', '豆瓣酱', '甜面酱', '番茄酱',
-        '清水', '水', '高汤', '鸡汤', '牛奶', '淀粉', '水淀粉', '玉米淀粉'
+        '盐',
+        '糖',
+        '白糖',
+        '酱油',
+        '生抽',
+        '老抽',
+        '醋',
+        '料酒',
+        '香油',
+        '食用油',
+        '花椒',
+        '八角',
+        '桂皮',
+        '香叶',
+        '葱',
+        '姜',
+        '蒜',
+        '辣椒',
+        '胡椒粉',
+        '五香粉',
+        '十三香',
+        '鸡精',
+        '味精',
+        '蚝油',
+        '豆瓣酱',
+        '甜面酱',
+        '番茄酱',
+        '清水',
+        '水',
+        '高汤',
+        '鸡汤',
+        '牛奶',
+        '淀粉',
+        '水淀粉',
+        '玉米淀粉',
       ]
-      
+
       // 过滤出可能是调料的食材
       return newIngredients.filter(ing => {
         // 检查是否是常见调料
-        return commonSeasonings.some(seasoning => 
-          ing.includes(seasoning) || seasoning.includes(ing)
+        return commonSeasonings.some(
+          seasoning => ing.includes(seasoning) || seasoning.includes(ing)
         )
       })
     } catch (error) {
@@ -366,7 +436,7 @@ export class GLMProvider implements BaseAIProvider {
       // 调用GLM API
       const response = await callGLM(prompt, {
         temperature: 0.7,
-        maxTokens: 2000
+        maxTokens: 2000,
       })
 
       // 解析JSON响应
@@ -409,7 +479,7 @@ export class GLMProvider implements BaseAIProvider {
       // 调用GLM API
       const response = await callGLM(prompt, {
         temperature: 0.5,
-        maxTokens: 1000
+        maxTokens: 1000,
       })
 
       // 解析JSON响应
@@ -425,7 +495,7 @@ export class GLMProvider implements BaseAIProvider {
         guidance: '按照步骤进行操作',
         tips: ['注意火候', '及时调味'],
         nextStep: '继续下一步',
-        estimatedTime: 5
+        estimatedTime: 5,
       }
     }
   }
@@ -453,22 +523,26 @@ export class GLMProvider implements BaseAIProvider {
       // 调用GLM API
       const response = await callGLM(prompt, {
         temperature: 0.3,
-        maxTokens: 200
+        maxTokens: 200,
       })
 
       // 解析JSON响应
-      const result = parseJsonResponse<{ isValid: boolean; reason?: string; alternatives?: string[] }>(response)
-      
+      const result = parseJsonResponse<{
+        isValid: boolean
+        reason?: string
+        alternatives?: string[]
+      }>(response)
+
       return {
         isValid: result.isValid,
         reason: result.reason,
-        alternatives: result.alternatives
+        alternatives: result.alternatives,
       }
     } catch (error) {
       console.error('GLM验证食材失败:', error)
-      return { 
-        isValid: true, 
-        reason: '验证服务暂时不可用，请自行确认是否为可食用食材' 
+      return {
+        isValid: true,
+        reason: '验证服务暂时不可用，请自行确认是否为可食用食材',
       }
     }
   }
@@ -476,32 +550,32 @@ export class GLMProvider implements BaseAIProvider {
   // 生成标签
   private generateTags(params: RecipeGenerationParams): string[] {
     const tags: string[] = []
-    
+
     // 添加主要食材标签
     if (params.ingredients.length > 0) {
       tags.push(params.ingredients[0])
     }
-    
+
     // 添加烹饪方式标签
     if (params.cookingMethods && params.cookingMethods.length > 0) {
       tags.push(params.cookingMethods[0])
     }
-    
+
     // 添加难度标签
     if (params.difficulty) {
       tags.push(params.difficulty)
     }
-    
+
     // 添加饮食限制标签
     if (params.dietaryRestrictions && params.dietaryRestrictions.length > 0) {
       tags.push(params.dietaryRestrictions[0])
     }
-    
+
     // 添加健康目标标签
     if (params.healthGoals && params.healthGoals.length > 0) {
       tags.push(params.healthGoals[0])
     }
-    
+
     return tags
   }
 

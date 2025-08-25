@@ -61,10 +61,10 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 5173,
+    port: 0, // 使用随机可用端口
     open: false,
     cors: true,
-    strictPort: true
+    strictPort: false
   },
   preview: {
     host: '0.0.0.0',

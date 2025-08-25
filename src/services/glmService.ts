@@ -19,46 +19,62 @@ interface GLMCallOptions {
  */
 export async function callGLM(prompt: string, options: GLMCallOptions = {}): Promise<string> {
   console.log('调用 GLM API:', prompt, options)
-  
+
   // 获取 API 密钥和 URL
   const apiKey = import.meta.env.VITE_GLM_API_KEY || ''
   const baseURL = import.meta.env.VITE_GLM_API_URL || 'https://open.bigmodel.cn/api/paas/v4/'
   const model = options.model || import.meta.env.VITE_GLM_MODEL || 'glm-4'
-  
+
   // 如果没有 API 密钥，返回模拟响应
   if (!apiKey || apiKey === 'your_glm_api_key_here') {
     console.log('未配置 GLM API 密钥，返回模拟响应')
     return mockGLMResponse(prompt)
   }
-  
+
   try {
-    // 构建请求体
+    // 构建符合GLM API标准的请求体
     const requestBody = {
       model: model,
-      prompt: prompt,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
       temperature: options.temperature || 0.7,
       top_p: options.topP || 0.9,
-      max_tokens: options.maxTokens || 1000
+      max_tokens: options.maxTokens || 1000,
     }
-    
+
+    console.log('GLM API 请求体:', JSON.stringify(requestBody, null, 2))
+
     // 发送请求
     const response = await fetch(`${baseURL}chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
     })
-    
+
     // 检查响应状态
     if (!response.ok) {
       const errorText = await response.text()
+      console.error('GLM API 错误响应:', errorText)
       throw new Error(`GLM API 请求失败: ${response.status} ${errorText}`)
     }
-    
+
     // 解析响应
     const data = await response.json()
+    console.log('GLM API 响应:', data)
+
+    // 检查响应结构
+    if (!data.choices?.[0]?.message) {
+      console.error('GLM API 响应格式错误:', data)
+      throw new Error('GLM API 响应格式不正确')
+    }
+
     return data.choices[0].message.content
   } catch (error) {
     console.error('GLM API 调用失败:', error)
@@ -77,11 +93,50 @@ export function parseJsonResponse<T>(response: string): T {
     try {
       return JSON.parse(response) as T
     } catch (e) {
-      // 如果直接解析失败，尝试提取 JSON 部分
-      const jsonMatch = response.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]) as T
+      // 如果直接解析失败，尝试提取第一个完整的 JSON 部分
+      console.log('直接解析失败，尝试提取JSON:', response)
+
+      // 移除可能的 markdown 标记
+      const cleanResponse = response.replace(/```json\s*|\s*```/g, '').trim()
+
+      // 尝试找到第一个完整的 JSON 对象
+      const firstBraceIndex = cleanResponse.indexOf('{')
+      if (firstBraceIndex !== -1) {
+        let braceCount = 0
+        let i = firstBraceIndex
+
+        for (; i < cleanResponse.length; i++) {
+          if (cleanResponse[i] === '{') braceCount++
+          else if (cleanResponse[i] === '}') braceCount--
+
+          if (braceCount === 0) {
+            let firstJsonStr = cleanResponse.substring(firstBraceIndex, i + 1)
+            try {
+              // 清理所有单位问题
+              // 第一步：处理不带引号的数字+单位组合: 45g -> "45"
+              firstJsonStr = firstJsonStr.replace(/:\s*(\d+(?:\.\d+)?)([a-zA-Z]+)/g, ': "$1"')
+
+              // 第二步：处理带引号的数字+单位组合: "45g" -> "45"
+              firstJsonStr = firstJsonStr.replace(/"(\d+(?:\.\d+)?)([a-zA-Z]+)"/g, '"$1"')
+
+              return JSON.parse(firstJsonStr) as T
+            } catch (parseError) {
+              console.error('第一个JSON解析失败:', parseError)
+            }
+            break
+          }
+        }
       }
+
+      // 最后尝试正则表达式匹配
+      const jsonRegex = /\{[\s\S]*?\}/
+      const jsonMatch = jsonRegex.exec(cleanResponse)
+      if (jsonMatch) {
+        // 只清理明确的单位问题
+        const cleanJson = jsonMatch[0].replace(/"(\d+(?:\.\d+)?)([a-zA-Z]+)"/g, '"$1"')
+        return JSON.parse(cleanJson) as T
+      }
+
       throw e
     }
   } catch (error) {
@@ -98,7 +153,7 @@ export function parseJsonResponse<T>(response: string): T {
  */
 function mockGLMResponse(prompt: string): string {
   console.log('生成模拟 GLM 响应:', prompt)
-  
+
   // 根据提示词中的关键词生成不同的模拟响应
   if (prompt.includes('食材') && prompt.includes('JSON')) {
     return `{
@@ -151,6 +206,94 @@ function mockGLMResponse(prompt: string): string {
         "recommendations": ["富含蛋白质", "适合健身人群"]
       }
     }`
+  } else if (prompt.includes('营养分析') || (prompt.includes('营养') && prompt.includes('分析'))) {
+    return `{
+      "nutritionEstimate": {
+        "calories": 1850,
+        "protein": 85,
+        "carbs": 220,
+        "fat": 65,
+        "fiber": 25,
+        "sodium": 2100,
+        "calcium": 850,
+        "iron": 12,
+        "vitaminC": 85,
+        "sugar": 45
+      },
+      "recommendations": [
+        "增加深绿色蔬菜摄入，补充叶酸和维生素K",
+        "适量摄入富含Omega-3的鱼类，有益心血管健康",
+        "建议增加全谷物摄入，提供更多膳食纤维",
+        "控制钠盐摄入，建议每日不超过6克",
+        "增加水果摄入，补充维生素C和抗氧化物质"
+      ],
+      "insights": [
+        "当前饮食结构基本合理，蛋白质摄入充足",
+        "碳水化合物比例适中，有利于维持血糖稳定",
+        "脂肪摄入比例合理，但建议优化脂肪酸结构",
+        "微量元素摄入良好，钙和铁含量达标"
+      ],
+      "risks": [
+        "钠摄入略高，长期可能增加高血压风险",
+        "膳食纤维摄入可能不足，建议增加蔬菜水果",
+        "维生素D可能缺乏，建议适当补充或增加日晒"
+      ],
+      "improvements": [
+        "早餐可增加燕麦或全麦面包，提供更多B族维生素",
+        "午餐建议增加一份绿叶蔬菜沙拉",
+        "晚餐可适当减少主食，增加蛋白质比例",
+        "建议每日增加200ml低脂牛奶补充钙质"
+      ],
+      "confidence": 87
+    }`
+  } else if (prompt.includes('中医体质') || prompt.includes('体质分析')) {
+    return `{
+      "primaryConstitution": "平和质",
+      "secondaryConstitution": "气虚质",
+      "characteristics": [
+        "体型匀称，面色红润，精力充沛",
+        "睡眠质量良好，消化功能正常",
+        "情绪稳定，适应能力强",
+        "偶有疲劳感，气短现象"
+      ],
+      "susceptibleDiseases": [
+        "过敏性疾病",
+        "呼吸系统疾病", 
+        "消化不良",
+        "免疫力下降"
+      ],
+      "dietaryRecommendations": [
+        "饮食以温补为主，避免过于寒凉",
+        "适量摄入健脾益气的食物如山药、大枣",
+        "少食辛辣刺激性食物",
+        "规律进餐，细嚼慢咽"
+      ],
+      "lifestyleAdvice": [
+        "保持规律作息，避免熬夜",
+        "适度运动，如太极拳、八段锦",
+        "保持心情愉悦，避免过度思虑",
+        "注意保暖，避免受凉"
+      ],
+      "seasonalAdjustments": [
+        "夏季应注意防暑降温，多饮温开水",
+        "适量食用清热解暑的食物如绿豆汤",
+        "避免长时间在空调房间，注意通风",
+        "夏季运动宜选择清晨或傍晚"
+      ],
+      "personalizedGuidance": [
+        "根据您的健康目标，建议增强脾胃功能",
+        "配合适当的中药调理，如四君子汤",
+        "定期进行体质监测，调整养生方案",
+        "建议咨询专业中医师制定个性化方案"
+      ],
+      "aiInsights": [
+        "您的体质总体良好，但需要注意气血调养",
+        "当前饮食习惯符合养生原则",
+        "建议保持现有良好生活习惯",
+        "适当增加补气食物的摄入"
+      ],
+      "confidence": 85
+    }`
   } else if (prompt.includes('营养') && prompt.includes('JSON')) {
     return `{
       "calories": 350,
@@ -170,10 +313,12 @@ function mockGLMResponse(prompt: string): string {
       "recommendations": ["营养均衡", "适合减脂期食用"]
     }`
   } else if (prompt.includes('判断') && prompt.includes('食材')) {
-    const ingredient = prompt.match(/"([^"]+)"/)?.[1] || '未知食材'
+    const ingredientRegex = /"([^"]+)"/
+    const ingredientMatch = ingredientRegex.exec(prompt)
+    const ingredient = ingredientMatch?.[1] || '未知食材'
     const invalidIngredients = ['洗衣粉', '洗洁精', '肥皂', '洗发水', '沐浴露', '香水']
     const isValid = !invalidIngredients.some(item => ingredient.includes(item))
-    
+
     return `{
       "isValid": ${isValid},
       "reason": "${isValid ? `${ingredient}是常见的可食用食材` : `${ingredient}不是可食用的食材`}"

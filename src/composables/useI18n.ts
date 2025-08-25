@@ -16,14 +16,14 @@ const messages = {
     'app.edit': '编辑',
     'app.search': '搜索',
     'app.back': '返回',
-    
+
     // 导航
     'nav.home': '首页',
     'nav.search': '搜索',
     'nav.favorites': '收藏',
     'nav.shopping': '购物清单',
     'nav.settings': '设置',
-    
+
     // 首页
     'home.welcome': '欢迎使用ChefMind',
     'home.subtitle': '智能菜谱生成平台',
@@ -32,7 +32,7 @@ const messages = {
     'home.popular_recipes': '热门菜谱',
     'home.recommendations': '为您推荐',
     'home.search_placeholder': '搜索菜谱、食材或烹饪方式...',
-    
+
     // 食谱生成器
     'generator.title': '食谱生成器',
     'generator.step1': '食材选择',
@@ -56,7 +56,7 @@ const messages = {
     'generator.results': '为您推荐的食谱',
     'generator.no_results': '没有找到匹配的食谱',
     'generator.try_again': '请尝试调整您的选择条件',
-    
+
     // 食谱详情
     'recipe.ingredients': '食材',
     'recipe.steps': '烹饪步骤',
@@ -77,7 +77,7 @@ const messages = {
     'recipe.comments': '评论',
     'recipe.related': '相关推荐',
     'recipe.no_related': '暂无相关推荐',
-    
+
     // 食材识别
     'recognition.title': '食材识别',
     'recognition.description': '通过拍照或上传图片识别食材，快速添加到食材列表',
@@ -88,12 +88,12 @@ const messages = {
     'recognition.add': '添加',
     'recognition.added': '已添加',
     'recognition.add_all': '添加全部',
-    
+
     // 收藏页面
     'favorites.title': '我的收藏',
     'favorites.empty': '您还没有收藏任何食谱',
     'favorites.start': '开始探索美食',
-    
+
     // 购物清单
     'shopping.title': '购物清单',
     'shopping.empty': '您的购物清单为空',
@@ -101,7 +101,7 @@ const messages = {
     'shopping.clear': '清空清单',
     'shopping.check_all': '全部选中',
     'shopping.uncheck_all': '全部取消',
-    
+
     // 搜索页面
     'search.title': '搜索食谱',
     'search.placeholder': '输入关键词搜索...',
@@ -114,7 +114,10 @@ const messages = {
     'search.results': '搜索结果',
     'search.no_results': '未找到匹配的食谱',
     'search.try_different': '请尝试不同的搜索词或筛选条件',
-    
+    'search.recent_searches': '最近搜索',
+    'search.clear_all': '清空全部',
+    'search.no_recent_searches': '暂无搜索记录',
+
     // 评论
     'comments.title': '评论',
     'comments.write': '写评论',
@@ -123,7 +126,7 @@ const messages = {
     'comments.empty': '暂无评论',
     'comments.be_first': '成为第一个评论的人',
     'comments.your_rating': '您的评分',
-    
+
     // 视频教程
     'video.tutorials': '视频教程',
     'video.search_placeholder': '搜索视频教程...',
@@ -150,13 +153,13 @@ const messages = {
     'video.shared_via': '已通过{platform}分享',
     'video.like_success': '点赞成功',
     'video.load_error': '加载视频失败',
-    
+
     // 通知
     'notification.success': '成功',
     'notification.error': '错误',
     'notification.info': '提示',
     'notification.warning': '警告',
-    
+
     // 设置
     'settings.title': '设置',
     'settings.theme': '主题',
@@ -166,12 +169,57 @@ const messages = {
     'settings.about': '关于',
     'settings.help': '帮助',
     'settings.feedback': '反馈',
-    
+
     // 主题
     'theme.light': '浅色',
     'theme.dark': '深色',
     'theme.system': '跟随系统',
     'theme.custom': '自定义',
+
+    // 数据分析
+    'analytics.title': '数据分析',
+    'analytics.subtitle': '了解您的烹饪习惯和偏好',
+    'analytics.last_7_days': '最近7天',
+    'analytics.last_30_days': '最近30天',
+    'analytics.last_90_days': '最近90天',
+    'analytics.last_year': '最近一年',
+    'analytics.activity_overview': '活动概览',
+    'analytics.viewed_recipes': '浏览食谱',
+    'analytics.saved_recipes': '收藏食谱',
+    'analytics.generated_recipes': '生成食谱',
+    'analytics.searches': '搜索次数',
+    'analytics.prints': '打印次数',
+    'analytics.shares': '分享次数',
+    'analytics.shopping_adds': '添加购物清单',
+    'analytics.ratings': '评分次数',
+    'analytics.activity_trend': '活动趋势',
+    'analytics.daily_activity': '每日活跃度',
+    'analytics.cooking_habits': '烹饪习惯',
+    'analytics.favorite_categories': '偏爱分类',
+    'analytics.favorite_ingredients': '偏爱食材',
+    'analytics.cooking_time': '烹饪时间',
+    'analytics.total_time': '总时长',
+    'analytics.average_time': '平均时长',
+    'analytics.hours': '小时',
+    'analytics.minutes': '分钟',
+    'analytics.usage_count': '使用次数',
+    'analytics.popular_recipes': '热门食谱',
+    'analytics.most_viewed': '最多浏览',
+    'analytics.most_saved': '最多收藏',
+    'analytics.highest_rated': '评分最高',
+    'analytics.most_shared': '最多分享',
+    'analytics.views': '次浏览',
+    'analytics.saves': '次收藏',
+    'analytics.recipe_distribution': '食谱分布',
+    'analytics.by_category': '按分类',
+    'analytics.by_cooking_time': '按烹饪时间',
+    'analytics.by_difficulty': '按难度',
+    'analytics.recipes': '个食谱',
+    'analytics.trends_recommendations': '趋势与推荐',
+    'analytics.trending_recipes': '热门食谱',
+    'analytics.trending_categories': '热门分类',
+    'analytics.seasonal_recipes': '时令食谱',
+    'analytics.personalized_recommendations': '个性化推荐',
   },
   'en-US': {
     // Common
@@ -187,14 +235,14 @@ const messages = {
     'app.edit': 'Edit',
     'app.search': 'Search',
     'app.back': 'Back',
-    
+
     // Navigation
     'nav.home': 'Home',
     'nav.search': 'Search',
     'nav.favorites': 'Favorites',
     'nav.shopping': 'Shopping List',
     'nav.settings': 'Settings',
-    
+
     // Home
     'home.welcome': 'Welcome to ChefMind',
     'home.subtitle': 'AI-Powered Recipe Generator',
@@ -203,7 +251,7 @@ const messages = {
     'home.popular_recipes': 'Popular Recipes',
     'home.recommendations': 'Recommendations',
     'home.search_placeholder': 'Search recipes, ingredients or cooking methods...',
-    
+
     // Recipe Generator
     'generator.title': 'Recipe Generator',
     'generator.step1': 'Ingredients',
@@ -212,7 +260,8 @@ const messages = {
     'generator.ingredients': 'Choose Your Ingredients',
     'generator.ingredients_desc': 'Please select the main ingredients you want to use, at least 1',
     'generator.cooking_methods': 'Choose Cooking Methods',
-    'generator.cooking_methods_desc': 'Please select your preferred cooking methods, multiple choices allowed',
+    'generator.cooking_methods_desc':
+      'Please select your preferred cooking methods, multiple choices allowed',
     'generator.constraints': 'Set Constraints',
     'generator.constraints_desc': 'Please select your dietary preferences or restrictions',
     'generator.add_custom': 'Add other ingredients...',
@@ -227,7 +276,7 @@ const messages = {
     'generator.results': 'Recommended Recipes',
     'generator.no_results': 'No matching recipes found',
     'generator.try_again': 'Please try adjusting your selection criteria',
-    
+
     // Recipe Detail
     'recipe.ingredients': 'Ingredients',
     'recipe.steps': 'Cooking Steps',
@@ -248,10 +297,11 @@ const messages = {
     'recipe.comments': 'Comments',
     'recipe.related': 'Related Recipes',
     'recipe.no_related': 'No related recipes',
-    
+
     // Ingredient Recognition
     'recognition.title': 'Ingredient Recognition',
-    'recognition.description': 'Recognize ingredients by taking a photo or uploading an image, quickly add them to your ingredient list',
+    'recognition.description':
+      'Recognize ingredients by taking a photo or uploading an image, quickly add them to your ingredient list',
     'recognition.camera': 'Take Photo',
     'recognition.upload': 'Upload Image',
     'recognition.recognizing': 'Recognizing ingredients, please wait...',
@@ -259,12 +309,12 @@ const messages = {
     'recognition.add': 'Add',
     'recognition.added': 'Added',
     'recognition.add_all': 'Add All',
-    
+
     // Favorites
     'favorites.title': 'My Favorites',
-    'favorites.empty': 'You haven\'t saved any recipes yet',
+    'favorites.empty': "You haven't saved any recipes yet",
     'favorites.start': 'Start exploring recipes',
-    
+
     // Shopping List
     'shopping.title': 'Shopping List',
     'shopping.empty': 'Your shopping list is empty',
@@ -272,7 +322,7 @@ const messages = {
     'shopping.clear': 'Clear List',
     'shopping.check_all': 'Check All',
     'shopping.uncheck_all': 'Uncheck All',
-    
+
     // Search
     'search.title': 'Search Recipes',
     'search.placeholder': 'Enter keywords to search...',
@@ -285,7 +335,7 @@ const messages = {
     'search.results': 'Search Results',
     'search.no_results': 'No matching recipes found',
     'search.try_different': 'Try different keywords or filters',
-    
+
     // Comments
     'comments.title': 'Comments',
     'comments.write': 'Write a Comment',
@@ -294,7 +344,7 @@ const messages = {
     'comments.empty': 'No comments yet',
     'comments.be_first': 'Be the first to comment',
     'comments.your_rating': 'Your Rating',
-    
+
     // Video Tutorials
     'video.tutorials': 'Video Tutorials',
     'video.search_placeholder': 'Search video tutorials...',
@@ -321,13 +371,13 @@ const messages = {
     'video.shared_via': 'Shared via {platform}',
     'video.like_success': 'Liked successfully',
     'video.load_error': 'Failed to load video',
-    
+
     // Notifications
     'notification.success': 'Success',
     'notification.error': 'Error',
     'notification.info': 'Info',
     'notification.warning': 'Warning',
-    
+
     // Settings
     'settings.title': 'Settings',
     'settings.theme': 'Theme',
@@ -337,13 +387,56 @@ const messages = {
     'settings.about': 'About',
     'settings.help': 'Help',
     'settings.feedback': 'Feedback',
-    
+
     // Theme
     'theme.light': 'Light',
     'theme.dark': 'Dark',
     'theme.system': 'System',
     'theme.custom': 'Custom',
-  }
+
+    // Analytics
+    'analytics.title': 'Data Analytics',
+    'analytics.subtitle': 'Understand your cooking habits and preferences',
+    'analytics.last_7_days': 'Last 7 Days',
+    'analytics.last_30_days': 'Last 30 Days',
+    'analytics.last_90_days': 'Last 90 Days',
+    'analytics.last_year': 'Last Year',
+    'analytics.activity_overview': 'Activity Overview',
+    'analytics.viewed_recipes': 'Viewed Recipes',
+    'analytics.saved_recipes': 'Saved Recipes',
+    'analytics.generated_recipes': 'Generated Recipes',
+    'analytics.searches': 'Searches',
+    'analytics.prints': 'Prints',
+    'analytics.shares': 'Shares',
+    'analytics.shopping_adds': 'Shopping Adds',
+    'analytics.ratings': 'Ratings',
+    'analytics.activity_trend': 'Activity Trend',
+    'analytics.daily_activity': 'Daily Activity',
+    'analytics.cooking_habits': 'Cooking Habits',
+    'analytics.favorite_categories': 'Favorite Categories',
+    'analytics.favorite_ingredients': 'Favorite Ingredients',
+    'analytics.cooking_time': 'Cooking Time',
+    'analytics.total_time': 'Total Time',
+    'analytics.average_time': 'Average Time',
+    'analytics.minutes': ' min',
+    'analytics.popular_recipes': 'Popular Recipes',
+    'analytics.most_viewed': 'Most Viewed',
+    'analytics.most_saved': 'Most Saved',
+    'analytics.highest_rated': 'Highest Rated',
+    'analytics.most_shared': 'Most Shared',
+    'analytics.views': ' views',
+    'analytics.saves': ' saves',
+    'analytics.recipe_distribution': 'Recipe Distribution',
+    'analytics.by_category': 'By Category',
+    'analytics.by_cooking_time': 'By Cooking Time',
+    'analytics.by_difficulty': 'By Difficulty',
+    'analytics.recipes': ' recipes',
+    'analytics.trends_recommendations': 'Trends & Recommendations',
+    'analytics.trending_recipes': 'Trending Recipes',
+    'analytics.trending_categories': 'Trending Categories',
+    'analytics.seasonal_recipes': 'Seasonal Recipes',
+    'analytics.personalized_recommendations': 'Personalized Recommendations',
+  },
 }
 
 // 默认语言
@@ -351,9 +444,7 @@ const defaultLanguage = 'zh-CN'
 
 // 创建一个全局状态来存储当前语言
 const currentLanguage = ref(
-  localStorage.getItem('language') || 
-  navigator.language || 
-  defaultLanguage
+  localStorage.getItem('language') || navigator.language || defaultLanguage
 )
 
 // 确保语言代码是有效的
@@ -362,25 +453,29 @@ if (!messages[currentLanguage.value]) {
 }
 
 // 监听语言变化并保存到本地存储
-watch(currentLanguage, (newLang) => {
-  localStorage.setItem('language', newLang)
-  document.documentElement.setAttribute('lang', newLang)
-}, { immediate: true })
+watch(
+  currentLanguage,
+  newLang => {
+    localStorage.setItem('language', newLang)
+    document.documentElement.setAttribute('lang', newLang)
+  },
+  { immediate: true }
+)
 
 // 翻译函数
 const t = (key: string, params?: Record<string, string | number>): string => {
   const lang = currentLanguage.value
   const langMessages = messages[lang] || messages[defaultLanguage]
-  
+
   let text = langMessages[key] || messages[defaultLanguage][key] || key
-  
+
   // 替换参数
   if (params) {
     Object.keys(params).forEach(param => {
       text = text.replace(new RegExp(`{${param}}`, 'g'), String(params[param]))
     })
   }
-  
+
   return text
 }
 
@@ -395,7 +490,7 @@ const setLanguage = (lang: string) => {
 const getAvailableLanguages = () => {
   return Object.keys(messages).map(code => ({
     code,
-    name: messages[code]['settings.language'] || code
+    name: messages[code]['settings.language'] || code,
   }))
 }
 
@@ -405,6 +500,6 @@ export function useI18n() {
     currentLanguage,
     t,
     setLanguage,
-    getAvailableLanguages
+    getAvailableLanguages,
   }
 }

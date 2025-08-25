@@ -1,73 +1,97 @@
 // ChefMind 智食谱 - 路由配置
 
-import { createRouter, createWebHashHistory } from 'vue-router'
-import type { RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
+
+// 错误处理组件
+const loadView = (view: string) => {
+  return () =>
+    import(`@/views/${view}.vue`).catch(error => {
+      console.error(`Failed to load view: ${view}`, error)
+      // 返回一个简单的错误组件对象而不是动态导入
+      return {
+        default: {
+          template: `
+          <div class="view-load-error">
+            <h2>页面加载失败</h2>
+            <p>抱歉，无法加载 ${view} 页面。</p>
+            <button @click="goHome">返回首页</button>
+          </div>
+        `,
+          methods: {
+            goHome() {
+              window.location.hash = '#/'
+            },
+          },
+        },
+      }
+    })
+}
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
-    component: () => import('@/views/HomeView.vue'),
+    component: loadView('HomeView'),
     meta: {
-      title: 'ChefMind 智食谱 - 首页'
-    }
+      title: 'ChefMind 智食谱 - 首页',
+    },
   },
   {
     path: '/search',
     name: 'Search',
-    component: () => import('@/views/SearchView.vue'),
+    component: loadView('SearchView'),
     meta: {
-      title: 'ChefMind 智食谱 - 搜索食谱'
-    }
+      title: 'ChefMind 智食谱 - 搜索食谱',
+    },
   },
   {
     path: '/ai',
     name: 'AI',
-    component: () => import('@/views/AIView.vue'),
+    component: loadView('AIView'),
     meta: {
-      title: 'ChefMind 智食谱 - AI 智能助手'
-    }
+      title: 'ChefMind 智食谱 - AI 智能助手',
+    },
   },
   {
     path: '/favorites',
     name: 'Favorites',
-    component: () => import('@/views/FavoritesView.vue'),
+    component: loadView('FavoritesView'),
     meta: {
-      title: 'ChefMind 智食谱 - 我的收藏'
-    }
+      title: 'ChefMind 智食谱 - 我的收藏',
+    },
   },
   {
     path: '/shopping-list',
     name: 'ShoppingList',
-    component: () => import('@/views/ShoppingListView.vue'),
+    component: loadView('ShoppingListView'),
     meta: {
-      title: 'ChefMind 智食谱 - 购物清单'
-    }
+      title: 'ChefMind 智食谱 - 购物清单',
+    },
   },
   {
     path: '/cooking-guide',
     name: 'CookingGuide',
-    component: () => import('@/views/CookingGuideView.vue'),
+    component: loadView('CookingGuideView'),
     meta: {
-      title: 'ChefMind 智食谱 - 烹饪指导'
-    }
+      title: 'ChefMind 智食谱 - 烹饪指导',
+    },
   },
   {
     path: '/analytics',
     name: 'Analytics',
-    component: () => import('@/views/AnalyticsView.vue'),
+    component: loadView('AnalyticsView'),
     meta: {
-      title: 'ChefMind 智食谱 - 数据分析'
-    }
+      title: 'ChefMind 智食谱 - 数据分析',
+    },
   },
   {
     path: '/recipe-detail',
     name: 'RecipeDetail',
-    component: () => import('@/views/RecipeDetailView.vue'),
+    component: loadView('RecipeDetailView'),
     meta: {
-      title: 'ChefMind 智食谱 - 食谱详情'
-    }
-  }
+      title: 'ChefMind 智食谱 - 食谱详情',
+    },
+  },
 ]
 
 const router = createRouter({
@@ -79,16 +103,21 @@ const router = createRouter({
     } else {
       return { top: 0 }
     }
-  }
+  },
 })
 
 // 路由守卫
-router.beforeEach((_to, _from, next) => {
+router.beforeEach((to, from, next) => {
   // 设置页面标题
-  if (_to.meta?.title) {
-    document.title = _to.meta.title as string
+  if (to.meta?.title) {
+    document.title = to.meta.title as string
   }
   next()
+})
+
+// 全局错误处理
+router.onError(error => {
+  console.error('Router error:', error)
 })
 
 export default router

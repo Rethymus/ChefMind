@@ -1,1106 +1,1079 @@
 <template>
   <div class="analytics-view">
-    <div class="analytics-container">
-      <div class="analytics-header">
-        <h1 class="analytics-title">{{ t('analytics.title') }}</h1>
-        <p class="analytics-subtitle">{{ t('analytics.subtitle') }}</p>
+    <!-- 页面标题 -->
+    <div class="view-header">
+      <h1 class="page-title">个人营养分析</h1>
+      <p class="page-subtitle">基于AI的个性化营养评估与健康指导</p>
+    </div>
+
+    <!-- 主要内容 -->
+    <div class="analytics-content">
+      <!-- 四个模块卡片 -->
+      <div class="modules-container">
         
-        <div class="time-filter">
-          <button 
-            v-for="period in timePeriods" 
-            :key="period.value"
-            :class="['time-button', { active: selectedPeriod === period.value }]"
-            @click="selectedPeriod = period.value"
-          >
-            {{ period.label }}
-          </button>
-        </div>
-      </div>
-      
-      <div class="analytics-content">
-        <!-- 用户活动概览 -->
-        <div class="analytics-card overview-card">
-          <h2 class="card-title">{{ t('analytics.activity_overview') }}</h2>
-          
-          <div class="stats-grid">
-            <div class="stat-item">
-              <div class="stat-icon">👁️</div>
-              <div class="stat-value">{{ userStats.viewedRecipes }}</div>
-              <div class="stat-label">{{ t('analytics.viewed_recipes') }}</div>
+        <!-- 模块 1: 个人信息 -->
+        <div class="analysis-module personal-info-module">
+          <div class="module-header">
+            <div class="header-left">
+              <el-icon class="module-icon" :size="24" color="#667eea">
+                <User />
+              </el-icon>
+              <h3 class="module-title">个人信息</h3>
             </div>
-            
-            <div class="stat-item">
-              <div class="stat-icon">❤️</div>
-              <div class="stat-value">{{ userStats.savedRecipes }}</div>
-              <div class="stat-label">{{ t('analytics.saved_recipes') }}</div>
-            </div>
-            
-            <div class="stat-item">
-              <div class="stat-icon">✨</div>
-              <div class="stat-value">{{ userStats.generatedRecipes }}</div>
-              <div class="stat-label">{{ t('analytics.generated_recipes') }}</div>
-            </div>
-            
-            <div class="stat-item">
-              <div class="stat-icon">🔍</div>
-              <div class="stat-value">{{ userStats.searchCount }}</div>
-              <div class="stat-label">{{ t('analytics.searches') }}</div>
-            </div>
-            
-            <div class="stat-item">
-              <div class="stat-icon">🖨️</div>
-              <div class="stat-value">{{ userStats.printCount }}</div>
-              <div class="stat-label">{{ t('analytics.prints') }}</div>
-            </div>
-            
-            <div class="stat-item">
-              <div class="stat-icon">📤</div>
-              <div class="stat-value">{{ userStats.shareCount }}</div>
-              <div class="stat-label">{{ t('analytics.shares') }}</div>
-            </div>
-            
-            <div class="stat-item">
-              <div class="stat-icon">🛒</div>
-              <div class="stat-value">{{ userStats.shoppingListAdds }}</div>
-              <div class="stat-label">{{ t('analytics.shopping_adds') }}</div>
-            </div>
-            
-            <div class="stat-item">
-              <div class="stat-icon">⭐</div>
-              <div class="stat-value">{{ userStats.ratingCount }}</div>
-              <div class="stat-label">{{ t('analytics.ratings') }}</div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 活动趋势 -->
-        <div class="analytics-card trend-card">
-          <h2 class="card-title">{{ t('analytics.activity_trend') }}</h2>
-          
-          <div class="chart-container">
-            <canvas ref="activityChart"></canvas>
-          </div>
-        </div>
-        
-        <!-- 烹饪习惯 -->
-        <div class="analytics-card habits-card">
-          <h2 class="card-title">{{ t('analytics.cooking_habits') }}</h2>
-          
-          <div class="habits-content">
-            <div class="habits-section">
-              <h3 class="section-title">{{ t('analytics.favorite_categories') }}</h3>
-              <div class="chart-container small">
-                <canvas ref="categoriesChart"></canvas>
-              </div>
-            </div>
-            
-            <div class="habits-section">
-              <h3 class="section-title">{{ t('analytics.favorite_ingredients') }}</h3>
-              <div class="chart-container small">
-                <canvas ref="ingredientsChart"></canvas>
-              </div>
-            </div>
-            
-            <div class="habits-section">
-              <h3 class="section-title">{{ t('analytics.cooking_time') }}</h3>
-              <div class="cooking-time">
-                <div class="time-stat">
-                  <div class="time-value">{{ formatTime(userStats.cookingTime.total) }}</div>
-                  <div class="time-label">{{ t('analytics.total_time') }}</div>
-                </div>
-                
-                <div class="time-stat">
-                  <div class="time-value">{{ userStats.cookingTime.average }}{{ t('analytics.minutes') }}</div>
-                  <div class="time-label">{{ t('analytics.average_time') }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 热门食谱 -->
-        <div class="analytics-card popular-card">
-          <h2 class="card-title">{{ t('analytics.popular_recipes') }}</h2>
-          
-          <div class="tabs">
-            <button 
-              v-for="tab in popularTabs" 
-              :key="tab.id"
-              :class="['tab-button', { active: activePopularTab === tab.id }]"
-              @click="activePopularTab = tab.id"
+            <el-button 
+              type="primary" 
+              :icon="Edit" 
+              @click="showProfileDialog = true"
+              size="small"
             >
-              {{ tab.name }}
-            </button>
+              {{ hasUserData ? '编辑资料' : '填写资料' }}
+            </el-button>
           </div>
           
-          <div class="popular-list">
-            <div v-if="activePopularTab === 'viewed'" class="popular-items">
-              <div 
-                v-for="(recipe, index) in recipeStats.mostViewed" 
-                :key="recipe.id"
-                class="popular-item"
-                @click="viewRecipe(recipe.id)"
-              >
-                <div class="item-rank">{{ index + 1 }}</div>
-                <div class="item-title">{{ recipe.title }}</div>
-                <div class="item-value">{{ recipe.count }}{{ t('analytics.views') }}</div>
-              </div>
+          <div class="module-content">
+            <!-- 无数据状态 -->
+            <div v-if="!hasUserData" class="empty-state">
+              <el-empty description="请先填写个人信息开始营养分析">
+                <el-button type="primary" @click="showProfileDialog = true">
+                  立即填写
+                </el-button>
+              </el-empty>
             </div>
             
-            <div v-if="activePopularTab === 'saved'" class="popular-items">
-              <div 
-                v-for="(recipe, index) in recipeStats.mostSaved" 
-                :key="recipe.id"
-                class="popular-item"
-                @click="viewRecipe(recipe.id)"
-              >
-                <div class="item-rank">{{ index + 1 }}</div>
-                <div class="item-title">{{ recipe.title }}</div>
-                <div class="item-value">{{ recipe.count }}{{ t('analytics.saves') }}</div>
+            <!-- 有数据状态 -->
+            <div v-else class="personal-info-grid">
+              <div class="info-card basic-info">
+                <h4 class="info-title">基本信息</h4>
+                <div class="info-item">
+                  <span class="info-label">性别</span>
+                  <span class="info-value">{{ userProfile?.gender === 'male' ? '男' : '女' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">年龄</span>
+                  <span class="info-value">{{ userProfile?.age }}岁</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">身高</span>
+                  <span class="info-value">{{ userProfile?.height }}cm</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">体重</span>
+                  <span class="info-value">{{ userProfile?.weight }}kg</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">BMI</span>
+                  <span class="info-value">
+                    {{ healthMetrics?.bmi }} 
+                    <el-tag :type="healthMetrics?.bmiStatus === 'normal' ? 'success' : 'warning'" size="small">
+                      {{ healthMetrics?.bmiStatusText }}
+                    </el-tag>
+                  </span>
+                </div>
               </div>
-            </div>
-            
-            <div v-if="activePopularTab === 'rated'" class="popular-items">
-              <div 
-                v-for="(recipe, index) in recipeStats.mostRated" 
-                :key="recipe.id"
-                class="popular-item"
-                @click="viewRecipe(recipe.id)"
-              >
-                <div class="item-rank">{{ index + 1 }}</div>
-                <div class="item-title">{{ recipe.title }}</div>
-                <div class="item-value">⭐ {{ recipe.rating }}</div>
+              
+              <div class="info-card health-goals">
+                <h4 class="info-title">健康目标</h4>
+                <div class="goals-list">
+                  <el-tag 
+                    v-for="goal in userProfile?.healthGoals" 
+                    :key="goal"
+                    type="primary"
+                    size="small"
+                    class="goal-tag"
+                  >
+                    {{ goal }}
+                  </el-tag>
+                </div>
               </div>
-            </div>
-            
-            <div v-if="activePopularTab === 'shared'" class="popular-items">
-              <div 
-                v-for="(recipe, index) in recipeStats.mostShared" 
-                :key="recipe.id"
-                class="popular-item"
-                @click="viewRecipe(recipe.id)"
-              >
-                <div class="item-rank">{{ index + 1 }}</div>
-                <div class="item-title">{{ recipe.title }}</div>
-                <div class="item-value">{{ recipe.count }}{{ t('analytics.shares') }}</div>
+              
+              <div class="info-card activity-level">
+                <h4 class="info-title">活动水平</h4>
+                <div class="activity-display">
+                  <span class="activity-text">{{ getActivityLevelText(userProfile?.activityLevel) }}</span>
+                </div>
+              </div>
+              
+              <div class="info-card meal-records">
+                <h4 class="info-title">今日饮食记录</h4>
+                <div class="meals-summary">
+                  <span class="meals-count">{{ userProfile?.meals?.length || 0 }}餐</span>
+                  <el-button 
+                    v-if="hasMealData && !hasCompletedAnalysis" 
+                    type="success" 
+                    size="small"
+                    @click="performNutritionAnalysis"
+                    :loading="isAnalyzing"
+                  >
+                    开始AI分析
+                  </el-button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        
-        <!-- 食谱分布 -->
-        <div class="analytics-card distribution-card">
-          <h2 class="card-title">{{ t('analytics.recipe_distribution') }}</h2>
-          
-          <div class="distribution-content">
-            <div class="distribution-section">
-              <h3 class="section-title">{{ t('analytics.by_category') }}</h3>
-              <div class="chart-container small">
-                <canvas ref="categoryDistChart"></canvas>
-              </div>
+
+        <!-- 模块 2: 营养概览 -->
+        <div class="analysis-module nutrition-overview-module">
+          <div class="module-header">
+            <div class="header-left">
+              <el-icon class="module-icon" :size="24" color="#67C23A">
+                <DataLine />
+              </el-icon>
+              <h3 class="module-title">营养概览</h3>
             </div>
-            
-            <div class="distribution-section">
-              <h3 class="section-title">{{ t('analytics.by_cooking_time') }}</h3>
-              <div class="chart-container small">
-                <canvas ref="timeDistChart"></canvas>
-              </div>
-            </div>
-            
-            <div class="distribution-section">
-              <h3 class="section-title">{{ t('analytics.by_difficulty') }}</h3>
-              <div class="chart-container small">
-                <canvas ref="difficultyDistChart"></canvas>
-              </div>
+            <div v-if="nutritionAnalysis" class="confidence-score">
+              <span class="score-label">AI可信度</span>
+              <span class="score-value">{{ nutritionAnalysis.confidenceScore }}%</span>
             </div>
           </div>
-        </div>
-        
-        <!-- 趋势和推荐 -->
-        <div class="analytics-card trends-card">
-          <h2 class="card-title">{{ t('analytics.trends_recommendations') }}</h2>
           
-          <div class="trends-content">
-            <div class="trends-section">
-              <h3 class="section-title">{{ t('analytics.trending_recipes') }}</h3>
-              <div class="trend-items">
-                <div 
-                  v-for="(recipe, index) in trendData.trendingRecipes" 
-                  :key="recipe.id"
-                  class="trend-item"
-                  @click="viewRecipe(recipe.id)"
-                >
-                  <div class="trend-rank">{{ index + 1 }}</div>
-                  <div class="trend-title">{{ recipe.title }}</div>
-                  <div class="trend-value">
-                    <span class="trend-arrow">↑</span>
-                    {{ recipe.trend }}%
+          <div class="module-content">
+            <!-- 分析中状态 -->
+            <div v-if="isAnalyzing" class="loading-state">
+              <el-skeleton :rows="4" animated />
+              <p class="loading-text">AI正在分析您的营养状况...</p>
+            </div>
+            
+            <!-- 无分析结果状态 -->
+            <div v-else-if="!nutritionAnalysis" class="empty-analysis">
+              <el-empty description="请先完成个人信息填写和饮食记录">
+                <el-button type="primary" @click="showProfileDialog = true">
+                  开始填写
+                </el-button>
+              </el-empty>
+            </div>
+            
+            <!-- 有分析结果状态 -->
+            <div v-else class="nutrition-overview-grid">
+              <!-- 热量对比 -->
+              <div class="nutrition-category">
+                <h4 class="category-title">热量摄入</h4>
+                <div class="nutrition-comparison">
+                  <div class="comparison-item needs">
+                    <span class="item-label">每日所需</span>
+                    <span class="item-value">{{ nutritionAnalysis.dailyNeeds.calories }}</span>
+                    <span class="item-unit">kcal</span>
+                  </div>
+                  <div class="comparison-arrow">→</div>
+                  <div class="comparison-item current">
+                    <span class="item-label">当前摄入</span>
+                    <span class="item-value">{{ nutritionAnalysis.currentIntake.calories }}</span>
+                    <span class="item-unit">kcal</span>
+                  </div>
+                  <div class="comparison-status">
+                    <el-tag :type="getCalorieStatusType()" size="small">
+                      {{ getCalorieStatusText() }}
+                    </el-tag>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 三大营养素 -->
+              <div class="nutrition-category">
+                <h4 class="category-title">三大营养素</h4>
+                <div class="macronutrients-grid">
+                  <div class="macro-item">
+                    <div class="macro-header">
+                      <span class="macro-name">蛋白质</span>
+                      <span class="macro-values">
+                        {{ nutritionAnalysis.currentIntake.protein }}g / {{ nutritionAnalysis.dailyNeeds.protein }}g
+                      </span>
+                    </div>
+                    <el-progress 
+                      :percentage="nutritionPercentages.protein || 0"
+                      :color="getNutrientStatusColor(nutritionAnalysis.analysis.adequacyRatios.protein || 0)"
+                    />
+                  </div>
+                  
+                  <div class="macro-item">
+                    <div class="macro-header">
+                      <span class="macro-name">碳水化合物</span>
+                      <span class="macro-values">
+                        {{ nutritionAnalysis.currentIntake.carbs }}g / {{ nutritionAnalysis.dailyNeeds.carbs }}g
+                      </span>
+                    </div>
+                    <el-progress 
+                      :percentage="nutritionPercentages.carbs || 0"
+                      :color="getNutrientStatusColor(nutritionAnalysis.analysis.adequacyRatios.carbs || 0)"
+                    />
+                  </div>
+                  
+                  <div class="macro-item">
+                    <div class="macro-header">
+                      <span class="macro-name">脂肪</span>
+                      <span class="macro-values">
+                        {{ nutritionAnalysis.currentIntake.fat }}g / {{ nutritionAnalysis.dailyNeeds.fat }}g
+                      </span>
+                    </div>
+                    <el-progress 
+                      :percentage="nutritionPercentages.fat || 0"
+                      :color="getNutrientStatusColor(nutritionAnalysis.analysis.adequacyRatios.fat || 0)"
+                    />
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- 模块 3: 营养平衡分析 -->
+        <div class="analysis-module nutrition-balance-module">
+          <div class="module-header">
+            <div class="header-left">
+              <el-icon class="module-icon" :size="24" color="#E6A23C">
+                <TrendCharts />
+              </el-icon>
+              <h3 class="module-title">营养平衡分析</h3>
+            </div>
+            <div v-if="nutritionAnalysis" class="balance-score">
+              <span class="score-label">平衡度</span>
+              <span class="score-value">{{ nutritionAnalysis.analysis.balanceScore }}%</span>
+            </div>
+          </div>
+          
+          <div class="module-content">
+            <div v-if="!nutritionAnalysis" class="empty-analysis">
+              <el-empty description="暂无营养平衡分析数据" />
+            </div>
             
-            <div class="trends-section">
-              <h3 class="section-title">{{ t('analytics.trending_categories') }}</h3>
-              <div class="trend-items">
-                <div 
-                  v-for="(category, index) in trendData.trendingCategories" 
-                  :key="category.category"
-                  class="trend-item"
-                >
-                  <div class="trend-rank">{{ index + 1 }}</div>
-                  <div class="trend-title">{{ category.category }}</div>
-                  <div class="trend-value">
-                    <span class="trend-arrow">↑</span>
-                    {{ category.trend }}%
+            <div v-else class="balance-analysis-content">
+              <!-- 营养充足率列表 -->
+              <div class="nutrients-analysis">
+                <h4 class="section-title">营养素充足率</h4>
+                <div class="nutrients-list">
+                  <div 
+                    v-for="(ratio, nutrient) in nutritionAnalysis.analysis.adequacyRatios" 
+                    :key="nutrient"
+                    class="nutrient-item"
+                  >
+                    <div class="nutrient-info">
+                      <span class="nutrient-name">{{ getNutrientDisplayName(nutrient) }}</span>
+                      <span class="nutrient-ratio">{{ Math.round(ratio * 100) }}%</span>
+                    </div>
+                    <el-progress 
+                      :percentage="Math.min(Math.round(ratio * 100), 150)"
+                      :color="getNutrientStatusColor(ratio)"
+                      :show-text="false"
+                      :stroke-width="8"
+                    />
+                    <div class="nutrient-status">
+                      <el-tag 
+                        :type="getNutrientStatusTagType(ratio)" 
+                        size="small"
+                      >
+                        {{ getNutrientStatusText(ratio) }}
+                      </el-tag>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 中国膳食指南参考 -->
+              <div class="guidelines-reference">
+                <h4 class="section-title">膳食指南参考</h4>
+                <div class="guidelines-list">
+                  <div 
+                    v-for="guideline in dietaryGuidelines.coreRecommendations.slice(0, 3)" 
+                    :key="guideline.title"
+                    class="guideline-item"
+                  >
+                    <h5 class="guideline-title">{{ guideline.title }}</h5>
+                    <p class="guideline-desc">{{ guideline.description }}</p>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- 模块 4: AI智能分析 -->
+        <div class="analysis-module ai-analysis-module">
+          <div class="module-header">
+            <div class="header-left">
+              <el-icon class="module-icon" :size="24" color="#F56C6C">
+                <MagicStick />
+              </el-icon>
+              <h3 class="module-title">AI智能分析</h3>
+            </div>
+            <div class="ai-badge">
+              <span class="badge-text">GLM分析</span>
+            </div>
+          </div>
+          
+          <div class="module-content">
+            <div v-if="!nutritionAnalysis" class="empty-analysis">
+              <el-empty description="请先完成营养分析获取AI建议" />
+            </div>
             
-            <div class="trends-section">
-              <h3 class="section-title">{{ t('analytics.seasonal_recipes') }}</h3>
-              <div class="seasonal-items">
-                <div 
-                  v-for="recipe in trendData.seasonalRecipes" 
-                  :key="recipe.id"
-                  class="seasonal-item"
-                  @click="viewRecipe(recipe.id)"
-                >
-                  <div class="seasonal-badge">{{ recipe.season }}</div>
-                  <div class="seasonal-title">{{ recipe.title }}</div>
+            <div v-else class="ai-analysis-content">
+              <!-- AI个性化建议 -->
+              <div class="ai-section recommendations">
+                <h4 class="section-title">
+                  <span class="title-icon">🎯</span>
+                  个性化建议
+                </h4>
+                <div class="recommendations-list">
+                  <div 
+                    v-for="(recommendation, index) in nutritionAnalysis.analysis.recommendations" 
+                    :key="index"
+                    class="recommendation-item"
+                  >
+                    <div class="item-marker">{{ index + 1 }}</div>
+                    <div class="item-content">{{ recommendation }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 健康风险评估 -->
+              <div class="ai-section risks">
+                <h4 class="section-title">
+                  <span class="title-icon">⚠️</span>
+                  健康风险评估
+                </h4>
+                <div class="risks-list">
+                  <div 
+                    v-for="(risk, index) in nutritionAnalysis.analysis.riskAssessments" 
+                    :key="index"
+                    class="risk-item"
+                    :class="risk.level"
+                  >
+                    <div class="risk-level">
+                      <el-tag :type="getRiskLevelColor(risk.level)" size="small">
+                        {{ risk.level === 'low' ? '低风险' : risk.level === 'medium' ? '中风险' : '高风险' }}
+                      </el-tag>
+                    </div>
+                    <div class="risk-content">
+                      <span class="risk-title">{{ risk.title }}</span>
+                      <span class="risk-desc">{{ risk.description }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 改进建议 -->
+              <div class="ai-section improvements">
+                <h4 class="section-title">
+                  <span class="title-icon">💡</span>
+                  改进建议
+                </h4>
+                <div class="improvements-list">
+                  <div 
+                    v-for="(improvement, index) in nutritionAnalysis.analysis.improvementSuggestions" 
+                    :key="index"
+                    class="improvement-item"
+                  >
+                    <el-tag type="info" size="small" class="category-tag">
+                      {{ improvement.category }}
+                    </el-tag>
+                    <span class="improvement-text">{{ improvement.suggestion }}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        
-        <!-- 个性化推荐 -->
-        <div class="analytics-card recommendations-card">
-          <h2 class="card-title">{{ t('analytics.personalized_recommendations') }}</h2>
-          
-          <div class="recommendations-list">
-            <div 
-              v-for="recommendation in recommendations" 
-              :key="recommendation.id"
-              class="recommendation-item"
-              @click="viewRecipe(recommendation.id)"
-            >
-              <div class="recommendation-image">
-                <img :src="recommendation.image" :alt="recommendation.title">
-              </div>
-              <div class="recommendation-info">
-                <h3 class="recommendation-title">{{ recommendation.title }}</h3>
-                <p class="recommendation-reason">{{ recommendation.reason }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
+
+    <!-- 用户资料对话框 -->
+    <el-dialog
+      v-model="showProfileDialog"
+      title="个人资料"
+      width="800px"
+      :close-on-click-modal="false"
+    >
+      <UserProfileForm 
+        :initial-data="userProfile"
+        @save="saveUserProfile"
+        @cancel="showProfileDialog = false"
+      />
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { analyticsService } from '@/services/analyticsService'
-import { useI18n } from '@/composables/useI18n'
-import Chart from 'chart.js/auto'
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage, ElDialog, ElButton, ElProgress, ElTag, ElEmpty, ElSkeleton } from 'element-plus'
+import { Edit, User, DataLine, TrendCharts, MagicStick } from '@element-plus/icons-vue'
+import UserProfileForm from '@/components/common/UserProfileForm.vue'
+import { nutritionAnalysisService, type UserProfile, type NutritionAnalysisResult } from '@/services/nutritionAnalysisService'
 
-// 国际化
-const { t } = useI18n()
+// 响应式状态
+const showProfileDialog = ref(false)
+const isAnalyzing = ref(false)
+const hasCompletedAnalysis = ref(false)
 
-// 路由
-const router = useRouter()
+// 用户档案 - 初始为空
+const userProfile = ref<UserProfile | null>(null)
 
-// 图表引用
-const activityChart = ref<HTMLCanvasElement | null>(null)
-const categoriesChart = ref<HTMLCanvasElement | null>(null)
-const ingredientsChart = ref<HTMLCanvasElement | null>(null)
-const categoryDistChart = ref<HTMLCanvasElement | null>(null)
-const timeDistChart = ref<HTMLCanvasElement | null>(null)
-const difficultyDistChart = ref<HTMLCanvasElement | null>(null)
+// 营养分析结果
+const nutritionAnalysis = ref<NutritionAnalysisResult | null>(null)
 
-// 图表实例
-let activityChartInstance: Chart | null = null
-let categoriesChartInstance: Chart | null = null
-let ingredientsChartInstance: Chart | null = null
-// Chart instances for cleanup (prefixed with _ to indicate intentionally unused)
-let _categoryDistChartInstance: Chart | null = null
-let _timeDistChartInstance: Chart | null = null
-let _difficultyDistChartInstance: Chart | null = null
-
-// 状态
-const selectedPeriod = ref(30)
-const activePopularTab = ref('viewed')
-const userStats = ref(analyticsService.getUserStats(30))
-const recipeStats = ref(analyticsService.getRecipeStats())
-const trendData = ref(analyticsService.getTrendData())
-const recommendations = ref(analyticsService.getPersonalizedRecommendations('1'))
-
-// 时间周期选项
-const timePeriods = [
-  { value: 7, label: t('analytics.last_7_days') },
-  { value: 30, label: t('analytics.last_30_days') },
-  { value: 90, label: t('analytics.last_90_days') },
-  { value: 365, label: t('analytics.last_year') }
-]
-
-// 热门食谱标签页
-const popularTabs = [
-  { id: 'viewed', name: t('analytics.most_viewed') },
-  { id: 'saved', name: t('analytics.most_saved') },
-  { id: 'rated', name: t('analytics.highest_rated') },
-  { id: 'shared', name: t('analytics.most_shared') }
-]
-
-// 监听时间周期变化
-watch(selectedPeriod, (newPeriod) => {
-  userStats.value = analyticsService.getUserStats(newPeriod)
-  updateCharts()
+// 计算属性：是否有用户数据
+const hasUserData = computed(() => {
+  return userProfile.value !== null && 
+         userProfile.value.age > 0 && 
+         userProfile.value.height > 0 && 
+         userProfile.value.weight > 0
 })
 
-// 生命周期钩子
-onMounted(() => {
-  initCharts()
+// 计算属性：是否有饮食记录
+const hasMealData = computed(() => {
+  return userProfile.value?.meals && userProfile.value.meals.length > 0
 })
 
-// 初始化图表
-const initCharts = () => {
-  // 活动趋势图表
-  if (activityChart.value) {
-    const ctx = activityChart.value.getContext('2d')
-    if (ctx) {
-      activityChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: generateDateLabels(selectedPeriod.value),
-          datasets: [{
-            label: t('analytics.daily_activity'),
-            data: generateActivityData(selectedPeriod.value),
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 2,
-            tension: 0.4,
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
-      })
-    }
-  }
-  
-  // 喜爱分类图表
-  if (categoriesChart.value) {
-    const ctx = categoriesChart.value.getContext('2d')
-    if (ctx) {
-      categoriesChartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: userStats.value.favoriteCategories.map(item => item.category),
-          datasets: [{
-            data: userStats.value.favoriteCategories.map(item => item.count),
-            backgroundColor: [
-              'rgba(255, 99, 132, 0.7)',
-              'rgba(54, 162, 235, 0.7)',
-              'rgba(255, 206, 86, 0.7)',
-              'rgba(75, 192, 192, 0.7)',
-              'rgba(153, 102, 255, 0.7)'
-            ],
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'right',
-              labels: {
-                boxWidth: 12,
-                font: {
-                  size: 10
-                }
-              }
-            }
-          }
-        }
-      })
-    }
-  }
-  
-  // 喜爱食材图表
-  if (ingredientsChart.value) {
-    const ctx = ingredientsChart.value.getContext('2d')
-    if (ctx) {
-      ingredientsChartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: userStats.value.favoriteIngredients.map(item => item.ingredient),
-          datasets: [{
-            data: userStats.value.favoriteIngredients.map(item => item.count),
-            backgroundColor: [
-              'rgba(255, 159, 64, 0.7)',
-              'rgba(75, 192, 192, 0.7)',
-              'rgba(54, 162, 235, 0.7)',
-              'rgba(153, 102, 255, 0.7)',
-              'rgba(255, 99, 132, 0.7)'
-            ],
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'right',
-              labels: {
-                boxWidth: 12,
-                font: {
-                  size: 10
-                }
-              }
-            }
-          }
-        }
-      })
-    }
-  }
-  
-  // 分类分布图表
-  if (categoryDistChart.value) {
-    const ctx = categoryDistChart.value.getContext('2d')
-    if (ctx) {
-      _categoryDistChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: recipeStats.value.categoryDistribution.map(item => item.category),
-          datasets: [{
-            label: t('analytics.recipes'),
-            data: recipeStats.value.categoryDistribution.map(item => item.count),
-            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
-      })
-    }
-  }
-  
-  // 烹饪时间分布图表
-  if (timeDistChart.value) {
-    const ctx = timeDistChart.value.getContext('2d')
-    if (ctx) {
-      _timeDistChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: recipeStats.value.cookingTimeDistribution.map(item => item.range),
-          datasets: [{
-            label: t('analytics.recipes'),
-            data: recipeStats.value.cookingTimeDistribution.map(item => item.count),
-            backgroundColor: 'rgba(75, 192, 192, 0.7)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
-      })
-    }
-  }
-  
-  // 难度分布图表
-  if (difficultyDistChart.value) {
-    const ctx = difficultyDistChart.value.getContext('2d')
-    if (ctx) {
-      _difficultyDistChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: recipeStats.value.difficultyDistribution.map(item => item.level),
-          datasets: [{
-            label: t('analytics.recipes'),
-            data: recipeStats.value.difficultyDistribution.map(item => item.count),
-            backgroundColor: 'rgba(255, 159, 64, 0.7)',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true
-            }
-          }
-        }
-      })
-    }
-  }
-}
+// 计算属性：健康指标
+const healthMetrics = computed(() => {
+  if (!userProfile.value) return null
+  return nutritionAnalysisService.calculateHealthMetrics(userProfile.value)
+})
 
-// 更新图表
-const updateCharts = () => {
-  if (activityChartInstance) {
-    activityChartInstance.data.labels = generateDateLabels(selectedPeriod.value)
-    activityChartInstance.data.datasets[0].data = generateActivityData(selectedPeriod.value)
-    activityChartInstance.update()
-  }
+// 计算属性：营养充足率百分比
+const nutritionPercentages = computed(() => {
+  if (!nutritionAnalysis.value) return {}
   
-  if (categoriesChartInstance) {
-    categoriesChartInstance.data.labels = userStats.value.favoriteCategories.map(item => item.category)
-    categoriesChartInstance.data.datasets[0].data = userStats.value.favoriteCategories.map(item => item.count)
-    categoriesChartInstance.update()
-  }
+  const percentages: Record<string, number> = {}
+  const { adequacyRatios } = nutritionAnalysis.value.analysis
   
-  if (ingredientsChartInstance) {
-    ingredientsChartInstance.data.labels = userStats.value.favoriteIngredients.map(item => item.ingredient)
-    ingredientsChartInstance.data.datasets[0].data = userStats.value.favoriteIngredients.map(item => item.count)
-    ingredientsChartInstance.update()
-  }
-}
-
-// 生成日期标签
-const generateDateLabels = (days: number) => {
-  const labels = []
-  const today = new Date()
-  
-  for (let i = days - 1; i >= 0; i--) {
-    const date = new Date(today)
-    date.setDate(today.getDate() - i)
-    labels.push(formatDate(date))
-  }
-  
-  return labels
-}
-
-// 生成活动数据
-const generateActivityData = (days: number) => {
-  const data = []
-  const today = new Date()
-  
-  for (let i = days - 1; i >= 0; i--) {
-    const date = new Date(today)
-    date.setDate(today.getDate() - i)
-    const dayKey = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
-    data.push(userStats.value.activityByDay[dayKey] || 0)
-  }
-  
-  return data
-}
-
-// 格式化日期
-const formatDate = (date: Date) => {
-  return `${date.getMonth() + 1}/${date.getDate()}`
-}
-
-// 格式化时间
-const formatTime = (minutes: number) => {
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
-  
-  if (hours > 0) {
-    return `${hours}${t('analytics.hours')} ${mins}${t('analytics.minutes')}`
-  }
-  
-  return `${mins}${t('analytics.minutes')}`
-}
-
-// 查看食谱
-const viewRecipe = (recipeId: string) => {
-  router.push({
-    path: '/recipe-detail',
-    query: { id: recipeId }
+  Object.entries(adequacyRatios).forEach(([nutrient, ratio]) => {
+    percentages[nutrient] = Math.min(Math.round(ratio * 100), 150) // 限制最大150%
   })
+  
+  return percentages
+})
+
+// 保存用户资料
+const saveUserProfile = async (profile: UserProfile) => {
+  try {
+    userProfile.value = profile
+    showProfileDialog.value = false
+    
+    // 保存到本地存储
+    localStorage.setItem('chefMind_userProfile', JSON.stringify(profile))
+    
+    // 如果有饮食记录，自动进行营养分析
+    if (hasMealData.value) {
+      await performNutritionAnalysis()
+    } else {
+      ElMessage.info('请添加今日饮食记录后进行营养分析')
+    }
+    
+    ElMessage.success('个人资料保存成功！')
+  } catch (error) {
+    console.error('保存用户资料失败:', error)
+    ElMessage.error('保存失败，请重试')
+  }
 }
+
+// 执行营养分析
+const performNutritionAnalysis = async () => {
+  if (!userProfile.value) {
+    ElMessage.warning('请先完善个人信息')
+    showProfileDialog.value = true
+    return
+  }
+  
+  if (!hasMealData.value) {
+    ElMessage.warning('请先记录今日饮食')
+    showProfileDialog.value = true
+    return
+  }
+  
+  try {
+    isAnalyzing.value = true
+    ElMessage.info('正在进行AI营养分析，请稍候...')
+    
+    // 调用AI营养分析服务
+    nutritionAnalysis.value = await nutritionAnalysisService.analyzeNutrition(userProfile.value)
+    hasCompletedAnalysis.value = true
+    
+    ElMessage.success('营养分析完成！')
+  } catch (error) {
+    console.error('营养分析失败:', error)
+    ElMessage.error('分析失败，请检查网络连接后重试')
+  } finally {
+    isAnalyzing.value = false
+  }
+}
+
+// 获取活动水平文本
+const getActivityLevelText = (level: string) => {
+  const levelMap = {
+    sedentary: '久坐少动',
+    light: '轻度活动',
+    moderate: '中度活动',
+    active: '高度活动',
+    veryActive: '极高活动'
+  }
+  return levelMap[level] || '中度活动'
+}
+
+// 获取热量状态类型
+const getCalorieStatusType = () => {
+  if (!nutritionAnalysis.value) return 'info'
+  const { currentIntake, dailyNeeds } = nutritionAnalysis.value
+  const ratio = currentIntake.calories / dailyNeeds.calories
+  
+  if (ratio < 0.8) return 'warning'
+  if (ratio > 1.2) return 'danger'
+  return 'success'
+}
+
+// 获取热量状态文本
+const getCalorieStatusText = () => {
+  if (!nutritionAnalysis.value) return '未知'
+  const { currentIntake, dailyNeeds } = nutritionAnalysis.value
+  const ratio = currentIntake.calories / dailyNeeds.calories
+  
+  if (ratio < 0.8) return '不足'
+  if (ratio > 1.2) return '过量'
+  return '适宜'
+}
+
+// 获取营养素状态颜色
+const getNutrientStatusColor = (ratio: number) => {
+  if (ratio < 0.6) return '#F56C6C' // 严重不足 - 红色
+  if (ratio < 0.8) return '#E6A23C' // 不足 - 黄色
+  if (ratio <= 1.2) return '#67C23A' // 合适 - 绿色
+  return '#E6A23C' // 过量 - 黄色
+}
+
+// 获取营养素状态标签类型
+const getNutrientStatusTagType = (ratio: number) => {
+  if (ratio < 0.6) return 'danger'
+  if (ratio < 0.8) return 'warning'
+  if (ratio <= 1.2) return 'success'
+  return 'warning'
+}
+
+// 获取营养素状态文本
+const getNutrientStatusText = (ratio: number) => {
+  if (ratio < 0.6) return '严重不足'
+  if (ratio < 0.8) return '不足'
+  if (ratio <= 1.2) return '合适'
+  return '过量'
+}
+
+// 获取营养素显示名称
+const getNutrientDisplayName = (nutrient: string) => {
+  const nameMap = {
+    calories: '热量',
+    protein: '蛋白质',
+    carbs: '碳水化合物',
+    fat: '脂肪',
+    fiber: '膳食纤维',
+    sodium: '钠',
+    calcium: '钙',
+    iron: '铁',
+    vitaminC: '维生素C',
+    vitaminD: '维生素D'
+  }
+  return nameMap[nutrient] || nutrient
+}
+
+// 获取风险等级颜色
+const getRiskLevelColor = (level: string) => {
+  switch (level) {
+    case 'low': return 'success'
+    case 'medium': return 'warning'
+    case 'high': return 'danger'
+    default: return 'info'
+  }
+}
+
+// 获取膳食指南信息
+const dietaryGuidelines = computed(() => {
+  return nutritionAnalysisService.getDietaryGuidelines()
+})
+
+// 组件挂载时检查数据
+onMounted(() => {
+  // 检查是否有保存的用户数据
+  const savedProfile = localStorage.getItem('chefMind_userProfile')
+  if (savedProfile) {
+    try {
+      userProfile.value = JSON.parse(savedProfile)
+    } catch (error) {
+      console.error('加载用户数据失败:', error)
+    }
+  }
+})
 </script>
 
-<style lang="scss" scoped>
+<style scoped lang="scss">
+@import "@/styles/variables.scss";
+
 .analytics-view {
-  padding: 2rem 1rem;
-  background-color: var(--bg-color);
   min-height: 100vh;
-}
+  background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+  padding: 2rem;
 
-.analytics-container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.analytics-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.analytics-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--heading-color);
-  margin: 0 0 0.5rem 0;
-}
-
-.analytics-subtitle {
-  font-size: 1.1rem;
-  color: var(--text-color-secondary);
-  margin: 0 0 1.5rem 0;
-}
-
-.time-filter {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.time-button {
-  padding: 0.5rem 1rem;
-  background-color: var(--bg-color-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 0.9rem;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background-color: var(--hover-color);
-  }
-  
-  &.active {
-    background-color: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-  }
-}
-
-.analytics-content {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-  
-  @media (max-width: 992px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.analytics-card {
-  background-color: var(--bg-color-secondary);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  
-  &.overview-card {
-    grid-column: span 2;
-    
-    @media (max-width: 992px) {
-      grid-column: span 1;
-    }
-  }
-  
-  &.trend-card {
-    grid-column: span 2;
-    
-    @media (max-width: 992px) {
-      grid-column: span 1;
-    }
-  }
-  
-  &.recommendations-card {
-    grid-column: span 2;
-    
-    @media (max-width: 992px) {
-      grid-column: span 1;
-    }
-  }
-}
-
-.card-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: var(--heading-color);
-  margin: 0 0 1.5rem 0;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
-  
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.stat-item {
-  text-align: center;
-  padding: 1rem;
-  background-color: var(--bg-color);
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  }
-  
-  .stat-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .stat-value {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--heading-color);
-    margin-bottom: 0.5rem;
-  }
-  
-  .stat-label {
-    font-size: 0.9rem;
-    color: var(--text-color-secondary);
-  }
-}
-
-.chart-container {
-  height: 300px;
-  position: relative;
-  
-  &.small {
-    height: 200px;
-  }
-}
-
-.habits-content,
-.distribution-content {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-  
-  .habits-section,
-  .distribution-section {
-    &:last-child {
-      grid-column: span 2;
-      
-      @media (max-width: 768px) {
-        grid-column: span 1;
-      }
-    }
-  }
-}
-
-.section-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--heading-color);
-  margin: 0 0 1rem 0;
-}
-
-.cooking-time {
-  display: flex;
-  justify-content: space-around;
-  padding: 2rem 0;
-  
-  .time-stat {
+  .view-header {
     text-align: center;
-    
-    .time-value {
-      font-size: 1.5rem;
+    margin-bottom: 3rem;
+
+    .page-title {
+      font-size: 2.5rem;
       font-weight: 700;
-      color: var(--heading-color);
+      color: #2c3e50;
       margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
-    
-    .time-label {
-      font-size: 0.9rem;
-      color: var(--text-color-secondary);
+
+    .page-subtitle {
+      font-size: 1.1rem;
+      color: #7f8c8d;
+      margin: 0;
     }
+  }
+
+  .analytics-content {
+    max-width: 1400px;
+    margin: 0 auto;
   }
 }
 
-.tabs {
-  display: flex;
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 1.5rem;
-  overflow-x: auto;
+.modules-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
   
-  .tab-button {
-    padding: 0.8rem 1.5rem;
-    background: none;
-    border: none;
-    font-size: 1rem;
-    color: var(--text-color);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-    
-    &:hover {
-      color: var(--primary-color);
-    }
-    
-    &.active {
-      color: var(--primary-color);
-      border-bottom: 2px solid var(--primary-color);
-      font-weight: 600;
-    }
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
   }
 }
 
-.popular-items {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.popular-item {
-  display: flex;
-  align-items: center;
-  padding: 0.8rem;
-  background-color: var(--bg-color);
-  border-radius: 8px;
-  cursor: pointer;
+.analysis-module {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
   transition: all 0.3s ease;
   
   &:hover {
-    background-color: var(--hover-color);
+    transform: translateY(-4px);
+    box-shadow: 
+      0 12px 48px rgba(0, 0, 0, 0.15),
+      0 4px 16px rgba(0, 0, 0, 0.08);
   }
-  
-  .item-rank {
-    width: 30px;
-    height: 30px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: var(--primary-color);
-    color: white;
-    border-radius: 50%;
-    font-weight: 600;
-    margin-right: 1rem;
-  }
-  
-  .item-title {
-    flex: 1;
-    font-weight: 500;
-    color: var(--text-color);
-  }
-  
-  .item-value {
-    font-size: 0.9rem;
-    color: var(--text-color-secondary);
-    white-space: nowrap;
-  }
-}
 
-.trends-content {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-  
-  .trends-section {
-    &:last-child {
-      grid-column: span 2;
+  .module-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f5f7fa;
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      .module-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0;
+      }
+    }
+
+    .confidence-score,
+    .balance-score {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
       
-      @media (max-width: 768px) {
-        grid-column: span 1;
+      .score-label {
+        font-size: 0.875rem;
+        color: #7f8c8d;
+      }
+      
+      .score-value {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #67C23A;
+      }
+    }
+
+    .ai-badge {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+  }
+
+  .module-content {
+    .empty-state,
+    .empty-analysis {
+      text-align: center;
+      padding: 2rem 1rem;
+    }
+
+    .loading-state {
+      .loading-text {
+        text-align: center;
+        color: #7f8c8d;
+        margin-top: 1rem;
+        font-style: italic;
       }
     }
   }
 }
 
-.trend-items {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.trend-item {
-  display: flex;
-  align-items: center;
-  padding: 0.8rem;
-  background-color: var(--bg-color);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background-color: var(--hover-color);
-  }
-  
-  .trend-rank {
-    width: 30px;
-    height: 30px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: var(--primary-color);
-    color: white;
-    border-radius: 50%;
-    font-weight: 600;
-    margin-right: 1rem;
-  }
-  
-  .trend-title {
-    flex: 1;
-    font-weight: 500;
-    color: var(--text-color);
-  }
-  
-  .trend-value {
-    font-size: 0.9rem;
-    color: #52c41a;
-    white-space: nowrap;
-    font-weight: 600;
-    
-    .trend-arrow {
-      margin-right: 0.25rem;
-    }
-  }
-}
-
-.seasonal-items {
+// 个人信息模块样式
+.personal-info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
-}
 
-.seasonal-item {
-  padding: 1rem;
-  background-color: var(--bg-color);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  
-  &:hover {
-    background-color: var(--hover-color);
-  }
-  
-  .seasonal-badge {
-    position: absolute;
-    top: 0;
-    right: 0;
-    padding: 0.25rem 0.5rem;
-    background-color: var(--primary-color);
-    color: white;
-    font-size: 0.8rem;
-    font-weight: 600;
-    border-bottom-left-radius: 8px;
-  }
-  
-  .seasonal-title {
-    font-weight: 500;
-    color: var(--text-color);
-    margin-top: 0.5rem;
-  }
-}
+  .info-card {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
 
-.recommendations-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1.5rem;
-  
-  @media (max-width: 576px) {
-    grid-template-columns: 1fr;
-  }
-}
+    .info-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #475569;
+      margin: 0 0 0.75rem 0;
+    }
 
-.recommendation-item {
-  background-color: var(--bg-color);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-  cursor: pointer;
-  
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  }
-  
-  .recommendation-image {
-    height: 180px;
-    overflow: hidden;
-    
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: all 0.5s ease;
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+
+      .info-label {
+        font-size: 0.875rem;
+        color: #64748b;
+      }
+
+      .info-value {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+    }
+
+    .goals-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+
+      .goal-tag {
+        font-size: 0.75rem;
+      }
+    }
+
+    .activity-display {
+      .activity-text {
+        font-size: 0.875rem;
+        color: #1e293b;
+        font-weight: 500;
+      }
+    }
+
+    .meals-summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .meals-count {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+      }
     }
   }
-  
-  &:hover .recommendation-image img {
-    transform: scale(1.05);
+}
+
+// 营养概览模块样式
+.nutrition-overview-grid {
+  .nutrition-category {
+    margin-bottom: 1.5rem;
+
+    .category-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 1rem;
+    }
+
+    .nutrition-comparison {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: #f8fafc;
+      padding: 1rem;
+      border-radius: 12px;
+
+      .comparison-item {
+        text-align: center;
+
+        .item-label {
+          display: block;
+          font-size: 0.75rem;
+          color: #64748b;
+          margin-bottom: 0.25rem;
+        }
+
+        .item-value {
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: #1e293b;
+        }
+
+        .item-unit {
+          font-size: 0.75rem;
+          color: #64748b;
+        }
+      }
+
+      .comparison-arrow {
+        font-size: 1.5rem;
+        color: #67C23A;
+      }
+    }
+
+    .macronutrients-grid {
+      .macro-item {
+        margin-bottom: 1rem;
+
+        .macro-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+
+          .macro-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #2c3e50;
+          }
+
+          .macro-values {
+            font-size: 0.75rem;
+            color: #64748b;
+          }
+        }
+      }
+    }
   }
-  
-  .recommendation-info {
+}
+
+// 营养平衡分析模块样式
+.balance-analysis-content {
+  .nutrients-analysis {
+    margin-bottom: 2rem;
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 1rem;
+    }
+
+    .nutrients-list {
+      .nutrient-item {
+        margin-bottom: 1rem;
+
+        .nutrient-info {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+
+          .nutrient-name {
+            font-size: 0.875rem;
+            color: #2c3e50;
+          }
+
+          .nutrient-ratio {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1e293b;
+          }
+        }
+
+        .nutrient-status {
+          margin-top: 0.5rem;
+        }
+      }
+    }
+  }
+
+  .guidelines-reference {
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 1rem;
+    }
+
+    .guidelines-list {
+      .guideline-item {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+
+        .guideline-title {
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: #1e293b;
+          margin: 0 0 0.5rem 0;
+        }
+
+        .guideline-desc {
+          font-size: 0.75rem;
+          color: #64748b;
+          margin: 0;
+          line-height: 1.4;
+        }
+      }
+    }
+  }
+}
+
+// AI智能分析模块样式
+.ai-analysis-content {
+  .ai-section {
+    margin-bottom: 2rem;
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 1rem;
+
+      .title-icon {
+        font-size: 1.125rem;
+      }
+    }
+
+    .recommendations-list {
+      .recommendation-item {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+        padding: 0.75rem;
+        background: #f0f9ff;
+        border-radius: 8px;
+        border-left: 3px solid #3b82f6;
+
+        .item-marker {
+          flex-shrink: 0;
+          width: 1.5rem;
+          height: 1.5rem;
+          background: #3b82f6;
+          color: white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .item-content {
+          font-size: 0.875rem;
+          color: #1e293b;
+          line-height: 1.5;
+        }
+      }
+    }
+
+    .risks-list {
+      .risk-item {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+        padding: 0.75rem;
+        background: #fefefe;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+
+        .risk-content {
+          flex: 1;
+
+          .risk-title {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+          }
+
+          .risk-desc {
+            font-size: 0.75rem;
+            color: #64748b;
+            line-height: 1.4;
+          }
+        }
+      }
+    }
+
+    .improvements-list {
+      .improvement-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+        padding: 0.75rem;
+        background: #fefdf8;
+        border-radius: 8px;
+        border-left: 3px solid #f59e0b;
+
+        .category-tag {
+          flex-shrink: 0;
+        }
+
+        .improvement-text {
+          font-size: 0.875rem;
+          color: #1e293b;
+          line-height: 1.5;
+        }
+      }
+    }
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .analytics-view {
     padding: 1rem;
   }
-  
-  .recommendation-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--heading-color);
-    margin: 0 0 0.5rem 0;
+
+  .personal-info-grid {
+    grid-template-columns: 1fr;
   }
-  
-  .recommendation-reason {
-    font-size: 0.9rem;
-    color: var(--text-color-secondary);
-    margin: 0;
+
+  .modules-container {
+    gap: 1rem;
+  }
+
+  .analysis-module {
+    padding: 1rem;
   }
 }
 </style>
