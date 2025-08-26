@@ -4,6 +4,7 @@ import { callGLM, parseJsonResponse } from './glmService'
 import { generateUUID } from '../utils/idGenerator'
 import { cookingMethods } from '../data/cookingMethods'
 import { cacheData, getCachedData } from '../utils/cacheUtils'
+import { generateRecipeCoverSvg } from '../utils/svgGenerator'
 import type {
   Recipe,
   RecipeGenerationRequest,
@@ -25,11 +26,13 @@ interface RawRecipeData {
     amount: string
     unit?: string
   }>
-  steps?: Array<{
-    description?: string
-    title?: string
-    order?: number
-  }> | string[]
+  steps?:
+    | Array<{
+        description?: string
+        title?: string
+        order?: number
+      }>
+    | string[]
   cookingTime?: number
   servings?: number
   difficulty?: string
@@ -52,9 +55,11 @@ interface RawStepData {
 }
 
 // 转换原始食材数据到Ingredient格式
-function convertIngredients(rawIngredients?: RawRecipeData['ingredients']): (string | Ingredient)[] {
+function convertIngredients(
+  rawIngredients?: RawRecipeData['ingredients']
+): (string | Ingredient)[] {
   if (!rawIngredients) return []
-  
+
   return rawIngredients.map(item => ({
     name: item.name,
     amount: parseFloat(item.amount) || 1,
@@ -65,11 +70,11 @@ function convertIngredients(rawIngredients?: RawRecipeData['ingredients']): (str
 // 转换原始步骤数据到RecipeStep格式
 function convertSteps(rawSteps?: RawRecipeData['steps']): string[] | RecipeStep[] {
   if (!rawSteps) return []
-  
+
   if (Array.isArray(rawSteps) && typeof rawSteps[0] === 'string') {
     return rawSteps as string[]
   }
-  
+
   return (rawSteps as RawStepData[]).map((step, index) => ({
     order: step.order || index + 1,
     description: step.description || step.title || '',
@@ -144,9 +149,7 @@ function buildCuisinePrompt(preferredCuisine?: string[]): string {
 
 function buildMealTypePrompt(ingredients: string[]): string {
   const mealKeywords = ['早餐', '午餐', '晚餐', '小食', '甜点']
-  const matchedMeal = mealKeywords.find(meal =>
-    ingredients.some(ing => ing.includes(meal))
-  )
+  const matchedMeal = mealKeywords.find(meal => ingredients.some(ing => ing.includes(meal)))
   return matchedMeal ? `${matchedMeal}` : ''
 }
 
@@ -169,7 +172,8 @@ function buildPreferencesPrompt(preferences?: UserPreference): string {
   if (!preferences) return ''
 
   let prompt = ''
-  const { favoriteIngredients, dislikedIngredients, preferredCuisine, dietaryRestrictions } = preferences
+  const { favoriteIngredients, dislikedIngredients, preferredCuisine, dietaryRestrictions } =
+    preferences
 
   if (favoriteIngredients?.length) {
     prompt += `，喜欢的食材：${favoriteIngredients.join('、')}`
@@ -225,7 +229,8 @@ function convertToRecipe(recipeData: RawRecipeData, request: RecipeGenerationReq
     name: recipeName,
     description: recipeData.description || '',
     ingredients: convertIngredients(recipeData.ingredients),
-    instructions: recipeData.steps?.map((step: RawStepData) => step.description || step.title || '') || [],
+    instructions:
+      recipeData.steps?.map((step: RawStepData) => step.description || step.title || '') || [],
     steps: convertSteps(recipeData.steps),
     cookingTime: `${recipeData.cookingTime || 30}分钟`,
     time: recipeData.cookingTime || 30,
@@ -240,6 +245,7 @@ function convertToRecipe(recipeData: RawRecipeData, request: RecipeGenerationReq
     userId: 'ai-system', // 默认用户ID
     cookingTips: recipeData.cookingTips || [],
     healthBenefits: recipeData.healthBenefits || [],
+    image: generateRecipeCoverSvg({ name: recipeName }), // 自动生成SVG封面
   }
 }
 
@@ -299,7 +305,7 @@ export async function generateRecipeByIngredients(
     difficulty: options.difficulty?.toString(),
     cookingTime: options.cookingTime?.toString(),
     preferences: options.preferences,
-    healthGoals: options.constraints?.map((_c) => `限制条件`) || [],
+    healthGoals: options.constraints?.map(_c => `限制条件`) || [],
   }
 
   return generateRecipe(request)
@@ -520,10 +526,10 @@ function processSearchResponse(response: string, filters?: RecipeFilters): Recip
 function convertSearchResults(recipesData: Recipe[]): Recipe[] {
   return recipesData.map((recipeData, _index) => {
     const recipe = buildRecipeFromSearchData(recipeData)
-    
+
     // 缓存生成的菜谱
     cacheData(`recipe_${recipe.id}`, recipe, 3600 * 24) // 缓存24小时
-    
+
     return recipe
   })
 }
@@ -585,12 +591,12 @@ function buildIngredientsFromData(ingredientsData?: unknown[]): Ingredient[] {
  */
 function buildStepsFromData(stepsData?: unknown[]): string[] | RecipeStep[] {
   if (!Array.isArray(stepsData)) return []
-  
+
   const isStringSteps = stepsData.every((step: unknown) => typeof step === 'string')
   if (isStringSteps) {
     return stepsData.filter((step): step is string => typeof step === 'string')
   }
-  
+
   return stepsData.map(
     (step: RawStepData, i: number) =>
       ({

@@ -156,8 +156,8 @@
               <h5>{{ recipe.title }}</h5>
               <p>{{ recipe.description }}</p>
               <div class="result-meta">
-                <span>{{ recipe.cookingTime }}</span>
-                <span>{{ recipe.difficulty }}</span>
+                <span>{{ formatCookingTime(recipe.cookingTime) }}</span>
+                <span>{{ formatDifficulty(recipe.difficulty) }}</span>
                 <el-tag size="small" type="success"> AI 推荐 </el-tag>
               </div>
             </div>
@@ -198,6 +198,7 @@
   import AIProviderSettings from './AIProviderSettings.vue'
   import GLMAPITester from './GLMAPITester.vue'
   import { aiService, type UserPreferences } from '@/services/aiService'
+  import { formatCookingTime, formatDifficulty } from '@/utils/formatUtils'
   import type { Recipe } from '@/types/recipe'
 
   // 测试图片缓存系统（开发环境）

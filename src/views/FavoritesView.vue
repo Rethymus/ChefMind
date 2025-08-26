@@ -1,5 +1,11 @@
 <template>
-  <div class="favorites-view">
+  <div class="favorites-view" style="min-height: 100vh; background: white; padding: 20px;">
+    <div style="border: 2px solid red; padding: 10px; margin: 10px 0;">
+      <h1 style="color: red; font-size: 24px;">🔍 调试: FavoritesView 组件已加载</h1>
+      <p>savedRecipes.length: {{ savedRecipes.length }}</p>
+      <p>isLoading: {{ isLoading }}</p>
+    </div>
+    
     <header class="page-header">
       <h1 class="page-title">我的收藏</h1>
       <div class="header-actions">
@@ -10,6 +16,15 @@
         >
           <span class="icon">📤</span>
           批量导出
+        </button>
+        <!-- 调试按钮 -->
+        <button class="debug-btn" @click="loadSavedRecipes" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-right: 10px;">
+          <span class="icon">🔄</span>
+          刷新数据
+        </button>
+        <button class="debug-btn" @click="addTestFavorite" style="background: #17a2b8; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-right: 10px;">
+          <span class="icon">🧪</span>
+          添加测试
         </button>
         <div class="view-toggle">
           <button
@@ -30,16 +45,30 @@
       </div>
     </header>
 
-    <div class="favorites-content">
-      <div v-if="isLoading" class="loading-container">
+    <div class="favorites-content" style="background: yellow; min-height: 80vh; padding: 20px; border: 3px solid red;">
+      <div style="background: orange; padding: 10px; margin: 10px 0; border: 2px solid green;">
+        <h2 style="color: red;">🔍 调试: FavoritesContent 已渲染</h2>
+        <p>savedRecipes.length: {{ savedRecipes.length }}</p>
+        <p>isLoading: {{ isLoading }}</p>
+        <p>activeCategory: {{ activeCategory }}</p>
+      </div>
+      
+      <div v-if="isLoading" class="loading-container" style="background: lightblue; padding: 20px;">
         <div class="loading-spinner"></div>
         <p>加载收藏中...</p>
       </div>
 
-      <div v-else-if="savedRecipes.length === 0" class="empty-state">
+      <div v-else-if="savedRecipes.length === 0" class="empty-state" style="background: lightcoral; padding: 40px; border: 3px solid darkred;">
         <div class="empty-icon">🍽️</div>
         <h3>暂无收藏的食谱</h3>
         <p>您可以在浏览食谱时点击"保存食谱"按钮添加收藏</p>
+        <!-- 调试信息 -->
+        <div style="margin: 20px 0; padding: 10px; background: #f0f0f0; border-radius: 5px; font-size: 12px;">
+          <p><strong>调试信息:</strong></p>
+          <p>savedRecipes.length: {{ savedRecipes.length }}</p>
+          <p>isLoading: {{ isLoading }}</p>
+          <p>LocalStorage 状态: 请打开浏览器控制台查看详细日志</p>
+        </div>
         <button class="primary-button" @click="goToGenerator">
           <span class="button-icon">🔍</span>
           去搜索食谱
@@ -47,8 +76,14 @@
       </div>
 
       <template v-else>
+        <div style="background: lightgreen; padding: 20px; border: 3px solid green; margin: 10px 0;">
+          <h2 style="color: darkgreen;">🔍 调试: 有收藏数据，准备显示 {{ savedRecipes.length }} 个菜谱</h2>
+          <p>filteredRecipes.length: {{ filteredRecipes.length }}</p>
+          <p>viewMode: {{ viewMode }}</p>
+        </div>
+        
         <!-- 分类标签 -->
-        <div class="category-tabs">
+        <div class="category-tabs" style="background: lightblue; padding: 10px; border: 2px solid blue;">
           <button
             :class="['category-tab', { active: activeCategory === 'all' }]"
             @click="activeCategory = 'all'"
@@ -69,30 +104,23 @@
         </div>
 
         <!-- 网格视图 -->
-        <div v-if="viewMode === 'grid'" class="recipes-grid">
-          <div v-for="recipe in filteredRecipes" :key="recipe.id" class="recipe-card">
-            <div class="recipe-header">
-              <h3 class="recipe-title">{{ recipe.name }}</h3>
-              <div class="recipe-actions">
-                <button class="action-btn" @click="editRecipeCategory(recipe)" title="修改分类">
-                  <span class="icon">📂</span>
-                </button>
-                <button class="action-btn" @click="removeFromFavorites(recipe)" title="取消收藏">
-                  <span class="icon">❌</span>
-                </button>
-              </div>
-            </div>
-            <p class="recipe-description">{{ recipe.description }}</p>
-            <div class="recipe-meta">
-              <span class="cooking-time">{{ recipe.cookingTime }}</span>
-              <div class="recipe-rating">
-                <span v-for="i in 5" :key="i" :class="['star', { filled: i <= recipe.rating }]"
-                  >★</span
-                >
-              </div>
-            </div>
-            <button class="view-recipe-btn" @click="viewRecipe(recipe)">查看详情</button>
+        <div v-if="viewMode === 'grid'" class="recipes-grid" style="background: pink; padding: 20px; border: 3px solid purple;">
+          <div style="background: white; padding: 10px; margin-bottom: 10px;">
+            <h3 style="color: purple;">🔍 调试: 网格视图渲染中，显示 {{ filteredRecipes.length }} 个菜谱</h3>
           </div>
+          <AutoRecipeCard
+            v-for="recipe in filteredRecipes"
+            :key="recipe.id"
+            :recipe="recipe"
+            show-actions
+            show-favorite-button
+            show-category-button
+            show-view-button
+            style="border: 2px solid red; margin: 10px;"
+            @view-details="viewRecipe"
+            @remove-favorite="removeFromFavorites"
+            @edit-category="editRecipeCategory"
+          />
         </div>
 
         <!-- 列表视图 -->
@@ -102,8 +130,8 @@
               <h3 class="recipe-title">{{ recipe.name }}</h3>
               <p class="recipe-description">{{ recipe.description }}</p>
               <div class="recipe-meta">
-                <span class="cooking-time">{{ recipe.cookingTime }}</span>
-                <span class="difficulty">{{ recipe.difficulty }}</span>
+                <span class="cooking-time">{{ formatCookingTime(recipe.cookingTime) }}</span>
+                <span class="difficulty">{{ formatDifficulty(recipe.difficulty) }}</span>
                 <div class="recipe-rating">
                   <span v-for="i in 5" :key="i" :class="['star', { filled: i <= recipe.rating }]"
                     >★</span
@@ -202,8 +230,10 @@
 <script setup lang="ts">
   import { ref, computed, onMounted } from 'vue'
   import { useRouter } from 'vue-router'
-  import type { Recipe } from '@/services/recipeService'
+  import type { Recipe } from '@/types/recipe'
   import RecipeBatchExport from '@/components/recipe/RecipeBatchExport.vue'
+  import AutoRecipeCard from '@/components/recipe/AutoRecipeCard.vue'
+  import { formatDifficulty, formatCookingTime } from '@/utils/formatUtils'
 
   const router = useRouter()
   const isLoading = ref(true)
@@ -222,24 +252,59 @@
 
   // 过滤后的食谱
   const filteredRecipes = computed(() => {
+    console.log('🔍 调试: filteredRecipes computed 被调用')
+    console.log('🔍 调试: activeCategory.value:', activeCategory.value)
+    console.log('🔍 调试: savedRecipes.value:', savedRecipes.value)
+    
     if (activeCategory.value === 'all') {
+      console.log('🔍 调试: 返回全部食谱，数量:', savedRecipes.value.length)
       return savedRecipes.value
     }
-    return savedRecipes.value.filter(recipe => recipe.category === activeCategory.value)
+    const filtered = savedRecipes.value.filter(recipe => recipe.category === activeCategory.value)
+    console.log('🔍 调试: 按分类过滤后的食谱数量:', filtered.length)
+    return filtered
   })
 
   // 加载收藏的食谱
   const loadSavedRecipes = () => {
+    console.log('🔍 调试: 开始加载收藏数据')
     isLoading.value = true
+    
     try {
       const saved = localStorage.getItem('savedRecipes')
+      console.log('🔍 调试: localStorage中的savedRecipes:', saved)
+      
       if (saved) {
-        savedRecipes.value = JSON.parse(saved)
+        const parsed = JSON.parse(saved)
+        console.log('🔍 调试: 解析后的收藏数据:', parsed)
+        console.log('🔍 调试: 数据类型:', typeof parsed, '是否为数组:', Array.isArray(parsed))
+        
+        // 确保解析的数据是数组
+        if (Array.isArray(parsed)) {
+          savedRecipes.value = parsed
+          console.log('🔍 调试: savedRecipes.value设置为:', savedRecipes.value)
+          console.log('🔍 调试: savedRecipes.value.length:', savedRecipes.value.length)
+        } else {
+          console.warn('⚠️  localStorage中的数据不是数组，重置为空数组')
+          savedRecipes.value = []
+          localStorage.setItem('savedRecipes', '[]')
+        }
+      } else {
+        console.log('🔍 调试: localStorage中没有savedRecipes数据，设置为空数组')
+        savedRecipes.value = []
       }
     } catch (error) {
-      console.error('加载收藏食谱失败:', error)
+      console.error('❌ 加载收藏食谱失败:', error)
+      savedRecipes.value = []
     } finally {
       isLoading.value = false
+      console.log('🔍 调试: 加载完成，isLoading设置为false')
+      console.log('🔍 调试: 最终savedRecipes.value.length:', savedRecipes.value.length)
+      
+      // 强制触发响应式更新
+      setTimeout(() => {
+        console.log('🔍 调试: 1秒后检查 - savedRecipes.value.length:', savedRecipes.value.length)
+      }, 1000)
     }
   }
 
@@ -328,8 +393,40 @@
     window.dispatchEvent(event)
   }
 
+  // 添加测试收藏功能
+  const addTestFavorite = () => {
+    const testRecipe = {
+      id: 'test_' + Date.now(),
+      name: '测试收藏菜谱',
+      title: '测试收藏菜谱',
+      description: '这是一个测试收藏的菜谱',
+      ingredients: ['测试食材1 100g', '测试食材2 适量'],
+      steps: ['测试步骤1', '测试步骤2'],
+      cookingTime: '30',
+      difficulty: 'easy',
+      servings: 2,
+      rating: 4.5,
+      tags: ['测试', '收藏'],
+      cookingMethods: ['测试'],
+      createdAt: new Date().toISOString()
+    }
+
+    try {
+      const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]')
+      savedRecipes.push(testRecipe)
+      localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes))
+      console.log('🔍 添加测试收藏成功，重新加载数据')
+      loadSavedRecipes()
+      showNotification({ type: 'success', title: '成功', message: '添加测试收藏成功' })
+    } catch (error) {
+      console.error('❌ 添加测试收藏失败:', error)
+    }
+  }
+
   // 生命周期钩子
   onMounted(() => {
+    console.log('🔍 FavoritesView onMounted 开始')
+    
     // 加载保存的分类
     const savedCategories = localStorage.getItem('recipeCategories')
     if (savedCategories) {
@@ -338,6 +435,25 @@
 
     // 加载收藏的食谱
     loadSavedRecipes()
+
+    // 监听storage事件，当其他页面修改localStorage时自动刷新
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'savedRecipes') {
+        console.log('🔍 检测到localStorage中savedRecipes变化，重新加载数据')
+        loadSavedRecipes()
+      }
+    }
+    window.addEventListener('storage', handleStorageChange)
+
+    // 添加全局调试函数
+    ;(window as any).refreshFavorites = loadSavedRecipes
+    console.log('🔍 已添加全局调试函数 window.refreshFavorites()')
+
+    // 组件卸载时移除监听器
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      delete (window as any).refreshFavorites
+    }
   })
 </script>
 
@@ -904,4 +1020,39 @@
       grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
   }
+</style>
+
+<style scoped>
+/* 强制显示样式 - 调试用 */
+.favorites-view {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.favorites-content {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.recipes-container {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.recipes-grid {
+  display: grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.empty-state {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
 </style>

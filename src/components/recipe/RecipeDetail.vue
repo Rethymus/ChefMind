@@ -1,7 +1,7 @@
-﻿﻿<template>
+﻿<template>
   <div class="recipe-detail">
     <div v-if="recipe" class="recipe-content">
-      <!-- 食谱标题和评分 -->
+      <!-- 食谱标题和操作 -->
       <div class="recipe-header">
         <h1>{{ recipe.name }}</h1>
         <div class="recipe-actions">
@@ -17,11 +17,11 @@
               :class="{ active: isFavorite }"
               @click="toggleFavorite"
             >
-              <i class="icon-heart"></i>
+              <span class="action-icon">❤️</span>
               <span>{{ isFavorite ? '已收藏' : '收藏' }}</span>
             </button>
             <button class="action-button print" @click="printRecipe">
-              <i class="icon-print"></i>
+              <span class="action-icon">🖨️</span>
               <span>打印</span>
             </button>
           </div>
@@ -39,10 +39,10 @@
       <!-- 食谱基本信息 -->
       <div class="recipe-info">
         <div class="info-item">
-          <div class="info-icon">⏱️</div>
+          <div class="info-icon">⏰</div>
           <div class="info-content">
             <div class="info-label">烹饪时间</div>
-            <div class="info-value">{{ recipe.cookingTime }}</div>
+            <div class="info-value">{{ formatCookingTime(recipe.cookingTime) }}</div>
           </div>
         </div>
 
@@ -55,10 +55,10 @@
         </div>
 
         <div class="info-item">
-          <div class="info-icon">🍽️</div>
+          <div class="info-icon">👥</div>
           <div class="info-content">
             <div class="info-label">份量</div>
-            <div class="info-value">{{ recipe.servings || '2人份' }}</div>
+            <div class="info-value">{{ formatServings(recipe.servings || 2) }}</div>
           </div>
         </div>
       </div>
@@ -98,14 +98,17 @@
             :key="index"
             class="ingredient-item"
           >
-            {{ ingredient }}
+            <span class="ingredient-icon">{{ getIngredientIcon(typeof ingredient === 'string' ? ingredient : ingredient.name) }}</span>
+            <span class="ingredient-text">
+              {{ typeof ingredient === 'string' ? ingredient : `${ingredient.name} ${ingredient.amount || ''} ${ingredient.unit || ''}`.trim() }}
+            </span>
           </li>
         </ul>
       </div>
 
-      <!-- 烹饪步骤 -->
+      <!-- 制作步骤 -->
       <div class="steps">
-        <h3 class="section-title">烹饪步骤</h3>
+        <h3 class="section-title">制作步骤</h3>
         <div class="steps-list">
           <div v-for="(step, index) in recipe.steps" :key="index" class="step-item">
             <div class="step-number">{{ index + 1 }}</div>
@@ -136,7 +139,7 @@
           >
             <h4 class="related-title">{{ relatedRecipe.name }}</h4>
             <div class="related-meta">
-              <span class="related-time">{{ relatedRecipe.cookingTime }}</span>
+              <span class="related-time">{{ formatCookingTime(relatedRecipe.cookingTime) }}</span>
               <div class="related-rating">
                 <span
                   v-for="i in 5"
@@ -150,7 +153,7 @@
         </div>
       </div>
 
-      <!-- 分享和保存按钮 -->
+      <!-- 购物清单按钮 -->
       <div class="recipe-actions bottom-actions">
         <button class="action-button shopping-button" @click="addIngredientsToShoppingList">
           <span class="action-icon">🛒</span>
@@ -160,9 +163,9 @@
     </div>
 
     <div v-else class="no-recipe">
-      <div class="no-recipe-icon">🍽️</div>
+      <div class="no-recipe-icon">📖</div>
       <h3>请选择一个食谱查看详情</h3>
-      <p>或者使用食谱生成器创建新的食谱</p>
+      <p>您可以使用食谱搜索功能查找美味的食谱</p>
     </div>
   </div>
 </template>
@@ -171,6 +174,8 @@
   import { defineProps, defineEmits, ref, watch } from 'vue'
   import { shoppingListService } from '@/services/shoppingListService'
   import type { Recipe } from '@/types/recipe'
+  import { formatCookingTime, formatServings } from '@/utils/formatUtils'
+  import { getIngredientIcon } from '@/utils/ingredientIconMapper'
 
   const props = defineProps<{
     recipe?: Recipe
@@ -214,13 +219,13 @@
       isFavorite.value = false
       emit('notification', {
         type: 'info',
-        title: '已取消收藏',
+        title: '取消收藏',
         message: '食谱已从收藏夹中移除',
       })
     }
   }
 
-  // 监听食谱变化，更新收藏状态
+  // 当食谱变化时更新收藏状态
   const updateFavoriteStatus = () => {
     if (props.recipe) {
       isFavorite.value = checkIfFavorite()
@@ -230,7 +235,7 @@
   // 初始化时检查收藏状态
   updateFavoriteStatus()
 
-  // 监听食谱变化，更新收藏状态
+  // 监听食谱变化并更新收藏状态
   watch(
     () => props.recipe,
     () => {
@@ -250,7 +255,7 @@
     if (!props.recipe || !props.recipe.ingredients || props.recipe.ingredients.length === 0) return
 
     try {
-      // 转换食材格式以匹配服务接口
+      // 转换食材格式以匹配接口
       const convertedIngredients = props.recipe.ingredients.map(ingredient => {
         if (typeof ingredient === 'string') {
           return ingredient
@@ -258,10 +263,10 @@
         return {
           name: ingredient.name,
           amount: ingredient.amount?.toString(),
-          unit: ingredient.unit
+          unit: ingredient.unit,
         }
       })
-      
+
       await shoppingListService.addIngredientsFromRecipe(
         props.recipe.id,
         props.recipe.name || props.recipe.title,
@@ -278,7 +283,7 @@
       emit('notification', {
         type: 'error',
         title: '添加失败',
-        message: '无法添加食材到购物清单，请稍后再试',
+        message: '无法添加食材到购物清单，请稍后重试',
       })
     }
   }
@@ -463,13 +468,16 @@
     color: var(--text-color);
     display: flex;
     align-items: center;
+    gap: 10px;
   }
 
-  .ingredient-item::before {
-    content: '•';
-    margin-right: 10px;
-    color: var(--primary-color);
+  .ingredient-icon {
     font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .ingredient-text {
+    flex: 1;
   }
 
   .steps-list {

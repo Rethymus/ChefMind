@@ -116,27 +116,33 @@ ChefMind/
 ## 🛠️ 技术栈
 
 ### 前端框架
+
 - **Vue 3** - 渐进式JavaScript框架
 - **TypeScript** - JavaScript的超集，提供类型安全
 - **Vite** - 下一代前端构建工具
 
 ### UI组件库
+
 - **Element Plus** - 基于Vue 3的组件库
 - **@element-plus/icons-vue** - Element Plus图标库
 
 ### 状态管理
+
 - **Pinia** - Vue的状态管理库
 
 ### 路由管理
+
 - **Vue Router** - Vue.js官方路由管理器
 
 ### 工具库
+
 - **@vueuse/core** - Vue组合式API工具集
 - **axios** - HTTP客户端
 - **lodash-es** - JavaScript实用工具库
 - **animate.css** - CSS动画库
 
 ### 开发工具
+
 - **ESLint** - 代码质量检查
 - **Prettier** - 代码格式化
 - **Sass** - CSS预处理器
@@ -157,6 +163,7 @@ VITE_GLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
 ### AI 提供商配置
 
 支持的 AI 提供商：
+
 - **OpenAI**: GPT-3.5/GPT-4 模型
 - **GLM**: 智谱清言大模型
 - **Mock**: 开发测试用的模拟 AI
@@ -166,6 +173,7 @@ VITE_GLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
 ### PWA 配置
 
 项目支持 PWA（Progressive Web App）功能：
+
 - 离线缓存
 - 桌面安装
 - 推送通知（规划中）
@@ -175,6 +183,7 @@ VITE_GLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
 ### Docker 配置
 
 提供完整的 Docker 部署方案：
+
 - `Dockerfile`: 生产环境镜像
 - `Dockerfile.dev`: 开发环境镜像
 - `docker-compose.yml`: 容器编排
@@ -185,17 +194,20 @@ VITE_GLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
 ### 1. 智能筛选系统
 
 #### 第一步：食材选择
+
 - 🥬 分类展示：蔬菜、肉类、海鲜、主食、调料
 - 🔍 智能搜索：支持食材名称搜索
 - 🏷️ 多选标签：实时显示已选食材
 - 💡 AI建议：食材搭配合理性提示
 
 #### 第二步：烹饪方式选择
+
 - 🍳 8种烹饪方式：炒、煮、蒸、烤、炸、炖、凉拌、焖
 - 🎯 智能推荐：根据食材推荐最适合的烹饪方式
 - 🔄 多选支持：支持多种烹饪方式组合
 
 #### 第三步：约束条件设定
+
 - ⏰ 时间选择：15分钟内、30分钟内、1小时内、不限时间
 - 👥 人数选择：1-2人、3-4人、5-6人、6人以上
 - 📊 难度偏好：简单、中等、困难、不限
@@ -225,12 +237,14 @@ VITE_GLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
 ## 🎨 界面设计
 
 ### 视觉风格
+
 - 🎨 温馨美食主题色彩（暖色调为主）
 - 📱 响应式卡片布局设计
 - 🎯 直观的图标和按钮设计
 - 🌙 支持亮色/暗色主题切换
 
 ### 交互体验
+
 - 📈 渐进式信息展示，避免信息过载
 - 🤖 智能的默认选项和推荐提示
 - ✨ 流畅的动画效果和状态指示
@@ -269,31 +283,31 @@ npm run type-check
 </template>
 
 <script setup lang="ts">
-// 使用 Composition API 和 TypeScript
-import { ref, computed } from 'vue'
+  // 使用 Composition API 和 TypeScript
+  import { ref, computed } from 'vue'
 
-// 定义Props类型
-interface Props {
-  title: string
-  count?: number
-}
+  // 定义Props类型
+  interface Props {
+    title: string
+    count?: number
+  }
 
-const props = withDefaults(defineProps<Props>(), {
-  count: 0
-})
+  const props = withDefaults(defineProps<Props>(), {
+    count: 0,
+  })
 
-// 定义Emits类型
-interface Emits {
-  (e: 'update', value: string): void
-}
+  // 定义Emits类型
+  interface Emits {
+    (e: 'update', value: string): void
+  }
 
-const emit = defineEmits<Emits>()
+  const emit = defineEmits<Emits>()
 </script>
 
 <style lang="scss" scoped>
-.component-name {
-  // 组件样式
-}
+  .component-name {
+    // 组件样式
+  }
 </style>
 ```
 
@@ -308,19 +322,19 @@ import { ref, computed } from 'vue'
 export const useExampleStore = defineStore('example', () => {
   // 状态
   const count = ref(0)
-  
+
   // 计算属性
   const doubleCount = computed(() => count.value * 2)
-  
+
   // 方法
   const increment = () => {
     count.value++
   }
-  
+
   return {
     count,
     doubleCount,
-    increment
+    increment,
   }
 })
 ```
@@ -341,7 +355,8 @@ npm run build
 
 项目可以部署到任何静态文件托管服务：
 
-- **Vercel**: 
+- **Vercel**:
+
   ```bash
   # 安装 Vercel CLI
   npm i -g vercel
@@ -349,7 +364,8 @@ npm run build
   vercel --prod
   ```
 
-- **Netlify**: 
+- **Netlify**:
+
   ```bash
   # 安装 Netlify CLI
   npm install -g netlify-cli
@@ -407,6 +423,7 @@ VITE_API_BASE_URL=https://your-api-domain.com
 ### 性能优化
 
 生产环境建议启用：
+
 - Gzip/Brotli 压缩
 - CDN 加速
 - HTTP/2

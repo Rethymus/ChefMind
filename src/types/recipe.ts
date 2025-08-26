@@ -2,8 +2,8 @@
  * 食谱相关类型定义
  */
 
-// 食材分类
-export type IngredientCategory =
+// 食材分类类型
+export type IngredientCategoryType =
   | '蔬菜'
   | '肉类'
   | '海鲜'
@@ -15,11 +15,36 @@ export type IngredientCategory =
   | '豆类'
   | '其他'
 
+// 食材分类接口
+export interface IngredientCategory {
+  id: string
+  name: string
+  icon: string
+  items: Ingredient[]
+}
+
+// 约束条件
+export interface Constraints {
+  servings?: number
+  cookingTime?: string
+  difficulty?: string
+  dietaryRestrictions?: string[]
+  healthGoals?: string[]
+  allergens?: string[]
+  budget?: number
+  equipment?: string[]
+  season?: string
+  occasion?: string
+  time?: string // 烹饪时间约束
+  people?: number // 用餐人数
+  taste?: string // 口味偏好
+}
+
 // 食材分析结果
 export interface IngredientAnalysisResult {
   name: string
   confidence: number
-  category: string
+  category: IngredientCategoryType
   nutrition: {
     calories: number
     protein: number
@@ -105,6 +130,7 @@ export interface PersonalizedRecommendation {
   difficulty: 'easy' | 'medium' | 'hard'
   imageUrl?: string
   reasonForRecommendation: string
+  nutrition?: Nutrition // 营养信息
 }
 
 // 用户偏好
@@ -116,10 +142,14 @@ export interface UserPreference {
   preferredCuisine?: string[]
   healthGoals?: string[]
   allergies?: string[]
+  taste?: string
+  dietType?: string
 }
 
 // 健康约束
 export interface HealthConstraint {
+  type?: string
+  description?: string
   maxCalories?: number
   minProtein?: number
   maxSodium?: number
@@ -155,6 +185,10 @@ export interface RecipeRating {
   rating: number
   review?: string
   createdAt: Date
+  overall?: number // 总体评分
+  count?: number // 评分次数
+  taste?: number // 口味评分
+  updatedAt?: Date // 更新时间
 }
 
 // 食谱评论
@@ -162,10 +196,12 @@ export interface RecipeComment {
   id: string
   recipeId: string
   userId: string
+  username?: string // 用户名
   content: string
   rating?: number
   createdAt: Date
   updatedAt?: Date
+  aiGenerated?: boolean // 是否为AI生成
   likes: number
   replies?: RecipeComment[]
 }
@@ -178,6 +214,7 @@ export interface CookingMethod {
   name?: string
   icon?: string
   description?: string
+  difficulty?: number
 }
 
 // 食材
@@ -186,8 +223,9 @@ export interface Ingredient {
   name: string
   amount?: number
   unit?: string
-  category?: string
+  category?: IngredientCategoryType
   isOptional?: boolean
+  icon?: string
 }
 
 // 饮食限制
@@ -295,6 +333,8 @@ export interface Recipe {
   cuisine?: string // 菜系
   healthBenefits?: string[] // 健康益处
   autoCompletedIngredients?: string[] // 自动补充的食材列表
+  aiGenerated?: boolean // AI生成标记
+  tips?: string // 小贴士
 }
 
 // 食谱生成参数
@@ -334,7 +374,7 @@ export interface ShoppingItem {
   name: string
   quantity: number
   unit: string
-  category: string
+  category: IngredientCategoryType
   completed: boolean
   createdAt: Date
   updatedAt: Date

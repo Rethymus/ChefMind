@@ -223,7 +223,8 @@
             <div class="recipe-option-info">
               <div class="recipe-option-name">{{ recipe.name }}</div>
               <div class="recipe-option-nutrition">
-                {{ recipe.calories }}千卡 | ⏱️ {{ recipe.cookingTime }}分钟
+                {{ formatCalories(recipe.calories) }} | ⏱️
+                {{ formatCookingTime(recipe.cookingTime) }}
               </div>
             </div>
           </div>
@@ -237,6 +238,7 @@
   import { ref, computed } from 'vue'
   import { ElMessage } from 'element-plus'
   import { Plus, Delete, Cpu, Search } from '@element-plus/icons-vue'
+  import { formatCookingTime, formatCalories } from '@/utils/formatUtils'
 
   // 接口定义
   interface Recipe {

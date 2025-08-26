@@ -331,11 +331,10 @@
     try {
       await userFormRef.value.validate()
 
-      // 检查是否至少有一个餐次有描述
+      // 检查是否至少有一个餐次有描述（可选）
       const hasValidMeal = userForm.meals.some(meal => meal.description.trim())
       if (!hasValidMeal) {
-        ElMessage.warning('请至少描述一个餐次的饮食内容')
-        return
+        ElMessage.info('未提供饮食记录，将进行基础营养分析')
       }
 
       submitting.value = true

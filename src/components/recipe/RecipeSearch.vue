@@ -76,7 +76,7 @@
               <span class="info-icon">⏱️</span>
               <div class="info-content">
                 <span class="info-label">烹饪时间</span>
-                <span class="info-value">{{ recipe.cookingTime }}</span>
+                <span class="info-value">{{ formatCookingTime(recipe.cookingTime) }}</span>
               </div>
             </div>
             <div class="info-item">
@@ -90,7 +90,7 @@
               <span class="info-icon">👥</span>
               <div class="info-content">
                 <span class="info-label">份量</span>
-                <span class="info-value">{{ recipe.servings }}人份</span>
+                <span class="info-value">{{ formatServings(recipe.servings) }}</span>
               </div>
             </div>
           </div>
@@ -155,7 +155,7 @@
           <div class="result-meta">
             <span class="meta-item">
               <span class="meta-icon">⏱️</span>
-              {{ recipe.cookingTime }}
+              {{ formatCookingTime(recipe.cookingTime) }}
             </span>
             <span class="meta-item">
               <span class="meta-icon">📊</span>
@@ -179,6 +179,7 @@
   import { ElMessageBox } from 'element-plus'
   import { useRecipeService, type Recipe } from '@/services/recipeService'
   import { aiService } from '@/services/aiService'
+  import { formatCookingTime, formatServings } from '@/utils/formatUtils'
 
   const emit = defineEmits(['select-recipe', 'search'])
 
@@ -218,9 +219,10 @@
     const ingredientSet = new Set<string>()
     allRecipes.value.forEach(recipe => {
       recipe.ingredients.forEach(ingredient => {
-        const ingredientName = typeof ingredient === 'string' 
-          ? ingredient.split(' ')[0] // 去掉数量部分
-          : ingredient.name
+        const ingredientName =
+          typeof ingredient === 'string'
+            ? ingredient.split(' ')[0] // 去掉数量部分
+            : ingredient.name
         if (ingredientName.toLowerCase().includes(query)) {
           ingredientSet.add(ingredientName)
         }
@@ -300,7 +302,7 @@
         <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
           <div style="text-align: center;">
             <div style="font-size: 12px; color: #999;">烹饪时间</div>
-            <div style="font-weight: 600; color: #2c3e50;">${recipe.cookingTime}</div>
+            <div style="font-weight: 600; color: #2c3e50;">${formatCookingTime(recipe.cookingTime)}</div>
           </div>
           <div style="text-align: center;">
             <div style="font-size: 12px; color: #999;">难度</div>
@@ -308,7 +310,7 @@
           </div>
           <div style="text-align: center;">
             <div style="font-size: 12px; color: #999;">份量</div>
-            <div style="font-weight: 600; color: #2c3e50;">${recipe.servings}人份</div>
+            <div style="font-weight: 600; color: #2c3e50;">${formatServings(recipe.servings)}</div>
           </div>
         </div>
         
@@ -516,7 +518,7 @@
     return recipe.ingredients
       .slice(0, 3)
       .map(ing => {
-        return typeof ing === 'string' 
+        return typeof ing === 'string'
           ? ing.split(' ')[0] // 去掉数量部分
           : ing.name
       })

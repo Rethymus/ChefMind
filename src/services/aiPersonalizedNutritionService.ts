@@ -189,7 +189,7 @@ ${userProfile.meals.map(meal => `${this.getMealName(meal.type)}：${meal.descrip
       const cleanedJson = this.cleanJsonString(jsonString)
       const parsed = JSON.parse(cleanedJson)
       console.log('成功解析AI响应:', parsed)
-      
+
       return this.convertToAnalysisResult(parsed)
     } catch (parseError) {
       console.error('JSON解析失败:', parseError)
@@ -251,7 +251,9 @@ ${userProfile.meals.map(meal => `${this.getMealName(meal.type)}：${meal.descrip
 
     return {
       nutritionAnalysis: convertedNutrition as unknown as NutrientAnalysis,
-      personalizedRecommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
+      personalizedRecommendations: Array.isArray(parsed.recommendations)
+        ? parsed.recommendations
+        : [],
       healthInsights: Array.isArray(parsed.insights) ? parsed.insights : [],
       riskAssessments: Array.isArray(parsed.risks) ? parsed.risks : [],
       improvementSuggestions: Array.isArray(parsed.improvements) ? parsed.improvements : [],

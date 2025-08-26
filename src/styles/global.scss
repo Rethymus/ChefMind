@@ -1,5 +1,8 @@
 /* ChefMind 智食谱 - 全局样式 */
 
+/* 导入图标修复样式 */
+@import './icon-fixes.scss';
+
 /* 基础样式重置 */
 * {
   box-sizing: border-box;

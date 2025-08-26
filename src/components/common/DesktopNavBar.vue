@@ -12,6 +12,9 @@
         <router-link to="/" class="nav-link" active-class="active">首页</router-link>
         <router-link to="/search" class="nav-link" active-class="active">搜索食谱</router-link>
         <router-link to="/ai" class="nav-link" active-class="active">AI 助手</router-link>
+        <router-link to="/svg-generator" class="nav-link" active-class="active"
+          >封面生成器</router-link
+        >
         <router-link to="/favorites" class="nav-link" active-class="active">我的收藏</router-link>
         <router-link to="/shopping-list" class="nav-link" active-class="active"
           >购物清单</router-link

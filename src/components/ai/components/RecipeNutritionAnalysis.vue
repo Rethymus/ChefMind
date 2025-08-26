@@ -31,8 +31,8 @@
                     <h5 class="recipe-name">{{ recipe.name }}</h5>
                     <p class="recipe-description">{{ recipe.description }}</p>
                     <div class="recipe-meta">
-                      <span class="meta-item">🕐 {{ recipe.cookingTime }}分钟</span>
-                      <span class="meta-item">👥 {{ recipe.servings }}人份</span>
+                      <span class="meta-item">🕐 {{ formatCookingTime(recipe.cookingTime) }}</span>
+                      <span class="meta-item">👥 {{ formatServings(recipe.servings) }}</span>
                       <span class="meta-item">⭐ {{ recipe.difficulty }}/5</span>
                     </div>
                   </div>
@@ -170,6 +170,7 @@
   import { ref, computed, onMounted } from 'vue'
   import { ElMessage } from 'element-plus'
   import { Search, Plus, Delete, Cpu, Check, Loading } from '@element-plus/icons-vue'
+  import { formatCookingTime, formatServings } from '@/utils/formatUtils'
 
   // 接口定义
   interface Recipe {

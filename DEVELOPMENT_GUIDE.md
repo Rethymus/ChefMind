@@ -69,39 +69,39 @@ src/
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { Recipe } from '@/types/recipe'
+  import { computed } from 'vue'
+  import type { Recipe } from '@/types/recipe'
 
-interface Props {
-  recipe: Recipe
-  showDetails?: boolean
-}
+  interface Props {
+    recipe: Recipe
+    showDetails?: boolean
+  }
 
-const props = withDefaults(defineProps<Props>(), {
-  showDetails: false
-})
+  const props = withDefaults(defineProps<Props>(), {
+    showDetails: false,
+  })
 
-const emit = defineEmits<{
-  click: [recipe: Recipe]
-  favorite: [recipeId: string]
-}>()
+  const emit = defineEmits<{
+    click: [recipe: Recipe]
+    favorite: [recipeId: string]
+  }>()
 
-const displayName = computed(() => {
-  return props.recipe.name.slice(0, 20)
-})
+  const displayName = computed(() => {
+    return props.recipe.name.slice(0, 20)
+  })
 </script>
 
 <style lang="scss" scoped>
-.recipe-card {
-  &__title {
-    font-size: 1.2rem;
-    font-weight: bold;
+  .recipe-card {
+    &__title {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    &__description {
+      color: var(--text-color-secondary);
+    }
   }
-  
-  &__description {
-    color: var(--text-color-secondary);
-  }
-}
 </style>
 ```
 
@@ -166,11 +166,9 @@ import { recipeService } from '@/services/recipeService'
 export const useRecipeStore = defineStore('recipe', () => {
   const recipes = ref<Recipe[]>([])
   const loading = ref(false)
-  
-  const favoriteRecipes = computed(() => 
-    recipes.value.filter(recipe => recipe.metadata.isFavorite)
-  )
-  
+
+  const favoriteRecipes = computed(() => recipes.value.filter(recipe => recipe.metadata.isFavorite))
+
   async function generateRecipe(request: RecipeGenerationRequest) {
     loading.value = true
     try {
@@ -181,12 +179,12 @@ export const useRecipeStore = defineStore('recipe', () => {
       loading.value = false
     }
   }
-  
+
   return {
     recipes,
     loading,
     favoriteRecipes,
-    generateRecipe
+    generateRecipe,
   }
 })
 ```
@@ -253,19 +251,19 @@ const mockRecipe: Recipe = {
 describe('RecipeCard', () => {
   it('renders recipe name correctly', () => {
     const wrapper = mount(RecipeCard, {
-      props: { recipe: mockRecipe }
+      props: { recipe: mockRecipe },
     })
-    
+
     expect(wrapper.find('.recipe-card__title').text()).toBe('宫保鸡丁')
   })
-  
+
   it('emits click event when clicked', async () => {
     const wrapper = mount(RecipeCard, {
-      props: { recipe: mockRecipe }
+      props: { recipe: mockRecipe },
     })
-    
+
     await wrapper.trigger('click')
-    
+
     expect(wrapper.emitted('click')).toBeTruthy()
     expect(wrapper.emitted('click')[0]).toEqual([mockRecipe])
   })
@@ -280,20 +278,20 @@ import { test, expect } from '@playwright/test'
 
 test('recipe generation flow', async ({ page }) => {
   await page.goto('/')
-  
+
   // 选择食材
   await page.click('[data-testid="ingredient-tomato"]')
   await page.click('[data-testid="ingredient-egg"]')
-  
+
   // 选择烹饪方式
   await page.click('[data-testid="cooking-method-stir-fry"]')
-  
+
   // 设置约束条件
   await page.selectOption('[data-testid="time-constraint"]', '30')
-  
+
   // 生成菜谱
   await page.click('[data-testid="generate-recipe"]')
-  
+
   // 验证结果
   await expect(page.locator('[data-testid="recipe-result"]')).toBeVisible()
   await expect(page.locator('.recipe-name')).toContainText('西红柿炒蛋')
@@ -305,6 +303,7 @@ test('recipe generation flow', async ({ page }) => {
 ### 功能开发流程
 
 1. **创建功能分支**
+
    ```bash
    git checkout -b feature/recipe-rating-system
    ```
@@ -315,6 +314,7 @@ test('recipe generation flow', async ({ page }) => {
    - 代码自查
 
 3. **提交代码**
+
    ```bash
    git add .
    git commit -m "feat(recipe): add rating system"
@@ -362,6 +362,7 @@ test('recipe generation flow', async ({ page }) => {
 ### Vue DevTools
 
 安装 Vue DevTools 浏览器扩展，用于调试：
+
 - 组件状态
 - Pinia store
 - 事件追踪
@@ -379,11 +380,11 @@ export const logger = {
       console.debug(`[DEBUG] ${message}`, data)
     }
   },
-  
+
   error: (message: string, error?: Error) => {
     console.error(`[ERROR] ${message}`, error)
     // 生产环境可以发送到错误监控服务
-  }
+  },
 }
 ```
 
@@ -391,14 +392,11 @@ export const logger = {
 
 ```typescript
 // utils/performance.ts
-export function measurePerformance<T>(
-  fn: () => T,
-  label: string
-): T {
+export function measurePerformance<T>(fn: () => T, label: string): T {
   const start = performance.now()
   const result = fn()
   const end = performance.now()
-  
+
   logger.debug(`${label} took ${end - start} milliseconds`)
   return result
 }
@@ -430,6 +428,7 @@ export function measurePerformance<T>(
 ### 报告问题
 
 提交 Issue 时请包含：
+
 - 问题描述
 - 复现步骤
 - 期望行为
@@ -439,6 +438,7 @@ export function measurePerformance<T>(
 ### 提交功能请求
 
 提交 Feature Request 时请包含：
+
 - 功能描述
 - 使用场景
 - 期望的 API 设计

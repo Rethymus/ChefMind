@@ -41,8 +41,8 @@
           <div class="recipe-image">
             <img :src="recipe.image" :alt="recipe.title" />
             <div class="recipe-overlay">
-              <span class="recipe-difficulty">{{ recipe.difficulty }}</span>
-              <span class="recipe-time">{{ recipe.cookingTime }}分钟</span>
+              <span class="recipe-difficulty">{{ formatDifficulty(recipe.difficulty) }}</span>
+              <span class="recipe-time">{{ formatCookingTime(recipe.cookingTime) }}</span>
             </div>
           </div>
 
@@ -96,6 +96,12 @@
           <p class="feature-description">一键生成购物清单，让买菜变得井井有条</p>
         </div>
 
+        <div class="feature-card" @click="goToSvgGenerator">
+          <div class="feature-icon">🎨</div>
+          <h3 class="feature-title">封面生成器</h3>
+          <p class="feature-description">输入菜品名称，自动生成精美的 SVG 封面图片</p>
+        </div>
+
         <div class="feature-card">
           <div class="feature-icon">❤️</div>
           <h3 class="feature-title">收藏管理</h3>
@@ -110,11 +116,15 @@
   import { useRouter } from 'vue-router'
   import { popularRecipes } from '@/data/mockData'
   import type { Recipe } from '@/types/recipe'
+  import { formatDifficulty, formatCookingTime } from '@/utils/formatUtils'
 
   const router = useRouter()
 
   const viewRecipe = (recipe: Recipe) => {
-    // 跳转到菜谱详情页，传递菜谱数据
+    // 将完整的菜谱数据保存到会话存储
+    sessionStorage.setItem('viewRecipe', JSON.stringify(recipe))
+
+    // 跳转到菜谱详情页
     router.push({
       name: 'RecipeDetail',
       query: {
@@ -126,6 +136,10 @@
         rating: recipe.rating.toString(),
       },
     })
+  }
+
+  const goToSvgGenerator = () => {
+    router.push({ name: 'SvgGenerator' })
   }
 </script>
 

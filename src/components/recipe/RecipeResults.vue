@@ -47,12 +47,7 @@
         >
           <!-- 菜谱图片区域 -->
           <div class="recipe-image">
-            <div class="image-placeholder">
-              <el-icon :size="48">
-                <Picture />
-              </el-icon>
-              <span>{{ recipe.name }}</span>
-            </div>
+            <div class="svg-cover" v-html="recipe.image"></div>
             <div class="recipe-badges">
               <el-tag v-for="tag in recipe.tags" :key="tag" size="small" type="info">
                 {{ tag }}
@@ -365,6 +360,20 @@ watch(() => props.isGenerating, stopLoading)
         align-items: center;
         justify-content: center;
         color: white;
+        
+        .svg-cover {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          svg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+        }
         
         .image-placeholder {
           display: flex;

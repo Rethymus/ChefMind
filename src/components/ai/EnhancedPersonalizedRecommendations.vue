@@ -118,7 +118,7 @@
             <div class="recipe-stats">
               <div class="stat-item">
                 <el-icon><Clock /></el-icon>
-                <span>{{ recommendation.recipe.cookingTime }}分钟</span>
+                <span>{{ formatCookingTime(recommendation.recipe.cookingTime) }}</span>
               </div>
               <div class="stat-item">
                 <el-icon><Star /></el-icon>
@@ -126,7 +126,7 @@
               </div>
               <div class="stat-item">
                 <el-icon><User /></el-icon>
-                <span>{{ recommendation.recipe.servings || 2 }}人份</span>
+                <span>{{ formatServings(recommendation.recipe.servings || 2) }}</span>
               </div>
             </div>
 
@@ -281,6 +281,7 @@
   } from '@element-plus/icons-vue'
   import { usePersonalizedRecommendations } from '@/composables/usePersonalizedRecommendations'
   import { useUserBehaviorAnalytics } from '@/composables/useUserBehaviorAnalytics'
+  import { formatCookingTime, formatServings } from '@/utils/formatUtils'
   import type { Recipe } from '@/types/recipe'
 
   // 推荐数据接口

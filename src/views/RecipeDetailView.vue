@@ -32,7 +32,7 @@
             <div class="info-icon">⏱️</div>
             <div class="info-content">
               <div class="info-label">烹饪时间</div>
-              <div class="info-value">{{ recipe.cookingTime }}</div>
+              <div class="info-value">{{ formatCookingTime(recipe.cookingTime) }}</div>
             </div>
           </div>
 
@@ -40,7 +40,7 @@
             <div class="info-icon">📊</div>
             <div class="info-content">
               <div class="info-label">难度</div>
-              <div class="info-value">{{ recipe.difficulty }}</div>
+              <div class="info-value">{{ formatDifficulty(recipe.difficulty) }}</div>
             </div>
           </div>
 
@@ -48,80 +48,89 @@
             <div class="info-icon">🍽️</div>
             <div class="info-content">
               <div class="info-label">份量</div>
-              <div class="info-value">{{ recipe.servings || '2人份' }}</div>
+              <div class="info-value">{{ formatServings(recipe.servings) }}</div>
             </div>
           </div>
         </div>
 
         <div class="recipe-main">
-          <div class="recipe-left">
-            <!-- 食材列表 -->
-            <div class="ingredients-section">
-              <h2 class="section-title">
-                <span class="section-icon">🥕</span>
-                食材
-              </h2>
-              <ul class="ingredients-list">
-                <li
-                  v-for="(ingredient, index) in recipe.ingredients"
-                  :key="index"
-                  class="ingredient-item"
-                >
-                  <div class="ingredient-checkbox">
-                    <input type="checkbox" :id="`ingredient-${index}`" />
-                    <label :for="`ingredient-${index}`">
-                      <span class="ingredient-text">{{ ingredient }}</span>
-                    </label>
-                  </div>
-                </li>
-              </ul>
+          <!-- 食材列表 -->
+          <div class="ingredients-section">
+            <h2 class="section-title">
+              <span class="section-icon">🥕</span>
+              食材
+            </h2>
+            <ul class="ingredients-list">
+              <li
+                v-for="(ingredient, index) in recipe.ingredients"
+                :key="index"
+                class="ingredient-item"
+              >
+                <label class="ingredient-checkbox" :for="`ingredient-${index}`">
+                  <input
+                    type="checkbox"
+                    :id="`ingredient-${index}`"
+                    v-model="selectedIngredients[index]"
+                  />
+                  <span class="checkbox-mark"></span>
+                  <span class="ingredient-text">{{ ingredient }}</span>
+                </label>
+              </li>
+            </ul>
 
-              <div class="ingredients-actions">
-                <button class="action-button" @click="addToShoppingList">
-                  <span class="action-icon">🛒</span>
-                  添加到购物清单
+            <div class="ingredients-actions">
+              <div class="selection-actions">
+                <button class="selection-button" @click="selectAllIngredients">
+                  <span class="action-icon">☑️</span>
+                  全选
+                </button>
+                <button class="selection-button" @click="deselectAllIngredients">
+                  <span class="action-icon">☐</span>
+                  取消全选
                 </button>
               </div>
+              <button class="action-button" @click="addToShoppingList">
+                <span class="action-icon">🛒</span>
+                添加勾选食材到购物清单 ({{ selectedCount }})
+              </button>
             </div>
-
-            <!-- 营养信息 -->
-            <RecipeNutrition v-if="recipe.nutritionInfo" :recipe="recipe" />
           </div>
 
-          <div class="recipe-right">
-            <!-- 烹饪步骤 -->
-            <div class="steps-section">
-              <h2 class="section-title">
-                <span class="section-icon">👨‍🍳</span>
-                烹饪步骤
-              </h2>
-              <ol class="steps-list">
-                <li v-for="(step, index) in recipe.steps" :key="index" class="step-item">
-                  <div class="step-number">{{ index + 1 }}</div>
-                  <div class="step-content">
-                    <p>{{ getStepDescription(step) }}</p>
-                    <div class="step-timer" v-if="stepHasTime(step)">
-                      <button class="timer-button" @click="startStepTimer(step)">
-                        <span class="timer-icon">⏱️</span>
-                        设置计时
-                      </button>
-                    </div>
+          <!-- 烹饪步骤 -->
+          <div class="steps-section">
+            <h2 class="section-title">
+              <span class="section-icon">👨‍🍳</span>
+              烹饪步骤
+            </h2>
+            <ol class="steps-list">
+              <li v-for="(step, index) in recipe.steps" :key="index" class="step-item">
+                <div class="step-number">{{ index + 1 }}</div>
+                <div class="step-content">
+                  <p>{{ getStepDescription(step) }}</p>
+                  <div class="step-timer" v-if="stepHasTime(step)">
+                    <button class="timer-button" @click="startStepTimer(step)">
+                      <span class="timer-icon">⏱️</span>
+                      设置计时
+                    </button>
                   </div>
-                </li>
-              </ol>
-            </div>
+                </div>
+              </li>
+            </ol>
+          </div>
 
-            <!-- 烹饪小贴士 -->
-            <div v-if="recipe.cookingTips && recipe.cookingTips.length > 0" class="tips-section">
-              <h2 class="section-title">
-                <span class="section-icon">💡</span>
-                小贴士
-              </h2>
-              <div class="tips-content">
-                <ul>
-                  <li v-for="tip in recipe.cookingTips" :key="tip">{{ tip }}</li>
-                </ul>
-              </div>
+          <!-- 营养信息 -->
+          <RecipeNutrition v-if="recipe.nutritionInfo" :recipe="recipe" />
+
+          <!-- 烹饪小贴士 -->
+          <div v-if="recipe.cookingTips && recipe.cookingTips.length > 0" class="tips-section">
+            <h2 class="section-title">
+              <span class="section-icon">💡</span>
+              小贴士
+            </h2>
+            <div class="tips-content">
+              <ul>
+                <li v-for="tip in recipe.cookingTips" :key="tip">{{ tip }}</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -157,8 +166,39 @@
           @select-recipe="viewRelatedRecipe"
         />
 
-        <!-- 评论区 -->
-        <RecipeComments v-if="recipe" :recipe-id="recipe.id" @update-rating="updateRecipeRating" />
+        <!-- 个人备注 -->
+        <div v-if="recipe" class="recipe-notes-section">
+          <h2 class="section-title">
+            <span class="section-icon">📝</span>
+            个人备注
+          </h2>
+          <div class="notes-content">
+            <div v-if="!isEditingNotes" class="notes-display">
+              <p v-if="recipeNotes" class="notes-text">{{ recipeNotes }}</p>
+              <p v-else class="notes-placeholder">暂无备注，点击下方按钮添加您的个人备注...</p>
+              <button class="edit-notes-btn" @click="startEditingNotes">
+                <span class="action-icon">✏️</span>
+                {{ recipeNotes ? '编辑备注' : '添加备注' }}
+              </button>
+            </div>
+            <div v-else class="notes-editor">
+              <textarea
+                v-model="tempNotes"
+                class="notes-textarea"
+                placeholder="在这里添加您对这道菜的个人备注，比如口味调整、制作心得、家人喜好等..."
+                rows="4"
+                maxlength="500"
+              ></textarea>
+              <div class="notes-actions">
+                <span class="char-count">{{ tempNotes.length }}/500</span>
+                <div class="action-buttons">
+                  <button class="cancel-btn" @click="cancelEditingNotes">取消</button>
+                  <button class="save-btn" @click="saveNotes">保存</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-else class="no-recipe">
@@ -229,11 +269,11 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted, onBeforeUnmount } from 'vue'
+  import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
   import { useRouter } from 'vue-router'
   import { useRecipeService, type Recipe } from '@/services/recipeService'
+  import { shoppingListService } from '@/services/shoppingListService'
   import type { RecipeStep } from '@/types/recipe'
-  import RecipeComments from '@/components/recipe/RecipeComments.vue'
   import RecipeShare from '@/components/recipe/RecipeShare.vue'
   import RecipePrintPreview from '@/components/recipe/RecipePrintPreview.vue'
   import RecipeRelated from '@/components/recipe/RecipeRelated.vue'
@@ -253,6 +293,19 @@
   const timerRunning = ref(false)
   const timerInterval = ref<number | null>(null)
 
+  // 备注相关
+  const isEditingNotes = ref(false)
+  const recipeNotes = ref('')
+  const tempNotes = ref('')
+
+  // 食材勾选状态
+  const selectedIngredients = ref<boolean[]>([])
+
+  // 计算选中的食材数量
+  const selectedCount = computed(
+    () => selectedIngredients.value.filter(selected => selected).length
+  )
+
   // 分享相关
   const showShareModal = ref(false)
 
@@ -267,8 +320,11 @@
     const recipeData = sessionStorage.getItem('viewRecipe')
     if (recipeData) {
       recipe.value = JSON.parse(recipeData)
+      // 初始化食材勾选状态（默认全部勾选）
+      selectedIngredients.value = new Array(recipe.value.ingredients.length).fill(true)
       checkIfFavorite()
       loadAllRecipes()
+      loadRecipeNotes()
     }
   }
 
@@ -313,24 +369,29 @@
 
     try {
       const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]')
+      console.log('🔍 收藏调试: 当前savedRecipes:', savedRecipes)
+      console.log('🔍 收藏调试: 当前recipe.value:', recipe.value)
 
       if (isFavorite.value) {
         // 取消收藏
         const index = savedRecipes.findIndex((r: Recipe) => r.id === recipe.value?.id)
+        console.log('🔍 收藏调试: 取消收藏, index:', index)
         if (index !== -1) {
           savedRecipes.splice(index, 1)
           showNotification({ type: 'success', title: '成功', message: '已取消收藏' })
         }
       } else {
         // 添加收藏
+        console.log('🔍 收藏调试: 添加收藏, 当前recipe.value:', recipe.value)
         savedRecipes.push(recipe.value)
         showNotification({ type: 'success', title: '成功', message: '已添加到收藏' })
       }
 
       localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes))
+      console.log('🔍 收藏调试: 保存后的localStorage:', localStorage.getItem('savedRecipes'))
       isFavorite.value = !isFavorite.value
     } catch (error) {
-      console.error('切换收藏状态失败:', error)
+      console.error('❌ 切换收藏状态失败:', error)
       showNotification({ type: 'error', title: '错误', message: '操作失败，请重试' })
     }
   }
@@ -365,28 +426,105 @@
   }
 
   // 添加到购物清单
-  const addToShoppingList = () => {
+  const addToShoppingList = async () => {
     if (!recipe.value) return
 
     try {
-      const shoppingList = JSON.parse(localStorage.getItem('shoppingList') || '[]')
+      // 获取勾选的食材
+      const selectedIngredientsData = recipe.value.ingredients.filter(
+        (_, index) => selectedIngredients.value[index]
+      )
 
-      // 添加食材到购物清单
-      recipe.value.ingredients.forEach(ingredient => {
-        if (!shoppingList.some((item: any) => item.name === ingredient)) {
-          shoppingList.push({
-            name: ingredient,
-            completed: false,
-          })
+      if (selectedIngredientsData.length === 0) {
+        showNotification({
+          type: 'warning',
+          title: '提示',
+          message: '请先勾选要添加到购物清单的食材',
+        })
+        return
+      }
+
+      // 转换食材格式以匹配购物清单服务接口
+      const ingredients = selectedIngredientsData.map(ingredient => {
+        if (typeof ingredient === 'string') {
+          return ingredient
+        } else {
+          return {
+            name: ingredient.name,
+            amount: ingredient.amount?.toString(),
+            unit: ingredient.unit,
+          }
         }
       })
 
-      localStorage.setItem('shoppingList', JSON.stringify(shoppingList))
-      showNotification({ type: 'success', title: '成功', message: '已添加食材到购物清单' })
+      // 使用购物清单服务添加食材
+      const addedItems = await shoppingListService.addIngredientsFromRecipe(
+        recipe.value.id,
+        recipe.value.name,
+        ingredients
+      )
+
+      if (addedItems.length > 0) {
+        showNotification({
+          type: 'success',
+          title: '成功',
+          message: `已添加 ${addedItems.length} 种新食材到购物清单`,
+        })
+      } else {
+        showNotification({
+          type: 'info',
+          title: '提示',
+          message: '所选食材已在购物清单中，无需重复添加',
+        })
+      }
     } catch (error) {
       console.error('添加到购物清单失败:', error)
-      showNotification({ type: 'error', title: '错误', message: '添加失败，请重试' })
+      showNotification({
+        type: 'error',
+        title: '错误',
+        message: '添加失败，请重试',
+      })
     }
+  }
+
+  // 食材选择相关函数
+  const selectAllIngredients = () => {
+    selectedIngredients.value = selectedIngredients.value.map(() => true)
+  }
+
+  const deselectAllIngredients = () => {
+    selectedIngredients.value = selectedIngredients.value.map(() => false)
+  }
+
+  // 备注相关方法
+  const loadRecipeNotes = () => {
+    if (!recipe.value) return
+    const savedNotes = localStorage.getItem(`recipe_notes_${recipe.value.id}`)
+    recipeNotes.value = savedNotes || ''
+  }
+
+  const startEditingNotes = () => {
+    tempNotes.value = recipeNotes.value
+    isEditingNotes.value = true
+  }
+
+  const cancelEditingNotes = () => {
+    tempNotes.value = ''
+    isEditingNotes.value = false
+  }
+
+  const saveNotes = () => {
+    if (!recipe.value) return
+
+    recipeNotes.value = tempNotes.value.trim()
+    localStorage.setItem(`recipe_notes_${recipe.value.id}`, recipeNotes.value)
+    isEditingNotes.value = false
+
+    showNotification({
+      type: 'success',
+      title: '保存成功',
+      message: recipeNotes.value ? '备注已保存' : '备注已清空',
+    })
   }
 
   // 显示通知
@@ -471,33 +609,74 @@
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  // 更新食谱评分
-  const updateRecipeRating = (newRating: number) => {
-    if (!recipe.value) return
-
-    try {
-      // 更新当前食谱的评分
-      recipe.value.rating = newRating
-
-      // 更新会话存储中的食谱数据
-      sessionStorage.setItem('viewRecipe', JSON.stringify(recipe.value))
-
-      // 更新本地存储中的收藏食谱评分
-      if (isFavorite.value) {
-        const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]')
-        const index = savedRecipes.findIndex((r: Recipe) => r.id === recipe.value?.id)
-        if (index !== -1) {
-          savedRecipes[index].rating = newRating
-          localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes))
-        }
-      }
-
-      // 显示通知
-      showNotification({ type: 'success', title: '成功', message: '评分已更新' })
-    } catch (error) {
-      console.error('更新评分失败:', error)
-      showNotification({ type: 'error', title: '错误', message: '更新评分失败，请重试' })
+  // 格式化烹饪时间
+  const formatCookingTime = (time: string | number) => {
+    if (typeof time === 'number') {
+      return `${time}分钟`
     }
+
+    const timeStr = String(time).toLowerCase()
+
+    // 如果已经包含单位，直接返回
+    if (
+      timeStr.includes('分钟') ||
+      timeStr.includes('小时') ||
+      timeStr.includes('天') ||
+      timeStr.includes('min') ||
+      timeStr.includes('hour') ||
+      timeStr.includes('day')
+    ) {
+      return String(time)
+    }
+
+    // 如果是纯数字，添加分钟单位
+    const numMatch = timeStr.match(/^\d+$/)
+    if (numMatch) {
+      return `${time}分钟`
+    }
+
+    return String(time)
+  }
+
+  // 格式化难度
+  const formatDifficulty = (difficulty: string | number) => {
+    if (typeof difficulty === 'number') {
+      if (difficulty <= 2) return '简单'
+      if (difficulty <= 4) return '中等'
+      return '困难'
+    }
+
+    const diffStr = String(difficulty).toLowerCase()
+
+    // 中文翻译
+    const difficultyMap: Record<string, string> = {
+      easy: '简单',
+      medium: '中等',
+      hard: '困难',
+      simple: '简单',
+      normal: '中等',
+      difficult: '困难',
+      '1': '简单',
+      '2': '简单',
+      '3': '中等',
+      '4': '中等',
+      '5': '困难',
+    }
+
+    return difficultyMap[diffStr] || String(difficulty)
+  }
+
+  // 格式化份量
+  const formatServings = (servings: number | string) => {
+    if (typeof servings === 'string') {
+      // 如果已经包含单位，直接返回
+      if (servings.includes('人份') || servings.includes('份')) {
+        return servings
+      }
+    }
+
+    const num = Number(servings)
+    return isNaN(num) ? String(servings) : `${num}人份`
   }
 
   // 生命周期钩子
@@ -636,8 +815,8 @@
   }
 
   .recipe-main {
-    display: grid;
-    grid-template-columns: 1fr 1.5fr;
+    display: flex;
+    flex-direction: column;
     gap: 2rem;
     margin-bottom: 3rem;
   }
@@ -671,22 +850,36 @@
     list-style-type: none;
     padding: 0;
     margin: 0 0 1.5rem 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.8rem;
   }
 
   .ingredient-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.8rem 0;
-    border-bottom: 1px solid var(--border-color-light);
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px;
+    transition: all 0.2s ease;
 
-    &:last-child {
-      border-bottom: none;
+    &:hover {
+      border-color: var(--primary-color);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
   }
 
   .ingredient-checkbox {
-    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    width: 100%;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: var(--hover-color);
+    }
 
     input[type='checkbox'] {
       position: absolute;
@@ -696,31 +889,32 @@
       width: 0;
     }
 
-    label {
+    .checkbox-mark {
+      position: relative;
       display: inline-block;
-      width: 20px;
-      height: 20px;
-      background-color: var(--bg-color);
+      width: 18px;
+      height: 18px;
+      background-color: var(--bg-color-secondary);
       border: 2px solid var(--border-color);
       border-radius: 4px;
-      cursor: pointer;
+      flex-shrink: 0;
       transition: all 0.3s ease;
 
       &::after {
         content: '';
         position: absolute;
         display: none;
-        left: 7px;
-        top: 3px;
-        width: 5px;
-        height: 10px;
+        left: 5px;
+        top: 2px;
+        width: 4px;
+        height: 8px;
         border: solid white;
         border-width: 0 2px 2px 0;
         transform: rotate(45deg);
       }
     }
 
-    input[type='checkbox']:checked + label {
+    input[type='checkbox']:checked + .checkbox-mark {
       background-color: var(--primary-color);
       border-color: var(--primary-color);
 
@@ -731,13 +925,50 @@
   }
 
   .ingredient-text {
-    font-size: 1rem;
+    font-size: 0.95rem;
+    line-height: 1.4;
     color: var(--text-color);
+    font-weight: 500;
+    flex: 1;
   }
 
   .ingredients-actions {
     display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color-light);
+  }
+
+  .selection-actions {
+    display: flex;
     justify-content: center;
+    gap: 0.8rem;
+  }
+
+  .selection-button {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background-color: var(--bg-color-secondary);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background-color: var(--hover-color);
+      transform: translateY(-1px);
+    }
+
+    .action-icon {
+      font-size: 0.9rem;
+    }
   }
 
   .action-button {
@@ -745,36 +976,25 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
     border-radius: 8px;
     padding: 0.8rem 1.5rem;
     font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
+    align-self: center;
 
     &:hover {
-      background-color: var(--hover-color);
+      background-color: var(--primary-color-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
-    &.primary {
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-
-      &:hover {
-        background-color: var(--primary-color-dark);
-      }
-    }
-
-    &.secondary {
-      background-color: var(--bg-color-secondary);
-
-      &:hover {
-        background-color: var(--hover-color);
-      }
+    .action-icon {
+      font-size: 1.1rem;
     }
   }
 
@@ -1065,6 +1285,137 @@
     }
   }
 
+  // 备注模块样式
+  .recipe-notes-section {
+    background-color: var(--bg-color-secondary);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .notes-content {
+    margin-top: 1rem;
+  }
+
+  .notes-display {
+    .notes-text {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--text-color);
+      margin: 0 0 1rem 0;
+      padding: 1rem;
+      background-color: var(--bg-color);
+      border-radius: 8px;
+      border-left: 4px solid var(--primary-color);
+      word-wrap: break-word;
+      white-space: pre-wrap;
+    }
+
+    .notes-placeholder {
+      font-size: 0.95rem;
+      color: var(--text-color-muted);
+      margin: 0 0 1rem 0;
+      padding: 1rem;
+      background-color: var(--bg-color);
+      border-radius: 8px;
+      border: 2px dashed var(--border-color);
+      text-align: center;
+    }
+
+    .edit-notes-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.8rem 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background-color: var(--primary-color-dark);
+        transform: translateY(-1px);
+      }
+    }
+  }
+
+  .notes-editor {
+    .notes-textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: var(--text-color);
+      background-color: var(--bg-color);
+      resize: vertical;
+      transition: border-color 0.3s ease;
+
+      &:focus {
+        outline: none;
+        border-color: var(--primary-color);
+      }
+
+      &::placeholder {
+        color: var(--text-color-muted);
+      }
+    }
+
+    .notes-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+
+      .char-count {
+        font-size: 0.85rem;
+        color: var(--text-color-muted);
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 0.8rem;
+
+        .cancel-btn,
+        .save-btn {
+          padding: 0.6rem 1.2rem;
+          border-radius: 6px;
+          font-size: 0.9rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          border: none;
+        }
+
+        .cancel-btn {
+          background-color: var(--bg-color-secondary);
+          color: var(--text-color);
+          border: 1px solid var(--border-color);
+
+          &:hover {
+            background-color: var(--hover-color);
+          }
+        }
+
+        .save-btn {
+          background-color: var(--primary-color);
+          color: white;
+
+          &:hover {
+            background-color: var(--primary-color-dark);
+          }
+        }
+      }
+    }
+  }
+
   @media print {
     .back-nav,
     .recipe-actions,
@@ -1085,10 +1436,6 @@
 
     .recipe-description {
       font-size: 1rem;
-    }
-
-    .recipe-main {
-      grid-template-columns: 1fr;
     }
 
     .recipe-actions {
@@ -1116,9 +1463,92 @@
     .ingredients-section,
     .nutrition-section,
     .steps-section,
-    .tips-section {
+    .tips-section,
+    .recipe-notes-section {
       padding: 1.2rem;
       margin-bottom: 1.5rem;
+    }
+
+    // 备注模块移动端样式
+    .recipe-notes-section {
+      padding: 1rem;
+    }
+
+    .notes-display {
+      .notes-text,
+      .notes-placeholder {
+        padding: 0.8rem;
+        font-size: 0.95rem;
+      }
+
+      .edit-notes-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.8rem;
+        font-size: 0.95rem;
+      }
+    }
+
+    .notes-editor {
+      .notes-textarea {
+        padding: 0.8rem;
+        font-size: 0.95rem;
+        min-height: 100px;
+      }
+
+      .notes-actions {
+        flex-direction: column;
+        gap: 0.8rem;
+        align-items: stretch;
+
+        .char-count {
+          text-align: center;
+          order: 2;
+        }
+
+        .action-buttons {
+          order: 1;
+          justify-content: space-between;
+          gap: 1rem;
+
+          .cancel-btn,
+          .save-btn {
+            flex: 1;
+            padding: 0.8rem;
+            font-size: 0.95rem;
+          }
+        }
+      }
+    }
+
+    .ingredients-list {
+      grid-template-columns: 1fr;
+    }
+
+    .ingredients-actions {
+      gap: 0.8rem;
+
+      .selection-actions {
+        gap: 0.6rem;
+      }
+
+      .selection-button {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.85rem;
+      }
+
+      .action-button {
+        padding: 0.8rem 1.2rem;
+        font-size: 0.95rem;
+      }
+    }
+
+    .ingredient-checkbox {
+      padding: 0.6rem 0.8rem;
+    }
+
+    .ingredient-text {
+      font-size: 0.9rem;
     }
 
     .step-item {

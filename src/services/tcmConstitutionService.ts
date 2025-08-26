@@ -330,14 +330,19 @@ ${mealDescriptions}
     return {
       primaryConstitution,
       secondaryConstitution,
-      mixedConstitutionAnalysis: this.buildMixedAnalysis(primaryConstitution, secondaryConstitution),
+      mixedConstitutionAnalysis: this.buildMixedAnalysis(
+        primaryConstitution,
+        secondaryConstitution
+      ),
       overallHealthScore: this.calculateHealthScore(userProfile, analysisData),
       nutritionalGuidance: this.extractStringArray(analysisData.dietaryRecommendations),
       seasonalDietPlan: {
         currentSeason: this.getCurrentSeason(),
         recommendations: this.extractStringArray(analysisData.seasonalAdjustments),
       },
-      aiInsights: this.extractStringArray(analysisData.aiInsights || analysisData.personalizedGuidance),
+      aiInsights: this.extractStringArray(
+        analysisData.aiInsights || analysisData.personalizedGuidance
+      ),
       analysisTimestamp: new Date().toISOString(),
     }
   }
@@ -352,8 +357,11 @@ ${mealDescriptions}
     return {
       type: constitutionType,
       name: primaryType.name,
-      characteristics: this.extractStringArray(analysisData.characteristics) || primaryType.characteristics,
-      susceptibleDiseases: this.extractStringArray(analysisData.susceptibleDiseases) || primaryType.susceptibleDiseases,
+      characteristics:
+        this.extractStringArray(analysisData.characteristics) || primaryType.characteristics,
+      susceptibleDiseases:
+        this.extractStringArray(analysisData.susceptibleDiseases) ||
+        primaryType.susceptibleDiseases,
       dietaryRecommendations: this.extractStringArray(analysisData.dietaryRecommendations),
       lifestyleAdvice: this.extractStringArray(analysisData.lifestyleAdvice),
       seasonalAdjustments: {
@@ -369,7 +377,9 @@ ${mealDescriptions}
   /**
    * 构建次要体质信息
    */
-  private buildSecondaryConstitution(analysisData: Record<string, unknown>): TCMConstitution | undefined {
+  private buildSecondaryConstitution(
+    analysisData: Record<string, unknown>
+  ): TCMConstitution | undefined {
     if (!analysisData.secondaryConstitution) {
       return undefined
     }

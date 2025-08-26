@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChefMind LocalStorage 调试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .storage-item {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .key {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .value {
+            margin-top: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 3px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .danger {
+            background: #dc3545;
+        }
+        .danger:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ChefMind LocalStorage 调试工具</h1>
+        
+        <div class="actions">
+            <button onclick="refreshStorage()">刷新数据</button>
+            <button onclick="clearAllStorage()" class="danger">清空所有数据</button>
+            <button onclick="addTestRecipe()">添加测试收藏</button>
+        </div>
+
+        <div id="storage-content">
+            <!-- localStorage内容将在这里显示 -->
+        </div>
+    </div>
+
+    <script>
+        function refreshStorage() {
+            const container = document.getElementById('storage-content');
+            container.innerHTML = '';
+
+            if (localStorage.length === 0) {
+                container.innerHTML = '<p>LocalStorage 中没有数据</p>';
+                return;
+            }
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'storage-item';
+                
+                let displayValue = value;
+                try {
+                    // 尝试格式化 JSON
+                    const parsed = JSON.parse(value);
+                    displayValue = JSON.stringify(parsed, null, 2);
+                } catch (e) {
+                    // 如果不是 JSON，就原样显示
+                }
+                
+                itemDiv.innerHTML = `
+                    <div class="key">${key}</div>
+                    <div class="value">${displayValue}</div>
+                    <button onclick="deleteItem('${key}')" class="danger">删除此项</button>
+                `;
+                
+                container.appendChild(itemDiv);
+            }
+        }
+
+        function clearAllStorage() {
+            if (confirm('确定要清空所有 LocalStorage 数据吗？')) {
+                localStorage.clear();
+                refreshStorage();
+                alert('已清空所有数据');
+            }
+        }
+
+        function deleteItem(key) {
+            if (confirm(`确定要删除 "${key}" 吗？`)) {
+                localStorage.removeItem(key);
+                refreshStorage();
+                alert(`已删除 "${key}"`);
+            }
+        }
+
+        function addTestRecipe() {
+            const testRecipe = {
+                id: 'test_' + Date.now(),
+                name: '测试收藏菜谱',
+                title: '测试收藏菜谱',
+                description: '这是一个测试收藏的菜谱',
+                ingredients: ['测试食材1', '测试食材2'],
+                steps: ['测试步骤1', '测试步骤2'],
+                cookingTime: '30',
+                difficulty: 'easy',
+                servings: 2,
+                rating: 4.5,
+                tags: ['测试', '收藏'],
+                createdAt: new Date().toISOString()
+            };
+
+            const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+            savedRecipes.push(testRecipe);
+            localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
+            
+            refreshStorage();
+            alert('已添加测试收藏菜谱');
+        }
+
+        // 页面加载时刷新数据
+        window.onload = function() {
+            refreshStorage();
+        };
+    </script>
+</body>
+</html>

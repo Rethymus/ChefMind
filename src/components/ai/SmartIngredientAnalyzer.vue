@@ -38,8 +38,8 @@
 
       <!-- 分析按钮 -->
       <div class="analyze-section">
-        <el-button 
-          type="primary" 
+        <el-button
+          type="primary"
           size="large"
           :loading="isAnalyzing"
           :disabled="!imagePreview"
@@ -57,13 +57,9 @@
           <el-icon><Trophy /></el-icon>
           识别结果
         </h4>
-        
+
         <div class="ingredients-list">
-          <div 
-            v-for="(ingredient, index) in analysisResults" 
-            :key="index"
-            class="ingredient-card"
-          >
+          <div v-for="(ingredient, index) in analysisResults" :key="index" class="ingredient-card">
             <div class="ingredient-header">
               <div class="ingredient-info">
                 <h5 class="ingredient-name">{{ ingredient.name }}</h5>
@@ -75,11 +71,7 @@
                 </div>
               </div>
               <div class="ingredient-actions">
-                <el-button 
-                  type="primary" 
-                  size="small"
-                  @click="addToRecipe(ingredient.name)"
-                >
+                <el-button type="primary" size="small" @click="addToRecipe(ingredient.name)">
                   添加到食谱
                 </el-button>
               </div>
@@ -112,8 +104,8 @@
             <div v-if="ingredient.freshness" class="freshness-info">
               <div class="freshness-header">
                 <span>新鲜度评估</span>
-                <el-progress 
-                  :percentage="ingredient.freshness * 100" 
+                <el-progress
+                  :percentage="ingredient.freshness * 100"
                   :color="getFreshnessColor(ingredient.freshness)"
                   :show-text="false"
                   :stroke-width="8"
@@ -123,11 +115,14 @@
             </div>
 
             <!-- 替代食材建议 -->
-            <div v-if="ingredient.alternatives && ingredient.alternatives.length > 0" class="alternatives">
+            <div
+              v-if="ingredient.alternatives && ingredient.alternatives.length > 0"
+              class="alternatives"
+            >
               <h6>替代食材建议</h6>
               <div class="alternatives-tags">
-                <el-tag 
-                  v-for="alt in ingredient.alternatives" 
+                <el-tag
+                  v-for="alt in ingredient.alternatives"
                   :key="alt"
                   type="success"
                   size="small"
@@ -159,8 +154,8 @@
         <el-collapse v-model="activeHistoryPanel">
           <el-collapse-item title="分析历史" name="history">
             <div class="history-list">
-              <div 
-                v-for="(record, index) in analysisHistory" 
+              <div
+                v-for="(record, index) in analysisHistory"
                 :key="index"
                 class="history-item"
                 @click="loadHistoryRecord(record)"
@@ -182,499 +177,506 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Plus, Delete, MagicStick, Trophy } from '@element-plus/icons-vue'
-import { aiService, type IngredientAnalysis } from '@/services/aiService'
+  import { ref, reactive } from 'vue'
+  import { ElMessage } from 'element-plus'
+  import { Plus, Delete, MagicStick, Trophy } from '@element-plus/icons-vue'
+  import { aiService } from '@/services/aiService'
 
-// 组件事件
-const emit = defineEmits<{
-  addIngredient: [ingredient: string]
-  generateRecipe: [ingredients: string[]]
-}>()
+  // 组件事件
+  const emit = defineEmits<{
+    addIngredient: [ingredient: string]
+    generateRecipe: [ingredients: string[]]
+  }>()
 
-// 响应式数据
-const uploadRef = ref()
-const imagePreview = ref<string>('')
-const isAnalyzing = ref(false)
-const analysisResults = ref<IngredientAnalysis[]>([])
-const activeHistoryPanel = ref<string>('')
+  // 响应式数据
+  const uploadRef = ref()
+  const imagePreview = ref<string>('')
+  const currentImageFile = ref<File | null>(null)
+  const isAnalyzing = ref(false)
+  const analysisResults = ref<any[]>([])
+  const activeHistoryPanel = ref<string>('')
 
-// 分析历史
-const analysisHistory = reactive<Array<{
-  image: string
-  timestamp: Date
-  ingredients: IngredientAnalysis[]
-}>>([])
+  // 分析历史
+  const analysisHistory = reactive<
+    Array<{
+      image: string
+      timestamp: Date
+      ingredients: any[]
+    }>
+  >([])
 
-// 处理图片上传
-const handleImageUpload = (file: File) => {
-  // 验证文件类型
-  const isImage = file.type.startsWith('image/')
-  if (!isImage) {
-    ElMessage.error('请上传图片文件！')
-    return false
-  }
-
-  // 验证文件大小 (5MB)
-  const isLt5M = file.size / 1024 / 1024 < 5
-  if (!isLt5M) {
-    ElMessage.error('图片大小不能超过 5MB！')
-    return false
-  }
-
-  // 创建预览
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    imagePreview.value = e.target?.result as string
-  }
-  reader.readAsDataURL(file)
-
-  return false // 阻止自动上传
-}
-
-// 清除图片
-const clearImage = () => {
-  imagePreview.value = ''
-  analysisResults.value = []
-}
-
-// 分析食材
-const analyzeIngredients = async () => {
-  if (!imagePreview.value) {
-    ElMessage.warning('请先上传图片')
-    return
-  }
-
-  isAnalyzing.value = true
-  
-  try {
-    const results = await aiService.recognizeIngredients(imagePreview.value)
-    analysisResults.value = results
-    
-    // 保存到历史记录
-    analysisHistory.unshift({
-      image: imagePreview.value,
-      timestamp: new Date(),
-      ingredients: results
-    })
-    
-    // 限制历史记录数量
-    if (analysisHistory.length > 10) {
-      analysisHistory.splice(10)
+  // 处理图片上传
+  const handleImageUpload = (file: File) => {
+    // 验证文件类型
+    const isImage = file.type.startsWith('image/')
+    if (!isImage) {
+      ElMessage.error('请上传图片文件！')
+      return false
     }
-    
-    ElMessage.success(`成功识别 ${results.length} 种食材`)
-  } catch (error) {
-    console.error('分析失败:', error)
-    ElMessage.error('分析失败，请重试')
-  } finally {
-    isAnalyzing.value = false
+
+    // 验证文件大小 (5MB)
+    const isLt5M = file.size / 1024 / 1024 < 5
+    if (!isLt5M) {
+      ElMessage.error('图片大小不能超过 5MB！')
+      return false
+    }
+
+    // 保存文件引用
+    currentImageFile.value = file
+
+    // 创建预览
+    const reader = new FileReader()
+    reader.onload = e => {
+      imagePreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+
+    return true // 上传成功
   }
-}
 
-// 获取置信度类型
-const getConfidenceType = (confidence: number) => {
-  if (confidence >= 0.8) return 'success'
-  if (confidence >= 0.6) return 'warning'
-  return 'danger'
-}
+  // 清除图片
+  const clearImage = () => {
+    imagePreview.value = ''
+    currentImageFile.value = null
+    analysisResults.value = []
+  }
 
-// 获取新鲜度颜色
-const getFreshnessColor = (freshness: number) => {
-  if (freshness >= 0.8) return '#67c23a'
-  if (freshness >= 0.6) return '#e6a23c'
-  return '#f56c6c'
-}
+  // 分析食材
+  const analyzeIngredients = async () => {
+    if (!currentImageFile.value) {
+      ElMessage.warning('请先上传图片')
+      return
+    }
 
-// 获取新鲜度文本
-const getFreshnessText = (freshness: number) => {
-  if (freshness >= 0.8) return '新鲜'
-  if (freshness >= 0.6) return '一般'
-  return '不够新鲜'
-}
+    isAnalyzing.value = true
 
-// 添加到食谱
-const addToRecipe = (ingredient: string) => {
-  emit('addIngredient', ingredient)
-  ElMessage.success(`已添加 ${ingredient} 到食材列表`)
-}
+    try {
+      const results = await aiService.recognizeIngredients(currentImageFile.value)
+      analysisResults.value = results.ingredients || []
 
-// 添加全部食材
-const addAllIngredients = () => {
-  const ingredients = analysisResults.value.map(item => item.name)
-  ingredients.forEach(ingredient => {
+      // 保存到历史记录
+      analysisHistory.unshift({
+        image: imagePreview.value,
+        timestamp: new Date(),
+        ingredients: results.ingredients || [],
+      })
+
+      // 限制历史记录数量
+      if (analysisHistory.length > 10) {
+        analysisHistory.splice(10)
+      }
+
+      ElMessage.success(`成功识别 ${results.ingredients?.length || 0} 种食材`)
+    } catch (error) {
+      console.error('分析失败:', error)
+      ElMessage.error('分析失败，请重试')
+    } finally {
+      isAnalyzing.value = false
+    }
+  }
+
+  // 获取置信度类型
+  const getConfidenceType = (confidence: number) => {
+    if (confidence >= 0.8) return 'success'
+    if (confidence >= 0.6) return 'warning'
+    return 'danger'
+  }
+
+  // 获取新鲜度颜色
+  const getFreshnessColor = (freshness: number) => {
+    if (freshness >= 0.8) return '#67c23a'
+    if (freshness >= 0.6) return '#e6a23c'
+    return '#f56c6c'
+  }
+
+  // 获取新鲜度文本
+  const getFreshnessText = (freshness: number) => {
+    if (freshness >= 0.8) return '新鲜'
+    if (freshness >= 0.6) return '一般'
+    return '不够新鲜'
+  }
+
+  // 添加到食谱
+  const addToRecipe = (ingredient: string) => {
     emit('addIngredient', ingredient)
-  })
-  ElMessage.success(`已添加 ${ingredients.length} 种食材到列表`)
-}
+    ElMessage.success(`已添加 ${ingredient} 到食材列表`)
+  }
 
-// 基于食材生成食谱
-const generateRecipeFromIngredients = () => {
-  const ingredients = analysisResults.value.map(item => item.name)
-  emit('generateRecipe', ingredients)
-}
+  // 添加全部食材
+  const addAllIngredients = () => {
+    const ingredients = analysisResults.value.map(item => item.name)
+    ingredients.forEach(ingredient => {
+      emit('addIngredient', ingredient)
+    })
+    ElMessage.success(`已添加 ${ingredients.length} 种食材到列表`)
+  }
 
-// 加载历史记录
-const loadHistoryRecord = (record: any) => {
-  imagePreview.value = record.image
-  analysisResults.value = record.ingredients
-  activeHistoryPanel.value = ''
-}
+  // 基于食材生成食谱
+  const generateRecipeFromIngredients = () => {
+    const ingredients = analysisResults.value.map(item => item.name)
+    emit('generateRecipe', ingredients)
+  }
 
-// 格式化日期
-const formatDate = (date: Date) => {
-  return new Intl.DateTimeFormat('zh-CN', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date)
-}
+  // 加载历史记录
+  const loadHistoryRecord = (record: any) => {
+    imagePreview.value = record.image
+    analysisResults.value = record.ingredients
+    activeHistoryPanel.value = ''
+  }
+
+  // 格式化日期
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('zh-CN', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date)
+  }
 </script>
 
 <style scoped lang="scss">
-.smart-ingredient-analyzer {
-  .analyzer-card {
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  }
-
-  .card-header {
-    text-align: center;
-    
-    h3 {
-      margin: 0 0 8px 0;
-      color: var(--el-text-color-primary);
-      font-size: 20px;
-      font-weight: 600;
+  .smart-ingredient-analyzer {
+    .analyzer-card {
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     }
-    
-    .subtitle {
-      margin: 0;
-      color: var(--el-text-color-secondary);
-      font-size: 14px;
-    }
-  }
 
-  .upload-section {
-    margin-bottom: 20px;
-    
-    .image-uploader {
-      width: 100%;
-      
-      :deep(.el-upload) {
-        width: 100%;
-        border-radius: 8px;
-        overflow: hidden;
+    .card-header {
+      text-align: center;
+
+      h3 {
+        margin: 0 0 8px 0;
+        color: var(--el-text-color-primary);
+        font-size: 20px;
+        font-weight: 600;
       }
-      
-      :deep(.el-upload-dragger) {
+
+      .subtitle {
+        margin: 0;
+        color: var(--el-text-color-secondary);
+        font-size: 14px;
+      }
+    }
+
+    .upload-section {
+      margin-bottom: 20px;
+
+      .image-uploader {
+        width: 100%;
+
+        :deep(.el-upload) {
+          width: 100%;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+
+        :deep(.el-upload-dragger) {
+          width: 100%;
+          height: 200px;
+          border-radius: 8px;
+          border: 2px dashed var(--el-border-color);
+          background-color: var(--el-fill-color-lighter);
+          transition: all 0.3s ease;
+
+          &:hover {
+            border-color: var(--el-color-primary);
+            background-color: var(--el-color-primary-light-9);
+          }
+        }
+      }
+
+      .upload-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+
+        .upload-icon {
+          font-size: 48px;
+          color: var(--el-text-color-placeholder);
+          margin-bottom: 16px;
+        }
+
+        .upload-text {
+          text-align: center;
+
+          p {
+            margin: 4px 0;
+
+            &:first-child {
+              color: var(--el-text-color-primary);
+              font-size: 16px;
+              font-weight: 500;
+            }
+
+            &.upload-hint {
+              color: var(--el-text-color-secondary);
+              font-size: 12px;
+            }
+          }
+        }
+      }
+
+      .image-preview {
+        position: relative;
         width: 100%;
         height: 200px;
-        border-radius: 8px;
-        border: 2px dashed var(--el-border-color);
-        background-color: var(--el-fill-color-lighter);
-        transition: all 0.3s ease;
-        
-        &:hover {
-          border-color: var(--el-color-primary);
-          background-color: var(--el-color-primary-light-9);
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 8px;
+        }
+
+        .preview-overlay {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+
+        &:hover .preview-overlay {
+          opacity: 1;
         }
       }
     }
-    
-    .upload-placeholder {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      
-      .upload-icon {
-        font-size: 48px;
-        color: var(--el-text-color-placeholder);
-        margin-bottom: 16px;
-      }
-      
-      .upload-text {
-        text-align: center;
-        
-        p {
-          margin: 4px 0;
-          
-          &:first-child {
-            color: var(--el-text-color-primary);
-            font-size: 16px;
-            font-weight: 500;
-          }
-          
-          &.upload-hint {
-            color: var(--el-text-color-secondary);
-            font-size: 12px;
-          }
-        }
-      }
-    }
-    
-    .image-preview {
-      position: relative;
-      width: 100%;
-      height: 200px;
-      
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 8px;
-      }
-      
-      .preview-overlay {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      }
-      
-      &:hover .preview-overlay {
-        opacity: 1;
-      }
-    }
-  }
 
-  .analyze-section {
-    text-align: center;
-    margin-bottom: 24px;
-    
-    .analyze-btn {
-      padding: 12px 32px;
-      font-size: 16px;
-      font-weight: 500;
-    }
-  }
+    .analyze-section {
+      text-align: center;
+      margin-bottom: 24px;
 
-  .results-section {
-    .results-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 16px;
-      color: var(--el-text-color-primary);
-      font-size: 18px;
-      font-weight: 600;
+      .analyze-btn {
+        padding: 12px 32px;
+        font-size: 16px;
+        font-weight: 500;
+      }
     }
-    
-    .ingredients-list {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-    
-    .ingredient-card {
-      background: var(--el-fill-color-lighter);
-      border-radius: 8px;
-      padding: 16px;
-      border: 1px solid var(--el-border-color-light);
-      
-      .ingredient-header {
+
+    .results-section {
+      .results-title {
         display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 12px;
-        
-        .ingredient-info {
-          flex: 1;
-          
-          .ingredient-name {
-            margin: 0 0 8px 0;
-            color: var(--el-text-color-primary);
-            font-size: 16px;
-            font-weight: 600;
-          }
-          
-          .ingredient-meta {
-            display: flex;
-            gap: 8px;
-          }
-        }
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        color: var(--el-text-color-primary);
+        font-size: 18px;
+        font-weight: 600;
       }
-      
-      .nutrition-info {
-        margin-bottom: 12px;
-        
-        h6 {
-          margin: 0 0 8px 0;
-          color: var(--el-text-color-regular);
-          font-size: 14px;
-          font-weight: 500;
-        }
-        
-        .nutrition-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-          gap: 8px;
-          
-          .nutrition-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 8px;
-            background: var(--el-bg-color);
-            border-radius: 4px;
-            
-            .label {
-              font-size: 12px;
-              color: var(--el-text-color-secondary);
-              margin-bottom: 2px;
-            }
-            
-            .value {
-              font-size: 14px;
-              font-weight: 600;
-              color: var(--el-text-color-primary);
-            }
-          }
-        }
+
+      .ingredients-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 20px;
       }
-      
-      .freshness-info {
-        margin-bottom: 12px;
-        
-        .freshness-header {
+
+      .ingredient-card {
+        background: var(--el-fill-color-lighter);
+        border-radius: 8px;
+        padding: 16px;
+        border: 1px solid var(--el-border-color-light);
+
+        .ingredient-header {
           display: flex;
-          align-items: center;
           justify-content: space-between;
-          margin-bottom: 4px;
-          
-          span {
-            font-size: 14px;
+          align-items: flex-start;
+          margin-bottom: 12px;
+
+          .ingredient-info {
+            flex: 1;
+
+            .ingredient-name {
+              margin: 0 0 8px 0;
+              color: var(--el-text-color-primary);
+              font-size: 16px;
+              font-weight: 600;
+            }
+
+            .ingredient-meta {
+              display: flex;
+              gap: 8px;
+            }
+          }
+        }
+
+        .nutrition-info {
+          margin-bottom: 12px;
+
+          h6 {
+            margin: 0 0 8px 0;
             color: var(--el-text-color-regular);
+            font-size: 14px;
             font-weight: 500;
           }
-          
-          :deep(.el-progress) {
-            flex: 1;
-            margin-left: 12px;
+
+          .nutrition-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+
+            .nutrition-item {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              padding: 8px;
+              background: var(--el-bg-color);
+              border-radius: 4px;
+
+              .label {
+                font-size: 12px;
+                color: var(--el-text-color-secondary);
+                margin-bottom: 2px;
+              }
+
+              .value {
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--el-text-color-primary);
+              }
+            }
           }
         }
-        
-        .freshness-text {
-          font-size: 12px;
-          color: var(--el-text-color-secondary);
+
+        .freshness-info {
+          margin-bottom: 12px;
+
+          .freshness-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+
+            span {
+              font-size: 14px;
+              color: var(--el-text-color-regular);
+              font-weight: 500;
+            }
+
+            :deep(.el-progress) {
+              flex: 1;
+              margin-left: 12px;
+            }
+          }
+
+          .freshness-text {
+            font-size: 12px;
+            color: var(--el-text-color-secondary);
+          }
         }
-      }
-      
-      .alternatives {
-        h6 {
-          margin: 0 0 8px 0;
-          color: var(--el-text-color-regular);
-          font-size: 14px;
-          font-weight: 500;
-        }
-        
-        .alternatives-tags {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-          
-          .clickable-tag {
-            cursor: pointer;
-            transition: all 0.3s ease;
-            
-            &:hover {
-              transform: translateY(-1px);
-              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+        .alternatives {
+          h6 {
+            margin: 0 0 8px 0;
+            color: var(--el-text-color-regular);
+            font-size: 14px;
+            font-weight: 500;
+          }
+
+          .alternatives-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+
+            .clickable-tag {
+              cursor: pointer;
+              transition: all 0.3s ease;
+
+              &:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+              }
             }
           }
         }
       }
+
+      .batch-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
     }
-    
-    .batch-actions {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      flex-wrap: wrap;
+
+    .history-section {
+      margin-top: 24px;
+
+      .history-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+
+      .history-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: var(--el-fill-color-lighter);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: var(--el-fill-color-light);
+          transform: translateX(4px);
+        }
+
+        .history-image {
+          width: 60px;
+          height: 60px;
+          object-fit: cover;
+          border-radius: 6px;
+          flex-shrink: 0;
+        }
+
+        .history-info {
+          flex: 1;
+
+          .history-date {
+            font-size: 12px;
+            color: var(--el-text-color-secondary);
+            margin-bottom: 4px;
+          }
+
+          .history-ingredients {
+            font-size: 14px;
+            color: var(--el-text-color-primary);
+            line-height: 1.4;
+          }
+        }
+      }
     }
   }
 
-  .history-section {
-    margin-top: 24px;
-    
-    .history-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    
-    .history-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      background: var(--el-fill-color-lighter);
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      
-      &:hover {
-        background: var(--el-fill-color-light);
-        transform: translateX(4px);
-      }
-      
-      .history-image {
-        width: 60px;
-        height: 60px;
-        object-fit: cover;
-        border-radius: 6px;
-        flex-shrink: 0;
-      }
-      
-      .history-info {
-        flex: 1;
-        
-        .history-date {
-          font-size: 12px;
-          color: var(--el-text-color-secondary);
-          margin-bottom: 4px;
-        }
-        
-        .history-ingredients {
-          font-size: 14px;
-          color: var(--el-text-color-primary);
-          line-height: 1.4;
-        }
-      }
-    }
-  }
-}
+  @media (max-width: 768px) {
+    .smart-ingredient-analyzer {
+      .ingredient-card .ingredient-header {
+        flex-direction: column;
+        gap: 12px;
 
-@media (max-width: 768px) {
-  .smart-ingredient-analyzer {
-    .ingredient-card .ingredient-header {
-      flex-direction: column;
-      gap: 12px;
-      
-      .ingredient-actions {
-        align-self: stretch;
-        
+        .ingredient-actions {
+          align-self: stretch;
+
+          .el-button {
+            width: 100%;
+          }
+        }
+      }
+
+      .batch-actions {
+        flex-direction: column;
+
         .el-button {
           width: 100%;
         }
       }
     }
-    
-    .batch-actions {
-      flex-direction: column;
-      
-      .el-button {
-        width: 100%;
-      }
-    }
   }
-}
 </style>

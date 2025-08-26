@@ -14,12 +14,12 @@ export const getIngredientCategories = async (): Promise<IngredientCategory[]> =
     // 如果没有存储的数据，使用AI生成
     const { aiService } = await import('@/services/aiService')
     const ingredients = ['蔬菜', '肉类', '海鲜', '调料']
-    const preferences = { 
+    const preferences = {
       dietaryRestrictions: [],
       cuisineType: 'chinese',
       spiceLevel: 'medium' as const,
       cookingTime: 30,
-      difficulty: 'medium' as const
+      difficulty: 'medium' as const,
     }
 
     const response = await aiService.generateRecipe(ingredients, preferences)
@@ -48,12 +48,12 @@ export const getCookingMethods = async (): Promise<CookingMethod[]> => {
     // 如果没有存储的数据，使用AI生成
     const { aiService } = await import('@/services/aiService')
     const ingredients = ['烹饪方法']
-    const preferences = { 
+    const preferences = {
       dietaryRestrictions: [],
       cuisineType: 'chinese',
       spiceLevel: 'medium' as const,
       cookingTime: 30,
-      difficulty: 'medium' as const
+      difficulty: 'medium' as const,
     }
 
     const response = await aiService.generateRecipe(ingredients, preferences)
@@ -177,8 +177,7 @@ export const popularRecipes: Recipe[] = [
     cookingTime: '20',
     difficulty: 'medium',
     servings: 2,
-    image:
-      'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8bWVhdCUyMGRpc2h8ZW58MHx8MHx8fDA%3D',
+    image: '/images/recipes/gongbao-jiding.svg',
     tags: ['川菜', '下饭菜', '家常菜', '辣味'],
     nutrition: {
       calories: 320,
@@ -219,8 +218,7 @@ export const popularRecipes: Recipe[] = [
     cookingTime: '15',
     difficulty: 'easy',
     servings: 1,
-    image:
-      'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bm9vZGxlJTIwZGlzaHxlbnwwfHwwfHx8MA%3D%3D',
+    image: '/images/recipes/fanqie-jidan-mian.svg',
     tags: ['快手菜', '面食', '家常菜', '素食'],
     nutrition: {
       calories: 280,
@@ -264,8 +262,7 @@ export const popularRecipes: Recipe[] = [
     cookingTime: '60',
     difficulty: 'medium',
     servings: 4,
-    image:
-      'https://images.unsplash.com/photo-1617692855027-33b14f061079?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8Y2hpbmVzZSUyMGZvb2R8ZW58MHx8MHx8fDA%3D',
+    image: '/images/recipes/hongshao-rou.svg',
     tags: ['家常菜', '下饭菜', '经典菜', '肉菜'],
     nutrition: {
       calories: 420,
@@ -277,8 +274,8 @@ export const popularRecipes: Recipe[] = [
     rating: 4.7,
     authorId: 'Chef Wang',
     createdAt: new Date('2024-01-25'),
-    cookingMethods: ['炸'],
-    name: '宫保鸡丁',
+    cookingMethods: ['炖'],
+    name: '红烧肉',
   },
   {
     id: '4',
@@ -298,7 +295,7 @@ export const popularRecipes: Recipe[] = [
       '食用油 适量',
       '盐 适量',
     ],
-    instructions: [
+    steps: [
       '豆腐切块，用淡盐水焯水去腥',
       '热锅下油，下牛肉末炒散变色',
       '加入郫县豆瓣酱炒出红油',
@@ -311,8 +308,7 @@ export const popularRecipes: Recipe[] = [
     cookingTime: '25',
     difficulty: 'medium',
     servings: 2,
-    image:
-      'https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y2hpbmVzZSUyMGZvb2R8ZW58MHx8MHx8fDA%3D',
+    image: '/images/recipes/mapo-doufu.svg',
     tags: ['川菜', '下饭菜', '豆腐', '辣味'],
     nutrition: {
       calories: 260,
@@ -324,8 +320,8 @@ export const popularRecipes: Recipe[] = [
     rating: 4.4,
     authorId: 'Chef Zhang',
     createdAt: new Date('2024-02-10'),
-    cookingMethods: ['炸'],
-    name: '酸辣土豆丝',
+    cookingMethods: ['炒'],
+    name: '麻婆豆腐',
   },
   {
     id: '5',
@@ -340,7 +336,7 @@ export const popularRecipes: Recipe[] = [
       '食用油 1勺',
       '盐 适量',
     ],
-    instructions: [
+    steps: [
       '鲈鱼处理干净，在鱼身两侧划几刀',
       '用盐和料酒腌制10分钟',
       '盘子上铺姜丝，放上鲈鱼，鱼身上也放些姜丝',
@@ -353,8 +349,7 @@ export const popularRecipes: Recipe[] = [
     cookingTime: '20',
     difficulty: 'easy',
     servings: 2,
-    image:
-      'https://images.unsplash.com/photo-1599084993091-1cb5c0721cc6?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8c2VhZm9vZCUyMGRpc2h8ZW58MHx8MHx8fDA%3D',
+    image: '/images/recipes/qingzheng-luyu.svg',
     tags: ['海鲜', '蒸菜', '清淡', '营养'],
     nutrition: {
       calories: 180,
@@ -374,7 +369,7 @@ export const popularRecipes: Recipe[] = [
     title: '蒜蓉西兰花',
     description: '简单健康的绿色蔬菜，营养丰富',
     ingredients: ['西兰花 300g', '蒜 4瓣', '盐 适量', '食用油 1勺', '生抽 1/2勺'],
-    instructions: [
+    steps: [
       '西兰花掰成小朵，用淡盐水浸泡10分钟',
       '蒜切末',
       '西兰花焯水1-2分钟，捞出沥干',
@@ -385,8 +380,7 @@ export const popularRecipes: Recipe[] = [
     cookingTime: '10',
     difficulty: 'easy',
     servings: 2,
-    image:
-      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8dmVnZXRhYmxlJTIwZGlzaHxlbnwwfHwwfHx8MA%3D%3D',
+    image: '/images/recipes/suanrong-xilanhua.svg',
     tags: ['素食', '蔬菜', '快手菜', '健康'],
     nutrition: {
       calories: 80,

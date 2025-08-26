@@ -17,8 +17,8 @@
           <div v-for="recipe in popularRecipes" :key="recipe.id" class="recipe-card">
             <div class="recipe-info">
               <div class="recipe-overlay">
-                <span class="recipe-difficulty">{{ getDifficultyLabel(recipe.difficulty) }}</span>
-                <span class="recipe-time">{{ recipe.cookingTime }}分钟</span>
+                <span class="recipe-difficulty">{{ formatDifficulty(recipe.difficulty) }}</span>
+                <span class="recipe-time">{{ formatCookingTime(recipe.cookingTime) }}</span>
               </div>
             </div>
 
@@ -97,6 +97,7 @@
   import { useRecipeService } from '@/services/recipeService'
   import type { Recipe } from '@/types/recipe'
   import { popularRecipes } from '@/data/mockData'
+  import { formatCookingTime, formatDifficulty } from '@/utils/formatUtils'
 
   const recipeService = useRecipeService()
   const router = useRouter()
@@ -190,25 +191,6 @@
 
     // 触发事件
     window.dispatchEvent(event)
-  }
-
-  // 获取难度标签
-  const getDifficultyLabel = (difficulty: string | number) => {
-    if (typeof difficulty === 'number') {
-      if (difficulty <= 1) return '简单'
-      if (difficulty <= 2) return '中等'
-      return '较难'
-    }
-
-    const labels: Record<string, string> = {
-      easy: '简单',
-      medium: '中等',
-      hard: '较难',
-      简单: '简单',
-      中等: '中等',
-      较难: '较难',
-    }
-    return labels[difficulty] || difficulty
   }
 
   // 开始烹饪确认方法

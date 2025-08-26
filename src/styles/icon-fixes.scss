@@ -1,0 +1,102 @@
+/* 图标修复样式 */
+/* 为自定义图标类提供Unicode图标备用方案 */
+
+.icon-heart {
+  &::before {
+    content: '❤️';
+    font-size: 1em;
+  }
+}
+
+.icon-print {
+  &::before {
+    content: '🖨️';
+    font-size: 1em;
+  }
+}
+
+.icon-shopping {
+  &::before {
+    content: '🛒';
+    font-size: 1em;
+  }
+}
+
+.icon-clock {
+  &::before {
+    content: '⏰';
+    font-size: 1em;
+  }
+}
+
+.icon-difficulty {
+  &::before {
+    content: '📊';
+    font-size: 1em;
+  }
+}
+
+.icon-servings {
+  &::before {
+    content: '👥';
+    font-size: 1em;
+  }
+}
+
+.icon-recipe {
+  &::before {
+    content: '📖';
+    font-size: 1em;
+  }
+}
+
+.icon-star {
+  &::before {
+    content: '★';
+    font-size: 1em;
+  }
+}
+
+.icon-star-empty {
+  &::before {
+    content: '☆';
+    font-size: 1em;
+  }
+}
+
+/* 确保图标正确显示 */
+[class^="icon-"], [class*=" icon-"] {
+  display: inline-block;
+  vertical-align: middle;
+  
+  &::before {
+    display: inline-block;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* 修复可能的编码问题显示的乱码字符 */
+.info-icon, .action-icon, .no-recipe-icon {
+  font-size: 1.2em;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* 星星评分样式 */
+.star {
+  color: #ddd;
+  font-size: 1.2em;
+  
+  &.filled {
+    color: #ffd700;
+  }
+}
+
+/* 确保所有图标都有合适的间距 */
+.action-icon {
+  margin-right: 0.5rem;
+}
+
+/* 修复食材显示问题 - 移除统一图标覆盖 */
+/* 由组件自行处理食材图标显示 */

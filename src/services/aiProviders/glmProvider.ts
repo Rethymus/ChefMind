@@ -71,7 +71,7 @@ export class GLMProvider implements BaseAIProvider {
       return {
         name: '未知食材',
         confidence: 0.5,
-        category: '未分类',
+        category: '其他',
         nutrition: {
           calories: 0,
           protein: 0,
@@ -162,7 +162,10 @@ export class GLMProvider implements BaseAIProvider {
       const recipeResult = parseJsonResponse<Recipe>(response)
       const recipe = this.buildRecipeFromResult(recipeResult, params)
 
-      if (params.autoCompleteIngredients && (!recipe.autoCompletedIngredients || recipe.autoCompletedIngredients.length === 0)) {
+      if (
+        params.autoCompleteIngredients &&
+        (!recipe.autoCompletedIngredients || recipe.autoCompletedIngredients.length === 0)
+      ) {
         recipe.autoCompletedIngredients = this.inferAutoCompletedIngredients(
           params.ingredients,
           recipe.ingredients
@@ -177,18 +180,22 @@ export class GLMProvider implements BaseAIProvider {
   }
 
   private buildRecipePrompt(params: RecipeGenerationParams): string {
-    const autoCompleteInstructions = params.autoCompleteIngredients 
+    const autoCompleteInstructions = params.autoCompleteIngredients
       ? `请自动添加必要的调料和辅料，使食谱更加完整。在返回的JSON中，请添加一个"autoCompletedIngredients"字段，列出所有自动添加的食材。`
       : ''
 
-    const basePrompt = params.requestType === 'dish_recreation' && params.dishName
-      ? this.buildDishRecreationPrompt(params, autoCompleteInstructions)
-      : this.buildIngredientBasedPrompt(params, autoCompleteInstructions)
+    const basePrompt =
+      params.requestType === 'dish_recreation' && params.dishName
+        ? this.buildDishRecreationPrompt(params, autoCompleteInstructions)
+        : this.buildIngredientBasedPrompt(params, autoCompleteInstructions)
 
     return basePrompt + this.getJsonFormatTemplate(params.autoCompleteIngredients)
   }
 
-  private buildDishRecreationPrompt(params: RecipeGenerationParams, autoCompleteInstructions: string): string {
+  private buildDishRecreationPrompt(
+    params: RecipeGenerationParams,
+    autoCompleteInstructions: string
+  ): string {
     return `
     请为"${params.dishName}"这道菜生成一个详细的制作食谱。请注意这是一道具体的菜品，不是食材。
     
@@ -208,13 +215,18 @@ export class GLMProvider implements BaseAIProvider {
     `
   }
 
-  private buildIngredientBasedPrompt(params: RecipeGenerationParams, autoCompleteInstructions: string): string {
+  private buildIngredientBasedPrompt(
+    params: RecipeGenerationParams,
+    autoCompleteInstructions: string
+  ): string {
     const parameterLines = [
       `食材: ${params.ingredients.join(', ')}`,
       params.cookingMethods?.length ? `烹饪方式: ${params.cookingMethods.join(', ')}` : '',
       params.noMethodRestriction ? '不限制烹饪方式（请选择最适合的烹饪方式）' : '',
       params.kitchenware?.length ? `厨具: ${params.kitchenware.join(', ')}` : '',
-      params.dietaryRestrictions?.length ? `饮食限制: ${params.dietaryRestrictions.join(', ')}` : '',
+      params.dietaryRestrictions?.length
+        ? `饮食限制: ${params.dietaryRestrictions.join(', ')}`
+        : '',
       params.healthGoals?.length ? `健康目标: ${params.healthGoals.join(', ')}` : '',
       params.allergies?.length ? `过敏原: ${params.allergies.join(', ')}` : '',
       params.flavorPreferences?.length ? `口味偏好: ${params.flavorPreferences.join(', ')}` : '',
@@ -223,7 +235,7 @@ export class GLMProvider implements BaseAIProvider {
       params.servings ? `份量: ${params.servings}人份` : '',
       params.cookingTime ? `制作时间: ${params.cookingTime}` : '',
       params.difficulty ? `难度: ${params.difficulty}` : '',
-      autoCompleteInstructions
+      autoCompleteInstructions,
     ].filter(Boolean)
 
     return `
@@ -234,8 +246,8 @@ export class GLMProvider implements BaseAIProvider {
   }
 
   private getJsonFormatTemplate(autoCompleteIngredients?: boolean): string {
-    const autoCompleteField = autoCompleteIngredients 
-      ? ',"autoCompletedIngredients": ["自动添加的食材1", "自动添加的食材2"]' 
+    const autoCompleteField = autoCompleteIngredients
+      ? ',"autoCompletedIngredients": ["自动添加的食材1", "自动添加的食材2"]'
       : ''
 
     return `
@@ -273,9 +285,12 @@ export class GLMProvider implements BaseAIProvider {
     `
   }
 
-  private buildRecipeFromResult(recipeResult: Partial<Recipe>, params: RecipeGenerationParams): Recipe {
+  private buildRecipeFromResult(
+    recipeResult: Partial<Recipe>,
+    params: RecipeGenerationParams
+  ): Recipe {
     const recipeTitle = recipeResult.title || '未命名食谱'
-    
+
     return {
       id: 'glm-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
       title: recipeTitle,
@@ -308,7 +323,7 @@ export class GLMProvider implements BaseAIProvider {
 
   private createFallbackRecipe(params: RecipeGenerationParams): Recipe {
     const fallbackTitle = `${params.ingredients[0] || '食材'}食谱`
-    
+
     return {
       id: 'glm-fallback-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
       title: fallbackTitle,

@@ -154,7 +154,7 @@ export function parseJsonResponse<T>(response: string): T {
   function tryRegexExtraction(cleanResponse: string): T {
     const jsonRegex = /\{[\s\S]*?\}/
     const jsonMatch = jsonRegex.exec(cleanResponse)
-    
+
     if (!jsonMatch) {
       throw new Error('无法找到有效的JSON格式')
     }
@@ -173,7 +173,7 @@ export function parseJsonResponse<T>(response: string): T {
     // 清理并提取JSON
     const cleanResponse = cleanJsonResponse(response)
     const extractedJson = extractJsonFromResponse(cleanResponse)
-    
+
     if (extractedJson) {
       return JSON.parse(extractedJson) as T
     }
@@ -188,7 +188,7 @@ export function parseJsonResponse<T>(response: string): T {
   } catch (directError) {
     // 直接解析失败，记录错误并尝试高级解析
     console.log('直接JSON解析失败，尝试高级解析:', directError)
-    
+
     try {
       return tryAdvancedParse()
     } catch (error) {
@@ -347,6 +347,47 @@ function mockGLMResponse(prompt: string): string {
       ],
       "confidence": 85
     }`
+  } else if (
+    prompt.includes('营养师') ||
+    prompt.includes('营养状况') ||
+    prompt.includes('营养分析')
+  ) {
+    return `{
+      "balanceScore": 78,
+      "recommendations": [
+        "建议增加深绿色蔬菜的摄入，如菠菜、西兰花等，以补充叶酸和维生素K",
+        "适当增加优质蛋白质，如鱼类、豆制品，建议每天摄入1.2-1.5g/kg体重",
+        "主食应多选择全谷物，如燕麦、糙米，增加膳食纤维摄入",
+        "控制钠盐摄入，建议每日不超过6g，多选择新鲜食材",
+        "保持规律的三餐时间，避免过度节食或暴饮暴食"
+      ],
+      "riskAssessments": [
+        {
+          "level": "low",
+          "title": "整体营养风险较低",
+          "description": "当前饮食结构基本合理，营养素摄入相对均衡"
+        },
+        {
+          "level": "medium",
+          "title": "膳食纤维可能不足",
+          "description": "建议增加全谷物和蔬果摄入，达到每日25-30g膳食纤维"
+        }
+      ],
+      "improvementSuggestions": [
+        {
+          "category": "蛋白质优化",
+          "suggestion": "增加植物蛋白比例，豆类、坚果与动物蛋白搭配摄入"
+        },
+        {
+          "category": "微量元素补充",
+          "suggestion": "适量摄入海产品补充碘、锌等矿物质"
+        },
+        {
+          "category": "饮食时间调整",
+          "suggestion": "晚餐时间提前至19:00前，有利于消化和睡眠质量"
+        }
+      ]
+    }`
   } else if (prompt.includes('营养') && prompt.includes('JSON')) {
     return `{
       "calories": 350,
@@ -379,4 +420,26 @@ function mockGLMResponse(prompt: string): string {
   } else {
     return '这是一个模拟的 GLM API 响应。请配置真实的 API 密钥以获取实际响应。'
   }
+}
+
+/**
+ * 对话形式的GLM调用（兼容旧接口）
+ * @param messages 消息数组
+ * @param options 选项
+ * @returns 响应文本
+ */
+export async function chat(
+  messages: Array<{ role: string; content: string }>,
+  options: GLMCallOptions = {}
+): Promise<string> {
+  // 将消息数组转换为单个prompt
+  const prompt = messages.map(msg => `${msg.role}: ${msg.content}`).join('\n')
+  return callGLM(prompt, options)
+}
+
+// 默认导出对象
+export const glmService = {
+  callGLM,
+  parseJsonResponse,
+  chat,
 }

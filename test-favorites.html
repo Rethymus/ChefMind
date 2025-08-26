@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>收藏功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success {
+            background: #28a745;
+        }
+        .danger {
+            background: #dc3545;
+        }
+        .output {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>ChefMind 收藏功能测试</h1>
+        
+        <div class="test-section">
+            <h3>测试操作</h3>
+            <button onclick="addTestRecipe()">添加测试食谱到收藏</button>
+            <button onclick="checkSavedRecipes()" class="success">检查收藏数据</button>
+            <button onclick="clearSavedRecipes()" class="danger">清空收藏</button>
+            <button onclick="openFavoritesPage()">打开收藏页面</button>
+        </div>
+
+        <div class="output-section">
+            <h3>输出信息</h3>
+            <div id="output" class="output">点击上方按钮开始测试...</div>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function addTestRecipe() {
+            try {
+                const testRecipe = {
+                    id: 'test_' + Date.now(),
+                    name: '测试收藏菜谱',
+                    title: '测试收藏菜谱', 
+                    description: '这是一个用于测试收藏功能的菜谱',
+                    ingredients: ['测试食材1 100g', '测试食材2 适量'],
+                    steps: ['测试步骤1: 准备食材', '测试步骤2: 开始制作'],
+                    cookingTime: '30',
+                    difficulty: 'easy',
+                    servings: 2,
+                    rating: 4.5,
+                    tags: ['测试', '收藏'],
+                    cookingMethods: ['测试方法'],
+                    createdAt: new Date().toISOString()
+                };
+
+                // 获取现有收藏
+                const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]');
+                log(`当前收藏数量: ${savedRecipes.length}`);
+                
+                // 添加新食谱
+                savedRecipes.push(testRecipe);
+                localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes));
+                
+                log(`✅ 成功添加测试食谱，新的收藏数量: ${savedRecipes.length}`);
+                log(`食谱ID: ${testRecipe.id}`);
+                log(`食谱名称: ${testRecipe.name}`);
+                
+            } catch (error) {
+                log(`❌ 添加失败: ${error.message}`);
+            }
+        }
+
+        function checkSavedRecipes() {
+            try {
+                const saved = localStorage.getItem('savedRecipes');
+                log(`LocalStorage 原始数据: ${saved}`);
+                
+                if (!saved) {
+                    log('⚠️  localStorage 中没有 savedRecipes 数据');
+                    return;
+                }
+
+                const savedRecipes = JSON.parse(saved);
+                log(`📊 收藏数据解析成功，数量: ${savedRecipes.length}`);
+                
+                if (savedRecipes.length > 0) {
+                    log(`📝 收藏列表:`);
+                    savedRecipes.forEach((recipe, index) => {
+                        log(`  ${index + 1}. ${recipe.name || recipe.title} (ID: ${recipe.id})`);
+                    });
+                } else {
+                    log('📭 收藏列表为空');
+                }
+                
+            } catch (error) {
+                log(`❌ 检查失败: ${error.message}`);
+            }
+        }
+
+        function clearSavedRecipes() {
+            try {
+                localStorage.removeItem('savedRecipes');
+                log('🗑️  已清空所有收藏数据');
+            } catch (error) {
+                log(`❌ 清空失败: ${error.message}`);
+            }
+        }
+
+        function openFavoritesPage() {
+            window.open('http://localhost:5173/favorites', '_blank');
+        }
+
+        // 页面加载时检查当前状态
+        window.onload = function() {
+            log('🚀 收藏功能测试工具已启动');
+            checkSavedRecipes();
+        };
+    </script>
+</body>
+</html>

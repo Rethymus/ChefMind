@@ -53,7 +53,10 @@ export class MockAIProvider implements BaseAIProvider {
     return recipe
   }
 
-  private processIngredients(params: RecipeGenerationParams): { ingredients: string[], autoCompletedIngredients: string[] } {
+  private processIngredients(params: RecipeGenerationParams): {
+    ingredients: string[]
+    autoCompletedIngredients: string[]
+  } {
     const ingredients = [...params.ingredients]
     const autoCompletedIngredients: string[] = []
 
@@ -63,7 +66,11 @@ export class MockAIProvider implements BaseAIProvider {
 
     this.addBasicSeasonings(ingredients, autoCompletedIngredients)
     this.addAdditionalSeasonings(ingredients, autoCompletedIngredients)
-    this.addCookingMethodSpecificIngredients(ingredients, autoCompletedIngredients, params.cookingMethods)
+    this.addCookingMethodSpecificIngredients(
+      ingredients,
+      autoCompletedIngredients,
+      params.cookingMethods
+    )
 
     return { ingredients, autoCompletedIngredients }
   }
@@ -82,7 +89,17 @@ export class MockAIProvider implements BaseAIProvider {
   }
 
   private addAdditionalSeasonings(ingredients: string[], autoCompletedIngredients: string[]): void {
-    const additionalSeasonings = ['葱', '姜', '蒜', '八角', '花椒', '胡椒粉', '醋', '蚝油', '辣椒粉']
+    const additionalSeasonings = [
+      '葱',
+      '姜',
+      '蒜',
+      '八角',
+      '花椒',
+      '胡椒粉',
+      '醋',
+      '蚝油',
+      '辣椒粉',
+    ]
     const additionalCount = Math.min(2 + Math.floor(Math.random() * 3), additionalSeasonings.length)
     const shuffledAdditional = [...additionalSeasonings].sort(() => 0.5 - Math.random())
 
@@ -95,13 +112,20 @@ export class MockAIProvider implements BaseAIProvider {
     }
   }
 
-  private addCookingMethodSpecificIngredients(ingredients: string[], autoCompletedIngredients: string[], cookingMethods?: string[]): void {
+  private addCookingMethodSpecificIngredients(
+    ingredients: string[],
+    autoCompletedIngredients: string[],
+    cookingMethods?: string[]
+  ): void {
     if (!cookingMethods || cookingMethods.length === 0) {
       return
     }
 
     const needsOil = cookingMethods.includes('炒') || cookingMethods.includes('煎')
-    const needsWater = cookingMethods.includes('蒸') || cookingMethods.includes('炖') || cookingMethods.includes('煮')
+    const needsWater =
+      cookingMethods.includes('蒸') ||
+      cookingMethods.includes('炖') ||
+      cookingMethods.includes('煮')
 
     if (needsOil && !ingredients.includes('食用油')) {
       ingredients.push('食用油')

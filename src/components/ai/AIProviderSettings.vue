@@ -23,7 +23,7 @@
                 <div class="provider-desc">国内领先的大语言模型，支持中文优化</div>
               </div>
             </el-radio>
-            
+
             <el-radio :label="AIProvider.OPENAI" class="provider-option">
               <div class="provider-info">
                 <div class="provider-name">
@@ -71,12 +71,7 @@
               </el-select>
             </el-form-item>
             <el-form-item label="最大令牌数">
-              <el-input-number
-                v-model="glmConfig.maxTokens"
-                :min="100"
-                :max="4000"
-                :step="100"
-              />
+              <el-input-number v-model="glmConfig.maxTokens" :min="100" :max="4000" :step="100" />
             </el-form-item>
           </el-form>
         </div>
@@ -94,10 +89,7 @@
               />
             </el-form-item>
             <el-form-item label="API地址">
-              <el-input
-                v-model="openaiConfig.baseURL"
-                placeholder="https://api.openai.com/v1"
-              />
+              <el-input v-model="openaiConfig.baseURL" placeholder="https://api.openai.com/v1" />
             </el-form-item>
             <el-form-item label="模型">
               <el-select v-model="openaiConfig.model" placeholder="选择模型">
@@ -119,16 +111,11 @@
 
         <!-- 测试连接 -->
         <div class="test-section">
-          <el-button
-            type="primary"
-            @click="testConnection"
-            :loading="testing"
-            :disabled="!canTest"
-          >
+          <el-button type="primary" @click="testConnection" :loading="testing" :disabled="!canTest">
             <el-icon><Connection /></el-icon>
             测试连接
           </el-button>
-          
+
           <div v-if="testResult" class="test-result">
             <el-alert
               :title="testResult.success ? '连接成功' : '连接失败'"
@@ -159,7 +146,7 @@
               <span class="value">{{ serviceStatus.currentProvider }}</span>
             </div>
           </div>
-          
+
           <el-button @click="clearCache" size="small" type="warning">
             <el-icon><Delete /></el-icon>
             清理缓存
@@ -171,298 +158,292 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { 
-  ChatDotRound, 
-  Connection, 
-  Delete,
-  Lightning,
-  Cpu
-} from '@element-plus/icons-vue'
-import { aiService, AIProviderType as AIProvider } from '@/services/aiService'
-import { AI_CONFIG } from '@/config/aiConfig'
+  import { ref, reactive, computed, onMounted } from 'vue'
+  import { ElMessage } from 'element-plus'
+  import { ChatDotRound, Connection, Delete, Lightning, Cpu } from '@element-plus/icons-vue'
+  import { aiService, AIProviderType as AIProvider } from '@/services/aiService'
+  import { AI_CONFIG } from '@/config/aiConfig'
 
-// 响应式数据
-const selectedProvider = ref<AIProvider>(AI_CONFIG.defaultProvider as unknown as AIProvider)
-const currentProvider = ref<AIProvider>(AI_CONFIG.defaultProvider as unknown as AIProvider)
-const testing = ref(false)
-const testResult = ref<{ success: boolean; message: string } | null>(null)
+  // 响应式数据
+  const selectedProvider = ref<AIProvider>(AI_CONFIG.defaultProvider as unknown as AIProvider)
+  const currentProvider = ref<AIProvider>(AI_CONFIG.defaultProvider as unknown as AIProvider)
+  const testing = ref(false)
+  const testResult = ref<{ success: boolean; message: string } | null>(null)
 
-// GLM配置
-const glmConfig = reactive({
-  apiKey: import.meta.env.VITE_GLM_API_KEY || '',
-  baseURL: import.meta.env.VITE_GLM_API_URL || 'https://open.bigmodel.cn/api/paas/v4/',
-  model: 'glm-4',
-  maxTokens: 2000
-})
+  // GLM配置
+  const glmConfig = reactive({
+    apiKey: import.meta.env.VITE_GLM_API_KEY || '',
+    baseURL: import.meta.env.VITE_GLM_API_URL || 'https://open.bigmodel.cn/api/paas/v4/',
+    model: 'glm-4',
+    maxTokens: 2000,
+  })
 
-// OpenAI配置
-const openaiConfig = reactive({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
-  baseURL: import.meta.env.VITE_OPENAI_BASE_URL || 'https://api.openai.com/v1',
-  model: 'gpt-3.5-turbo',
-  maxTokens: 2000
-})
+  // OpenAI配置
+  const openaiConfig = reactive({
+    apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
+    baseURL: import.meta.env.VITE_OPENAI_BASE_URL || 'https://api.openai.com/v1',
+    model: 'gpt-3.5-turbo',
+    maxTokens: 2000,
+  })
 
-// 服务状态
-const serviceStatus = ref({
-  initialized: false,
-  cacheSize: 0,
-  currentProvider: ''
-})
+  // 服务状态
+  const serviceStatus = ref({
+    initialized: false,
+    cacheSize: 0,
+    currentProvider: '',
+  })
 
-// 计算属性
-const canTest = computed(() => {
-  if (selectedProvider.value === AIProvider.OPENAI) return !!openaiConfig.apiKey
-  if (selectedProvider.value === AIProvider.GLM) return !!glmConfig.apiKey
-  return false
-})
+  // 计算属性
+  const canTest = computed(() => {
+    if (selectedProvider.value === AIProvider.OPENAI) return !!openaiConfig.apiKey
+    if (selectedProvider.value === AIProvider.GLM) return !!glmConfig.apiKey
+    return false
+  })
 
-// 方法
-const getProviderName = (provider: AIProvider): string => {
-  const names = {
-    [AIProvider.GLM]: '智谱 GLM',
-    [AIProvider.OPENAI]: 'OpenAI GPT',
-    [AIProvider.MOCK]: '模拟模式'
+  // 方法
+  const getProviderName = (provider: AIProvider): string => {
+    const names = {
+      [AIProvider.GLM]: '智谱 GLM',
+      [AIProvider.OPENAI]: 'OpenAI GPT',
+      [AIProvider.MOCK]: '模拟模式',
+    }
+    return names[provider] || '未知'
   }
-  return names[provider] || '未知'
-}
 
-const getProviderTagType = (provider: AIProvider): 'primary' | 'success' | 'warning' | 'info' => {
-  const types: Record<string, 'primary' | 'success' | 'warning' | 'info'> = {
-    [AIProvider.GLM]: 'primary',
-    [AIProvider.OPENAI]: 'success',
-    [AIProvider.MOCK]: 'warning'
+  const getProviderTagType = (provider: AIProvider): 'primary' | 'success' | 'warning' | 'info' => {
+    const types: Record<string, 'primary' | 'success' | 'warning' | 'info'> = {
+      [AIProvider.GLM]: 'primary',
+      [AIProvider.OPENAI]: 'success',
+      [AIProvider.MOCK]: 'warning',
+    }
+    return types[provider] || 'info'
   }
-  return types[provider] || 'info'
-}
 
-const handleProviderChange = (provider: AIProvider) => {
-  try {
-    aiService.switchProvider(provider)
-    currentProvider.value = provider
+  const handleProviderChange = (provider: AIProvider) => {
+    try {
+      aiService.switchProvider(provider)
+      currentProvider.value = provider
+      testResult.value = null
+      updateServiceStatus()
+      ElMessage.success(`已切换到 ${getProviderName(provider)}`)
+    } catch (error) {
+      console.error('切换提供商失败:', error)
+      ElMessage.error('切换提供商失败')
+      selectedProvider.value = currentProvider.value
+    }
+  }
+
+  const testConnection = async () => {
+    testing.value = true
     testResult.value = null
-    updateServiceStatus()
-    ElMessage.success(`已切换到 ${getProviderName(provider)}`)
-  } catch (error) {
-    console.error('切换提供商失败:', error)
-    ElMessage.error('切换提供商失败')
-    selectedProvider.value = currentProvider.value
-  }
-}
 
-const testConnection = async () => {
-  testing.value = true
-  testResult.value = null
+    try {
+      if (selectedProvider.value === AIProvider.GLM) {
+        if (!glmConfig.apiKey) {
+          throw new Error('请先配置智谱 GLM API密钥')
+        }
 
-  try {
-    if (selectedProvider.value === AIProvider.GLM) {
-      if (!glmConfig.apiKey) {
-        throw new Error('请先配置智谱 GLM API密钥')
-      }
-      
-      // 导入测试模块
-      const { testGLMAPI } = await import('@/utils/testGLMAPI')
-      const result = await testGLMAPI()
-      
-      if (result.success) {
+        // 导入测试模块
+        const { testGLMAPI } = await import('@/utils/testGLMAPI')
+        const result = await testGLMAPI()
+
+        if (result.success) {
+          testResult.value = {
+            success: true,
+            message: '智谱 GLM 连接测试成功: ' + result.data,
+          }
+        } else {
+          throw new Error(result.message)
+        }
+      } else if (selectedProvider.value === AIProvider.OPENAI) {
+        if (!openaiConfig.apiKey) {
+          throw new Error('请先配置OpenAI API密钥')
+        }
+
+        // 测试OpenAI连接 - 使用简单的文本生成测试
+        await aiService.generateRecipe(['测试食材'], { difficulty: 'easy', servings: 1 })
+
         testResult.value = {
           success: true,
-          message: '智谱 GLM 连接测试成功: ' + result.data
+          message: 'OpenAI连接测试成功',
         }
       } else {
-        throw new Error(result.message)
+        throw new Error('当前提供商不支持测试')
       }
-    } else if (selectedProvider.value === AIProvider.OPENAI) {
-      if (!openaiConfig.apiKey) {
-        throw new Error('请先配置OpenAI API密钥')
-      }
-      
-      // 测试OpenAI连接 - 使用简单的文本生成测试
-      await aiService.generateRecipe(['测试食材'], { difficulty: 'easy', servings: 1 })
-      
+    } catch (error: any) {
       testResult.value = {
-        success: true,
-        message: 'OpenAI连接测试成功'
+        success: false,
+        message: error.message || '连接测试失败',
       }
-    } else {
-      throw new Error('当前提供商不支持测试')
+    } finally {
+      testing.value = false
     }
-  } catch (error: any) {
-    testResult.value = {
-      success: false,
-      message: error.message || '连接测试失败'
-    }
-  } finally {
-    testing.value = false
   }
-}
 
-const clearCache = () => {
-  aiService.clearCache()
-  updateServiceStatus()
-  ElMessage.success('缓存已清理')
-}
+  const clearCache = () => {
+    aiService.clearCache()
+    updateServiceStatus()
+    ElMessage.success('缓存已清理')
+  }
 
-const updateServiceStatus = () => {
-  serviceStatus.value = aiService.getStatus()
-}
+  const updateServiceStatus = () => {
+    serviceStatus.value = aiService.getStatus()
+  }
 
-// 生命周期
-onMounted(() => {
-  updateServiceStatus()
-  
-  // 定期更新状态
-  setInterval(updateServiceStatus, 5000)
-})
+  // 生命周期
+  onMounted(() => {
+    updateServiceStatus()
+
+    // 定期更新状态
+    setInterval(updateServiceStatus, 5000)
+  })
 </script>
 
 <style scoped lang="scss">
-.ai-provider-settings {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-
-  .settings-card {
-    border-radius: 12px;
-    
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      
-      h3 {
-        margin: 0;
-        color: var(--el-text-color-primary);
-        font-size: 20px;
-        font-weight: 600;
-      }
-    }
-  }
-
-  .provider-options {
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-  }
-
-  .provider-section {
-    h4 {
-      margin: 0 0 16px 0;
-      color: var(--el-text-color-primary);
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    .provider-option {
-      display: block;
-      width: 100%;
-      margin-bottom: 16px;
-      padding: 16px;
-      border: 1px solid var(--el-border-color);
-      border-radius: 8px;
-      transition: all 0.3s ease;
-
-      &:hover {
-        border-color: var(--el-color-primary);
-        background-color: var(--el-color-primary-light-9);
-      }
-
-      .provider-info {
-        .provider-name {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 16px;
-          font-weight: 600;
-          color: var(--el-text-color-primary);
-          margin-bottom: 4px;
-        }
-
-        .provider-desc {
-          font-size: 14px;
-          color: var(--el-text-color-secondary);
-        }
-      }
-    }
-  }
-
-  .config-section {
+  .ai-provider-settings {
+    max-width: 800px;
+    margin: 0 auto;
     padding: 20px;
-    background: var(--el-fill-color-lighter);
-    border-radius: 8px;
 
-    h4 {
-      margin: 0 0 16px 0;
-      color: var(--el-text-color-primary);
-      font-size: 16px;
-      font-weight: 600;
-    }
-  }
+    .settings-card {
+      border-radius: 12px;
 
-  .test-section {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    align-items: flex-start;
-
-    .test-result {
-      width: 100%;
-    }
-  }
-
-  .status-section {
-    padding: 20px;
-    background: var(--el-color-info-light-9);
-    border-radius: 8px;
-    border-left: 4px solid var(--el-color-info);
-
-    h4 {
-      margin: 0 0 16px 0;
-      color: var(--el-text-color-primary);
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    .status-info {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-bottom: 16px;
-
-      .status-item {
+      .card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
 
-        .label {
-          font-size: 14px;
-          color: var(--el-text-color-secondary);
+        h3 {
+          margin: 0;
+          color: var(--el-text-color-primary);
+          font-size: 20px;
+          font-weight: 600;
+        }
+      }
+    }
+
+    .provider-options {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .provider-section {
+      h4 {
+        margin: 0 0 16px 0;
+        color: var(--el-text-color-primary);
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .provider-option {
+        display: block;
+        width: 100%;
+        margin-bottom: 16px;
+        padding: 16px;
+        border: 1px solid var(--el-border-color);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+
+        &:hover {
+          border-color: var(--el-color-primary);
+          background-color: var(--el-color-primary-light-9);
         }
 
-        .value {
-          font-size: 14px;
-          font-weight: 600;
-          color: var(--el-text-color-primary);
+        .provider-info {
+          .provider-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--el-text-color-primary);
+            margin-bottom: 4px;
+          }
+
+          .provider-desc {
+            font-size: 14px;
+            color: var(--el-text-color-secondary);
+          }
+        }
+      }
+    }
+
+    .config-section {
+      padding: 20px;
+      background: var(--el-fill-color-lighter);
+      border-radius: 8px;
+
+      h4 {
+        margin: 0 0 16px 0;
+        color: var(--el-text-color-primary);
+        font-size: 16px;
+        font-weight: 600;
+      }
+    }
+
+    .test-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: flex-start;
+
+      .test-result {
+        width: 100%;
+      }
+    }
+
+    .status-section {
+      padding: 20px;
+      background: var(--el-color-info-light-9);
+      border-radius: 8px;
+      border-left: 4px solid var(--el-color-info);
+
+      h4 {
+        margin: 0 0 16px 0;
+        color: var(--el-text-color-primary);
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .status-info {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 16px;
+
+        .status-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          .label {
+            font-size: 14px;
+            color: var(--el-text-color-secondary);
+          }
+
+          .value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--el-text-color-primary);
+          }
         }
       }
     }
   }
-}
 
-@media (max-width: 768px) {
-  .ai-provider-settings {
-    padding: 16px;
-
-    .provider-section .provider-option {
-      padding: 12px;
-    }
-
-    .config-section,
-    .status-section {
+  @media (max-width: 768px) {
+    .ai-provider-settings {
       padding: 16px;
+
+      .provider-section .provider-option {
+        padding: 12px;
+      }
+
+      .config-section,
+      .status-section {
+        padding: 16px;
+      }
     }
   }
-}
 </style>
