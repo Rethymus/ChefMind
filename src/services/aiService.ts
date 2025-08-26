@@ -1,30 +1,65 @@
 // AI服务 - 智能烹饪助手核心服务
 import { ElMessage } from 'element-plus'
 import { aiProvider } from './aiProviders'
-import type { Recipe, IngredientValidationResult } from '@/types/recipe'
+import type {
+  Recipe,
+  IngredientValidationResult,
+  PersonalizedRecommendation,
+  IngredientAnalysisResult,
+  NutritionAnalysisResult,
+} from '@/types/recipe'
+
+// AI提供商枚举
+export enum AIProviderType {
+  GLM = 'glm',
+  OPENAI = 'openai',
+  MOCK = 'mock',
+}
 
 // 扩展AI服务接口
-interface ChatResponse {
-  content: string
-  suggestions?: string[]
+
+// 烹饪助手响应类型
+export interface CookingAssistance {
+  response: string
+  suggestions: string[]
+  relatedTips: string[]
 }
 
-interface IngredientAnalysisResult {
+// 烹饪步骤详细数据类型
+export interface CookingStepData {
+  instruction: string
+  temperature?: number
+  timeEstimate?: number
+  visualCues: string[]
+  tips: string[]
+  commonMistakes: string[]
+}
+
+// 食谱推荐类型 (PersonalizedRecommendation 的别名)
+export type RecipeRecommendation = PersonalizedRecommendation
+
+export interface UserPreferences {
+  dietaryRestrictions?: string[]
+  cuisineType?: string
+  spiceLevel?: 'mild' | 'medium' | 'hot'
+  cookingTime?: number
+  difficulty?: 'easy' | 'medium' | 'hard'
+  servings?: number
+}
+
+export interface UserHistoryItem {
+  recipeId: string
   name: string
-  confidence: number
-  category: string
-  nutrition?: any
-  suggestions?: string[]
+  rating?: number
+  timestamp: Date
+  ingredients: string[]
 }
 
-interface NutritionAnalysisResult {
-  calories: number
-  protein: number
-  carbs: number
-  fat: number
-  vitamins?: any
-  minerals?: any
-  recommendations?: string[]
+export interface RecipeContext {
+  mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  season?: 'spring' | 'summer' | 'fall' | 'winter'
+  occasion?: string
+  equipment?: string[]
 }
 
 interface RecipeGenerationResult {
@@ -35,28 +70,29 @@ interface RecipeGenerationResult {
   nutritionAnalysis: NutritionAnalysisResult
 }
 
-interface PersonalizedRecommendation {
-  recipe: Recipe
-  score: number
-  reason: string
+interface CacheItem<T = unknown> {
+  data: T
+  timestamp: number
 }
 
 class AIService {
-  private readonly isInitialized = false
-  private readonly cache = new Map<string, any>()
+  private isInitialized = false
+  private readonly cache = new Map<string, CacheItem>()
   private readonly cacheExpiry = 5 * 60 * 1000 // 5分钟缓存
   private readonly currentProvider = aiProvider
 
-  constructor() {
-    // 异步初始化移到单独方法
-    void this.initialize()
+  // 单独初始化方法，在实例化后手动调用
+  public async init(): Promise<void> {
+    if (!this.isInitialized) {
+      await this.initialize()
+    }
+    return Promise.resolve()
   }
 
-  private async initialize() {
+  private async initialize(): Promise<void> {
     try {
       // AI服务初始化
       await new Promise(resolve => setTimeout(resolve, 100))
-      // @ts-ignore - 私有属性赋值
       this.isInitialized = true
       console.log('AI服务初始化完成')
     } catch (error) {
@@ -66,14 +102,14 @@ class AIService {
   }
 
   // 缓存管理
-  private getCacheKey(method: string, params: any): string {
+  private getCacheKey(method: string, params: unknown): string {
     return `${method}_${JSON.stringify(params)}`
   }
 
   private getFromCache<T>(key: string): T | null {
     const cached = this.cache.get(key)
     if (cached && Date.now() - cached.timestamp < this.cacheExpiry) {
-      return cached.data
+      return cached.data as T
     }
     return null
   }
@@ -86,9 +122,9 @@ class AIService {
   }
 
   // 切换AI提供商
-  switchProvider(provider: AIProvider): void {
+  switchProvider(provider: AIProviderType): void {
     // 强制使用GLM提供商
-    if (provider !== AIProvider.GLM) {
+    if (provider !== AIProviderType.GLM) {
       console.warn('项目已配置为仅使用智谱GLM API，忽略切换到其他提供商的请求')
       return
     }
@@ -117,9 +153,12 @@ class AIService {
     }
 
     try {
-      const result = await this.currentProvider.analyzeIngredient(imageFile)
-      this.setCache(cacheKey, result)
-      return result
+      const result = await this.currentProvider.analyzeIngredient?.(imageFile)
+      if (result) {
+        this.setCache(cacheKey, result)
+        return result
+      }
+      throw new Error('食材分析方法未实现')
     } catch (error) {
       console.error('食材识别失败:', error)
       throw new Error('食材识别服务暂时不可用')
@@ -127,7 +166,7 @@ class AIService {
   }
 
   // 营养成分分析
-  async analyzeNutrition(recipe: any): Promise<NutritionAnalysisResult> {
+  async analyzeNutrition(recipe: Recipe): Promise<NutritionAnalysisResult> {
     if (!this.isInitialized) {
       throw new Error('AI服务未初始化')
     }
@@ -139,9 +178,12 @@ class AIService {
     }
 
     try {
-      const result = await this.currentProvider.analyzeNutrition(recipe)
-      this.setCache(cacheKey, result)
-      return result
+      const result = await this.currentProvider.analyzeNutrition?.(recipe)
+      if (result) {
+        this.setCache(cacheKey, result)
+        return result
+      }
+      throw new Error('营养分析方法未实现')
     } catch (error) {
       console.error('营养分析失败:', error)
       throw new Error('营养分析服务暂时不可用')
@@ -182,7 +224,7 @@ class AIService {
   // 智能食谱生成
   async generateRecipe(
     ingredientsOrPrompt: string[] | string,
-    preferences?: any
+    preferences?: UserPreferences
   ): Promise<RecipeGenerationResult> {
     if (!this.isInitialized) {
       throw new Error('AI服务未初始化')
@@ -196,7 +238,7 @@ class AIService {
 
     try {
       // 构造符合GLM提供商期望的参数格式
-      let params: any
+      let params: { ingredients: string[]; [key: string]: unknown }
 
       if (typeof ingredientsOrPrompt === 'string') {
         // 如果是字符串，转换为数组
@@ -236,12 +278,42 @@ class AIService {
         confidence: 0.9,
         alternativeOptions: [],
         cookingTips: result.cookingTips || [],
-        nutritionAnalysis: result.nutrition || {
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0,
-        },
+        nutritionAnalysis: (result.nutrition
+          ? {
+              ...result.nutrition,
+              healthScore:
+                'healthScore' in result.nutrition
+                  ? (result.nutrition as NutritionAnalysisResult).healthScore
+                  : 75,
+              dietaryInfo:
+                'dietaryInfo' in result.nutrition
+                  ? (result.nutrition as NutritionAnalysisResult).dietaryInfo
+                  : {
+                      isVegetarian: false,
+                      isVegan: false,
+                      isGlutenFree: false,
+                      allergens: [],
+                    },
+              recommendations:
+                'recommendations' in result.nutrition
+                  ? (result.nutrition as NutritionAnalysisResult).recommendations
+                  : [],
+            }
+          : {
+              calories: 0,
+              protein: 0,
+              carbs: 0,
+              fat: 0,
+              fiber: 0,
+              healthScore: 75,
+              dietaryInfo: {
+                isVegetarian: false,
+                isVegan: false,
+                isGlutenFree: false,
+                allergens: [],
+              },
+              recommendations: [],
+            }) as NutritionAnalysisResult,
       }
 
       this.setCache(cacheKey, recipeResult)
@@ -254,8 +326,8 @@ class AIService {
 
   // 个性化推荐
   async getPersonalizedRecommendations(
-    userHistory: any[],
-    preferences: any,
+    userHistory: UserHistoryItem[],
+    preferences: UserPreferences,
     limit: number = 5
   ): Promise<PersonalizedRecommendation[]> {
     if (!this.isInitialized) {
@@ -273,13 +345,18 @@ class AIService {
     }
 
     try {
-      const result = await this.currentProvider.getPersonalizedRecommendations(
+      const result = await this.currentProvider.getPersonalizedRecommendations?.(
         userHistory,
-        preferences,
-        limit
+        preferences
       )
-      this.setCache(cacheKey, result)
-      return result
+
+      if (result) {
+        this.setCache(cacheKey, result)
+        return result
+      }
+
+      // 如果方法未实现，返回空数组
+      return []
     } catch (error) {
       console.error('个性化推荐失败:', error)
       throw new Error('推荐服务暂时不可用')
@@ -288,7 +365,7 @@ class AIService {
 
   // 烹饪指导
   async getCookingGuidance(
-    recipe: any,
+    recipe: Recipe,
     currentStep: number
   ): Promise<{
     guidance: string
@@ -301,7 +378,11 @@ class AIService {
     }
 
     try {
-      return await this.currentProvider.getCookingGuidance(recipe, currentStep)
+      const result = await this.currentProvider.getCookingGuidance?.(recipe, currentStep)
+      if (result) {
+        return result
+      }
+      throw new Error('烹饪指导方法未实现')
     } catch (error) {
       console.error('烹饪指导失败:', error)
       throw new Error('烹饪指导服务暂时不可用')
@@ -309,27 +390,25 @@ class AIService {
   }
 
   // 烹饪助手 - 获取烹饪建议和帮助
-  async getCookingAssistance(
-    query: string,
-    context?: any
-  ): Promise<{
-    response: string
-    suggestions: string[]
-    relatedTips: string[]
-  }> {
+  async getCookingAssistance(query: string, context?: RecipeContext): Promise<CookingAssistance> {
     if (!this.isInitialized) {
       throw new Error('AI服务未初始化')
     }
 
     const cacheKey = this.getCacheKey('getCookingAssistance', { query, context })
-    const cached = this.getFromCache<any>(cacheKey)
+    const cached = this.getFromCache<{
+      response: string
+      suggestions: string[]
+      relatedTips: string[]
+    }>(cacheKey)
     if (cached) {
       return cached
     }
 
     try {
       // 使用AI提供商生成烹饪建议
-      const prompt = `作为专业烹饪助手，请回答以下问题：${query}${context ? `\n上下文：${JSON.stringify(context)}` : ''}`
+      // 构建查询上下文 - 已注释未使用的prompt变量
+      // const prompt = `作为专业烹饪助手，请回答以下问题：${query}${context ? `\n上下文：${JSON.stringify(context)}` : ''}`
 
       const result = {
         response: `针对"${query}"的专业建议：基于您的问题，我建议您注意以下几个要点...`,
@@ -359,7 +438,7 @@ class AIService {
       name: string
       confidence: number
       category: string
-      nutritionInfo?: any
+      nutritionInfo?: Record<string, unknown>
     }>
     suggestions: string[]
   }> {
@@ -377,7 +456,7 @@ class AIService {
             name: analysisResult.name,
             confidence: analysisResult.confidence,
             category: analysisResult.category,
-            nutritionInfo: analysisResult.nutrition,
+            nutritionInfo: analysisResult.nutrition as unknown as Record<string, unknown>,
           },
         ],
         suggestions: analysisResult.suggestions || [],
@@ -429,7 +508,7 @@ class AIService {
     try {
       // 分析聊天历史以提供更好的上下文理解
       const recentContext = chatHistory.slice(-5) // 只保留最近5条对话
-      const hasContext = recentContext.length > 0
+      console.log('Recent context length:', recentContext.length)
 
       // 基于消息内容确定回复类型
       let response = ''
@@ -525,9 +604,13 @@ class AIService {
 
 // 导出单例实例
 export const aiService = new AIService()
+// 初始化服务
+;(async () => {
+  await aiService.init()
+})()
 
 // 导出类型和枚举
-export { AIProvider }
+export { AIProviderType as AIProvider }
 export type {
   IngredientAnalysisResult,
   NutritionAnalysisResult,

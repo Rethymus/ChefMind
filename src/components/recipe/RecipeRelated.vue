@@ -48,7 +48,7 @@
 
 <script setup lang="ts">
   import { defineProps, defineEmits, computed } from 'vue'
-  import type { Recipe } from '@/services/recipeService'
+  import type { Recipe } from '@/types/recipe'
 
   // 定义属性
   const props = defineProps<{
@@ -58,7 +58,7 @@
 
   // 定义事件
   const emit = defineEmits<{
-    (_e: 'recipe-select', _recipe: Recipe): void
+    'recipe-select': [recipe: Recipe]
   }>()
 
   // 计算相关食谱

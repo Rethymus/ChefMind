@@ -115,10 +115,12 @@
       </div>
 
       <!-- 烹饪小贴士 -->
-      <div v-if="recipe.tips" class="tips">
+      <div v-if="recipe.cookingTips && recipe.cookingTips.length > 0" class="tips">
         <h3 class="section-title">小贴士</h3>
         <div class="tips-content">
-          {{ recipe.tips }}
+          <ul>
+            <li v-for="tip in recipe.cookingTips" :key="tip">{{ tip }}</li>
+          </ul>
         </div>
       </div>
 
@@ -168,17 +170,12 @@
 <script setup lang="ts">
   import { defineProps, defineEmits, ref, watch } from 'vue'
   import { shoppingListService } from '@/services/shoppingListService'
+  import type { Recipe } from '@/types/recipe'
 
-  const props = defineProps({
-    recipe: {
-      type: Object,
-      default: null,
-    },
-    relatedRecipes: {
-      type: Array,
-      default: () => [],
-    },
-  })
+  const props = defineProps<{
+    recipe?: Recipe
+    relatedRecipes?: Recipe[]
+  }>()
 
   const emit = defineEmits(['select-recipe', 'notification'])
 
@@ -253,10 +250,22 @@
     if (!props.recipe || !props.recipe.ingredients || props.recipe.ingredients.length === 0) return
 
     try {
+      // 转换食材格式以匹配服务接口
+      const convertedIngredients = props.recipe.ingredients.map(ingredient => {
+        if (typeof ingredient === 'string') {
+          return ingredient
+        }
+        return {
+          name: ingredient.name,
+          amount: ingredient.amount?.toString(),
+          unit: ingredient.unit
+        }
+      })
+      
       await shoppingListService.addIngredientsFromRecipe(
         props.recipe.id,
-        props.recipe.name,
-        props.recipe.ingredients
+        props.recipe.name || props.recipe.title,
+        convertedIngredients
       )
 
       emit('notification', {

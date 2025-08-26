@@ -34,23 +34,13 @@
               </div>
             </el-radio>
 
-            <el-radio :label="AIProvider.BAIDU" class="provider-option" disabled>
+            <el-radio :label="AIProvider.MOCK" class="provider-option">
               <div class="provider-info">
                 <div class="provider-name">
-                  <el-icon><Search /></el-icon>
-                  百度AI
+                  <el-icon><Cpu /></el-icon>
+                  模拟模式
                 </div>
-                <div class="provider-desc">即将支持</div>
-              </div>
-            </el-radio>
-
-            <el-radio :label="AIProvider.TENCENT" class="provider-option" disabled>
-              <div class="provider-info">
-                <div class="provider-name">
-                  <el-icon><CloudFilled /></el-icon>
-                  腾讯云AI
-                </div>
-                <div class="provider-desc">即将支持</div>
+                <div class="provider-desc">用于测试和演示</div>
               </div>
             </el-radio>
           </el-radio-group>
@@ -185,12 +175,12 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { 
   ChatDotRound, 
-  Search, 
   Connection, 
   Delete,
-  Lightning
+  Lightning,
+  Cpu
 } from '@element-plus/icons-vue'
-import { aiService, AIProvider } from '@/services/aiService'
+import { aiService, AIProviderType as AIProvider } from '@/services/aiService'
 import { AI_CONFIG } from '@/config/aiConfig'
 
 // 响应式数据
@@ -234,18 +224,16 @@ const getProviderName = (provider: AIProvider): string => {
   const names = {
     [AIProvider.GLM]: '智谱 GLM',
     [AIProvider.OPENAI]: 'OpenAI GPT',
-    [AIProvider.BAIDU]: '百度AI',
-    [AIProvider.TENCENT]: '腾讯云AI'
+    [AIProvider.MOCK]: '模拟模式'
   }
   return names[provider] || '未知'
 }
 
-const getProviderTagType = (provider: AIProvider): string => {
+const getProviderTagType = (provider: AIProvider): 'primary' | 'success' | 'warning' | 'info' => {
   const types: Record<string, 'primary' | 'success' | 'warning' | 'info'> = {
     [AIProvider.GLM]: 'primary',
     [AIProvider.OPENAI]: 'success',
-    [AIProvider.BAIDU]: 'warning',
-    [AIProvider.TENCENT]: 'warning'
+    [AIProvider.MOCK]: 'warning'
   }
   return types[provider] || 'info'
 }
@@ -258,6 +246,7 @@ const handleProviderChange = (provider: AIProvider) => {
     updateServiceStatus()
     ElMessage.success(`已切换到 ${getProviderName(provider)}`)
   } catch (error) {
+    console.error('切换提供商失败:', error)
     ElMessage.error('切换提供商失败')
     selectedProvider.value = currentProvider.value
   }
@@ -274,7 +263,7 @@ const testConnection = async () => {
       }
       
       // 导入测试模块
-      const { testGLMAPI } = await import('@/services/testGLMAPI')
+      const { testGLMAPI } = await import('@/utils/testGLMAPI')
       const result = await testGLMAPI()
       
       if (result.success) {

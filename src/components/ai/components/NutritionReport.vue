@@ -383,11 +383,11 @@
     return '#67C23A'
   }
 
-  function getTagType(type: string): string {
+  function getTagType(type: string): 'primary' | 'success' | 'warning' | 'info' | 'danger' {
     const types = {
-      good: 'success',
-      warning: 'warning',
-      improvement: 'info',
+      good: 'success' as const,
+      warning: 'warning' as const,
+      improvement: 'info' as const,
     }
     return types[type as keyof typeof types] || 'info'
   }
@@ -419,11 +419,11 @@
     return '营养搭配需要大幅调整，建议咨询专业营养师。'
   }
 
-  function getPriorityType(priority: string): string {
+  function getPriorityType(priority: string): 'primary' | 'success' | 'warning' | 'info' | 'danger' {
     const types = {
-      高优先级: 'danger',
-      中优先级: 'warning',
-      低优先级: 'info',
+      高优先级: 'danger' as const,
+      中优先级: 'warning' as const,
+      低优先级: 'info' as const,
     }
     return types[priority as keyof typeof types] || 'info'
   }

@@ -384,7 +384,7 @@
       :close-on-click-modal="false"
     >
       <UserProfileForm 
-        :initial-data="userProfile"
+        :initial-data="convertProfileToFormData(userProfile)"
         @save="saveUserProfile"
         @cancel="showProfileDialog = false"
       />
@@ -396,7 +396,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElDialog, ElButton, ElProgress, ElTag, ElEmpty, ElSkeleton } from 'element-plus'
 import { Edit, User, DataLine, TrendCharts, MagicStick } from '@element-plus/icons-vue'
-import UserProfileForm from '@/components/common/UserProfileForm.vue'
+import UserProfileForm from '@/components/analytics/UserProfileForm.vue'
 import { nutritionAnalysisService, type UserProfile, type NutritionAnalysisResult } from '@/services/nutritionAnalysisService'
 
 // 响应式状态
@@ -443,9 +443,79 @@ const nutritionPercentages = computed(() => {
   return percentages
 })
 
+// 活动水平映射函数
+const mapActivityLevel = (formLevel: string): UserProfile['activityLevel'] => {
+  const mapping: Record<string, UserProfile['activityLevel']> = {
+    'low': 'sedentary',
+    'moderate': 'moderate', 
+    'high': 'active'
+  }
+  return mapping[formLevel] || 'moderate'
+}
+
+// 反向映射活动水平
+const mapActivityLevelReverse = (profileLevel: UserProfile['activityLevel']): 'low' | 'moderate' | 'high' => {
+  const mapping: Record<UserProfile['activityLevel'], 'low' | 'moderate' | 'high'> = {
+    'sedentary': 'low',
+    'light': 'low', 
+    'moderate': 'moderate',
+    'active': 'high',
+    'veryActive': 'high'
+  }
+  return mapping[profileLevel] || 'moderate'
+}
+
+// 将用户档案转换为表单数据
+const convertProfileToFormData = (profile: UserProfile | null) => {
+  if (!profile) return {}
+  
+  return {
+    name: profile.name,
+    age: profile.age,
+    gender: profile.gender,
+    height: profile.height,
+    weight: profile.weight,
+    activityLevel: mapActivityLevelReverse(profile.activityLevel),
+    healthGoals: profile.healthGoals || [],
+    medicalConditions: profile.medicalConditions || [],
+    allergies: profile.allergies?.join(', ') || '',
+    dietaryPreferences: profile.dietaryRestrictions || [],
+    meals: profile.meals?.map(meal => ({
+      type: meal.type,
+      description: meal.foods?.map(food => food.name).join(', ') || ''
+    })) || []
+  }
+}
+
+// 将表单数据转换为用户档案
+const convertFormDataToProfile = (formData: any): UserProfile => {
+  return {
+    name: formData.name || '用户',
+    age: formData.age || 25,
+    gender: formData.gender || 'male',
+    height: formData.height || 170,
+    weight: formData.weight || 65,
+    activityLevel: mapActivityLevel(formData.activityLevel),
+    healthGoals: formData.healthGoals || [],
+    medicalConditions: formData.medicalConditions || [],
+    allergies: formData.allergies ? [formData.allergies] : [],
+    dietaryRestrictions: formData.dietaryPreferences || [],
+    meals: formData.meals?.map((meal: any) => ({
+      type: meal.type,
+      foods: meal.description ? [{
+        name: meal.description,
+        amount: 1,
+        unit: '份'
+      }] : [],
+      time: new Date().toISOString()
+    })) || []
+  }
+}
+
 // 保存用户资料
-const saveUserProfile = async (profile: UserProfile) => {
+const saveUserProfile = async (formData: any) => {
   try {
+    const profile = convertFormDataToProfile(formData)
     userProfile.value = profile
     showProfileDialog.value = false
     

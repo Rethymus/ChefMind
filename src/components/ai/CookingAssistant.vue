@@ -253,7 +253,7 @@ import {
   Share,
   Refresh
 } from '@element-plus/icons-vue'
-import { aiService, type RecipeRecommendation, type CookingAssistance } from '@/services/aiService'
+import { aiService, type RecipeRecommendation, type CookingStepData, type RecipeContext } from '@/services/aiService'
 
 
 // 组件属性
@@ -278,7 +278,7 @@ const currentStep = ref(1)
 const isProcessing = ref(false)
 const cookingCompleted = ref(false)
 const activeTipPanel = ref<string>('')
-const currentStepData = ref<CookingAssistance>()
+const currentStepData = ref<CookingStepData>()
 const aiSuggestion = ref<string>('')
 
 // 可用食谱列表（模拟数据）
@@ -307,7 +307,11 @@ const dishRating = reactive({
 
 // 计算属性
 const totalSteps = computed(() => {
-  return selectedRecipe.value?.instructions.length || 0
+  // PersonalizedRecommendation 没有 instructions 属性，使用默认步骤数
+  // 或者根据烹饪时间估算步骤数
+  if (!selectedRecipe.value) return 0
+  const baseSteps = Math.max(3, Math.floor(selectedRecipe.value.cookingTime / 10)) // 每10分钟一个步骤，最少3步
+  return Math.min(baseSteps, 8) // 最多8步
 })
 
 const cookingProgress = computed(() => {
@@ -336,8 +340,24 @@ const loadStepAssistance = async () => {
   if (!selectedRecipe.value) return
 
   try {
-    const assistance = await aiService.getCookingAssistance(selectedRecipe.value, currentStep.value)
-    currentStepData.value = assistance
+    // 构建查询字符串，包含当前步骤信息
+    const query = `${selectedRecipe.value.title}的第${currentStep.value}步烹饪指导`
+    const context: RecipeContext = {
+      mealType: 'dinner', // 默认晚餐
+      season: 'spring' // 默认春季
+    }
+    
+    const assistance = await aiService.getCookingAssistance(query, context)
+    
+    // 将 CookingAssistance 转换为 CookingStepData 格式
+    currentStepData.value = {
+      instruction: assistance.response,
+      visualCues: assistance.suggestions,
+      tips: assistance.relatedTips,
+      commonMistakes: [],
+      timeEstimate: undefined,
+      temperature: undefined
+    }
     
     // 生成AI建议
     generateAISuggestion()
@@ -451,7 +471,7 @@ const startVoiceControl = () => {
     return
   }
 
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+  const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
   voiceControl.recognition = new SpeechRecognition()
   
   voiceControl.recognition.continuous = true

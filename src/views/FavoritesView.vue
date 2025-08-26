@@ -321,13 +321,9 @@
   }
 
   // 显示通知
-  const showNotification = (type: string, title: string, message: string) => {
+  const showNotification = (notification: { type: string; title: string; message: string }) => {
     const event = new CustomEvent('notification', {
-      detail: {
-        type,
-        title,
-        message,
-      },
+      detail: notification,
     })
     window.dispatchEvent(event)
   }
@@ -603,6 +599,7 @@
     line-height: 1.5;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }

@@ -135,16 +135,27 @@ class TCMConstitutionService {
     // 尝试从不同可能的字段中提取文本内容
     const recipe = aiResponse.recipe as Record<string, unknown> | undefined
 
+    // 安全转换函数，确保不会出现[object Object]
+    const safeStringConvert = (value: unknown): string => {
+      if (value === null || value === undefined) return ''
+      if (typeof value === 'string') return value
+      if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+      return JSON.stringify(value)
+    }
+
     if (recipe?.description) {
-      return String(recipe.description)
+      return safeStringConvert(recipe.description)
     }
+
     if (recipe?.instructions) {
-      return Array.isArray(recipe.instructions)
-        ? recipe.instructions.join(' ')
-        : String(recipe.instructions)
+      if (Array.isArray(recipe.instructions)) {
+        return recipe.instructions.map(safeStringConvert).join(' ')
+      }
+      return safeStringConvert(recipe.instructions)
     }
+
     if (recipe?.name) {
-      return String(recipe.name)
+      return safeStringConvert(recipe.name)
     }
 
     // 如果都没有，返回JSON字符串用于解析
@@ -397,8 +408,8 @@ ${mealDescriptions}
     else score -= userProfile.medicalConditions.length * 3
 
     // 活动水平调整
-    if (userProfile.activityLevel === 'high') score += 10
-    else if (userProfile.activityLevel === 'low') score -= 10
+    if (userProfile.activityLevel === 'veryActive') score += 10
+    else if (userProfile.activityLevel === 'sedentary') score -= 10
 
     // AI分析可信度调整
     const confidence = typeof analysisData.confidence === 'number' ? analysisData.confidence : 85

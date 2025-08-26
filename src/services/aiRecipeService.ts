@@ -1,6 +1,6 @@
 // ChefMind 智食谱 - AI菜谱服务
 
-import glmService from './glmService'
+import { callGLM, parseJsonResponse } from './glmService'
 import { generateUUID } from '../utils/idGenerator'
 import { cookingMethods } from '../data/cookingMethods'
 import { cacheData, getCachedData } from '../utils/cacheUtils'
@@ -11,7 +11,81 @@ import type {
   HealthConstraint,
   RecipeFilters,
   RecipeSearchResult,
+  Ingredient,
+  RecipeStep,
+  Nutrition,
 } from '../types/recipe'
+
+// 原始AI响应数据类型
+interface RawRecipeData {
+  name?: string
+  description?: string
+  ingredients?: Array<{
+    name: string
+    amount: string
+    unit?: string
+  }>
+  steps?: Array<{
+    description?: string
+    title?: string
+    order?: number
+  }> | string[]
+  cookingTime?: number
+  servings?: number
+  difficulty?: string
+  cuisine?: string
+  tags?: string[]
+  cookingTips?: string[]
+  healthBenefits?: string[]
+  nutrition?: {
+    calories?: number
+    protein?: number
+    carbs?: number
+    fat?: number
+  }
+}
+
+interface RawStepData {
+  description?: string
+  title?: string
+  order?: number
+}
+
+// 转换原始食材数据到Ingredient格式
+function convertIngredients(rawIngredients?: RawRecipeData['ingredients']): (string | Ingredient)[] {
+  if (!rawIngredients) return []
+  
+  return rawIngredients.map(item => ({
+    name: item.name,
+    amount: parseFloat(item.amount) || 1,
+    unit: item.unit || '个',
+  }))
+}
+
+// 转换原始步骤数据到RecipeStep格式
+function convertSteps(rawSteps?: RawRecipeData['steps']): string[] | RecipeStep[] {
+  if (!rawSteps) return []
+  
+  if (Array.isArray(rawSteps) && typeof rawSteps[0] === 'string') {
+    return rawSteps as string[]
+  }
+  
+  return (rawSteps as RawStepData[]).map((step, index) => ({
+    order: step.order || index + 1,
+    description: step.description || step.title || '',
+  }))
+}
+
+// 转换原始营养数据到Nutrition格式
+function convertNutrition(rawNutrition?: RawRecipeData['nutrition']): Nutrition {
+  return {
+    calories: rawNutrition?.calories || 0,
+    protein: rawNutrition?.protein || 0,
+    carbs: rawNutrition?.carbs || 0,
+    fat: rawNutrition?.fat || 0,
+    fiber: 0,
+  }
+}
 
 /**
  * 通过AI生成菜谱
@@ -20,40 +94,26 @@ import type {
  */
 export async function generateRecipe(request: RecipeGenerationRequest): Promise<Recipe> {
   try {
-    // 构建系统提示词
-    const systemPrompt = `你是一位专业的中餐厨师，精通各种菜系和烹饪技巧。请根据用户提供的要求，创建一道详细的菜谱。
-    返回的菜谱必须是JSON格式，包含以下字段：
-    - name: 菜名
-    - description: 菜品描述
-    - ingredients: 食材列表，每项包含name(名称)、amount(用量)、unit(单位)
-    - steps: 步骤列表，每项包含title(标题)、description(详细说明)、tips(小贴士，可选)
-    - cookingTime: 烹饪时间(分钟)
-    - difficulty: 难度(1-5)
-    - servings: 份数
-    - nutrition: 营养信息，包含calories(卡路里)、protein(蛋白质,克)、carbs(碳水,克)、fat(脂肪,克)、fiber(纤维,克)
-    - tags: 标签列表
-    - cuisine: 菜系
-    - cookingTips: 烹饪技巧列表
-    - healthBenefits: 健康益处列表
-    
-    请确保返回的是有效的JSON格式，不要包含任何额外的文本说明。`
+    // 构建用户提示词，整合系统指示
+    let userPrompt = '你是一位专业的行政总厨，请创建一道详细的菜谱。'
 
-    // 构建用户提示词
-    let userPrompt = '请创建一道'
-
-    // 添加菜系
-    if (request.cuisine) {
-      userPrompt += `${request.cuisine}`
+    // 添加菜系（从偏好中获取）
+    if (request.preferences?.preferredCuisine && request.preferences.preferredCuisine.length > 0) {
+      userPrompt += `菜系：${request.preferences.preferredCuisine[0]}。`
     }
 
-    // 添加餐点类型
-    if (request.mealType) {
-      userPrompt += `${request.mealType}`
+    // 添加餐点类型（根据食材推断）
+    const mealKeywords = ['早餐', '午餐', '晚餐', '小食', '甜点']
+    const matchedMeal = mealKeywords.find(meal =>
+      request.ingredients.some(ing => ing.includes(meal))
+    )
+    if (matchedMeal) {
+      userPrompt += `${matchedMeal}`
     }
 
     // 添加烹饪方式
-    if (request.cookingMethod) {
-      userPrompt += `，使用${request.cookingMethod}的烹饪方式`
+    if (request.cookingMethods && request.cookingMethods.length > 0) {
+      userPrompt += `，使用${request.cookingMethods[0]}的烹饪方式`
     }
 
     // 添加食材
@@ -68,30 +128,29 @@ export async function generateRecipe(request: RecipeGenerationRequest): Promise<
 
     // 添加用户偏好
     if (request.preferences) {
-      const { flavors, ingredients, _cuisines, dietaryHabits, dislikedIngredients } =
+      const { favoriteIngredients, dislikedIngredients, preferredCuisine, dietaryRestrictions } =
         request.preferences
 
-      if (flavors && flavors.length > 0) {
-        userPrompt += `，口味偏好：${flavors.join('、')}`
-      }
-
-      if (ingredients && ingredients.length > 0) {
-        userPrompt += `，喜欢的食材：${ingredients.join('、')}`
+      if (favoriteIngredients && favoriteIngredients.length > 0) {
+        userPrompt += `，喜欢的食材：${favoriteIngredients.join('、')}`
       }
 
       if (dislikedIngredients && dislikedIngredients.length > 0) {
         userPrompt += `，不喜欢的食材：${dislikedIngredients.join('、')}`
       }
 
-      if (dietaryHabits && dietaryHabits.length > 0) {
-        userPrompt += `，饮食习惯：${dietaryHabits.join('、')}`
+      if (preferredCuisine && preferredCuisine.length > 0) {
+        userPrompt += `，偏好菜系：${preferredCuisine.join('、')}`
+      }
+
+      if (dietaryRestrictions && dietaryRestrictions.length > 0) {
+        userPrompt += `，饮食限制：${dietaryRestrictions.join('、')}`
       }
     }
 
-    // 添加健康约束
-    if (request.constraints && request.constraints.length > 0) {
-      const constraintDescriptions = request.constraints.map(c => c.description)
-      userPrompt += `，需要考虑以下健康约束：${constraintDescriptions.join('、')}`
+    // 添加健康约束（从healthGoals中获取）
+    if (request.healthGoals && request.healthGoals.length > 0) {
+      userPrompt += `，健康目标：${request.healthGoals.join('、')}`
     }
 
     // 添加难度要求
@@ -114,16 +173,15 @@ export async function generateRecipe(request: RecipeGenerationRequest): Promise<
     console.log('生成菜谱的提示词:', userPrompt)
 
     // 调用GLM API
-    const response = await glmService.callGLM(userPrompt, {
+    const response = await callGLM(userPrompt, {
       temperature: 0.7,
       maxTokens: 4096,
-      systemPrompt,
     })
 
     console.log('GLM API响应:', response)
 
     // 解析JSON响应
-    const recipeData = glmService.parseJsonResponse<any>(response)
+    const recipeData = parseJsonResponse<RawRecipeData>(response)
 
     // 生成菜品名称
     const recipeName = recipeData.name || '未命名菜谱'
@@ -134,26 +192,20 @@ export async function generateRecipe(request: RecipeGenerationRequest): Promise<
       title: recipeName,
       name: recipeName,
       description: recipeData.description || '',
-      ingredients: recipeData.ingredients || [],
-      instructions: recipeData.steps?.map((step: any) => step.description) || [],
-      steps: recipeData.steps || [],
+      ingredients: convertIngredients(recipeData.ingredients),
+      instructions: recipeData.steps?.map((step: RawStepData) => step.description || step.title || '') || [],
+      steps: convertSteps(recipeData.steps),
       cookingTime: `${recipeData.cookingTime || 30}分钟`,
       time: recipeData.cookingTime || 30,
       difficulty: recipeData.difficulty || 3,
       servings: recipeData.servings || request.servings || 2,
       cookingMethods: request.cookingMethods || ['炒'],
-      nutrition: recipeData.nutrition || {
-        calories: 0,
-        protein: 0,
-        carbs: 0,
-        fat: 0,
-        fiber: 0,
-      },
+      nutrition: convertNutrition(recipeData.nutrition),
       tags: recipeData.tags || ['AI生成'],
       createdAt: new Date(),
       updatedAt: new Date(),
       isPublic: true,
-      userId: request.userId || 'ai-system',
+      userId: 'ai-system', // 默认用户ID
       cookingTips: recipeData.cookingTips || [],
       healthBenefits: recipeData.healthBenefits || [],
     }
@@ -220,12 +272,11 @@ export async function generateRecipeByIngredients(
 ): Promise<Recipe> {
   const request: RecipeGenerationRequest = {
     ingredients,
-    cuisine: options.cuisine,
-    cookingMethod: options.cookingMethod,
-    difficulty: options.difficulty,
-    cookingTime: options.cookingTime,
+    cookingMethods: options.cookingMethod ? [options.cookingMethod] : undefined,
+    difficulty: options.difficulty?.toString(),
+    cookingTime: options.cookingTime?.toString(),
     preferences: options.preferences,
-    constraints: options.constraints,
+    healthGoals: options.constraints?.map((_c) => `限制条件`) || [],
   }
 
   return generateRecipe(request)
@@ -248,17 +299,24 @@ export async function generateRecipeRecommendations(
     for (let i = 0; i < count; i++) {
       // 随机选择一些用户偏好的元素，以增加多样性
       const request: RecipeGenerationRequest = {
+        ingredients: preferences.favoriteIngredients || [],
         preferences: { ...preferences },
       }
 
       // 随机选择一种烹饪方式
-      if (Math.random() > 0.5 && preferences.cuisines && preferences.cuisines.length > 0) {
-        const randomIndex = Math.floor(Math.random() * preferences.cuisines.length)
-        request.cuisine = preferences.cuisines[randomIndex]
+      if (
+        Math.random() > 0.5 &&
+        preferences.preferredCuisine &&
+        preferences.preferredCuisine.length > 0
+      ) {
+        const randomIndex = Math.floor(Math.random() * preferences.preferredCuisine.length)
+        // 将菜系信息添加到烹饪方法中
+        request.cookingMethods = request.cookingMethods || []
+        request.cookingMethods.push(`${preferences.preferredCuisine[randomIndex]}菜系`)
       }
 
       // 随机设置难度
-      request.difficulty = Math.floor(Math.random() * 3) + 2 // 2-4之间的难度
+      request.difficulty = String(Math.floor(Math.random() * 3) + 2) // 2-4之间的难度
 
       requests.push(request)
     }
@@ -276,9 +334,20 @@ export async function generateRecipeRecommendations(
  * @returns 生成的菜谱
  */
 export async function generateHealthyRecipe(constraints: HealthConstraint[]): Promise<Recipe> {
+  const dietaryRestrictions: string[] = []
+
+  // 从健康约束中提取饮食限制
+  constraints.forEach(c => {
+    if (c.isVegetarian) dietaryRestrictions.push('素食')
+    if (c.isVegan) dietaryRestrictions.push('纯素食')
+    if (c.isGlutenFree) dietaryRestrictions.push('无麸质')
+    if (c.isDairyFree) dietaryRestrictions.push('无乳制品')
+  })
+
   const request: RecipeGenerationRequest = {
-    constraints,
-    dietaryRestrictions: constraints.map(c => c.type),
+    ingredients: [],
+    dietaryRestrictions,
+    healthGoals: ['健康饮食'],
   }
 
   return generateRecipe(request)
@@ -314,41 +383,23 @@ export async function searchRecipes(
   filters?: RecipeFilters
 ): Promise<RecipeSearchResult> {
   try {
-    // 构建系统提示词
-    const systemPrompt = `你是一位专业的中餐厨师，精通各种菜系和烹饪技巧。请根据用户的搜索关键词和过滤条件，生成3道符合条件的菜谱。
-    返回的结果必须是JSON格式的数组，每个菜谱包含以下字段：
-    - name: 菜名
-    - description: 菜品描述
-    - ingredients: 食材列表，每项包含name(名称)、amount(用量)、unit(单位)
-    - steps: 步骤列表，每项包含title(标题)、description(详细说明)、tips(小贴士，可选)
-    - cookingTime: 烹饪时间(分钟)
-    - difficulty: 难度(1-5)
-    - servings: 份数
-    - nutrition: 营养信息，包含calories(卡路里)、protein(蛋白质,克)、carbs(碳水,克)、fat(脂肪,克)、fiber(纤维,克)
-    - tags: 标签列表
-    - cuisine: 菜系
-    - cookingTips: 烹饪技巧列表
-    - healthBenefits: 健康益处列表
-    
-    请确保返回的是有效的JSON格式数组，不要包含任何额外的文本说明。`
-
     // 构建用户提示词
-    let userPrompt = `请搜索与"${query}"相关的菜谱`
+    let userPrompt = `你是一位专业的中餐厨师，请搜索与"${query}"相关的菜谱，生成3道符合条件的菜谱。`
 
     if (filters) {
-      // 添加烹饪方式过滤
-      if (filters.cookingMethod) {
-        userPrompt += `，烹饪方式为${filters.cookingMethod}`
-      }
-
       // 添加难度过滤
-      if (filters.difficulty) {
-        userPrompt += `，难度级别为${filters.difficulty}`
+      if (filters.difficulty && filters.difficulty.length > 0) {
+        userPrompt += `，难度级别为${filters.difficulty.join('或')}`
       }
 
       // 添加烹饪时间过滤
       if (filters.cookingTime) {
-        userPrompt += `，烹饪时间不超过${filters.cookingTime}分钟`
+        if (filters.cookingTime.max) {
+          userPrompt += `，烹饪时间不超过${filters.cookingTime.max}分钟`
+        }
+        if (filters.cookingTime.min) {
+          userPrompt += `，烹饪时间不少于${filters.cookingTime.min}分钟`
+        }
       }
 
       // 添加食材过滤
@@ -356,24 +407,19 @@ export async function searchRecipes(
         userPrompt += `，包含以下食材：${filters.ingredients.join('、')}`
       }
 
-      // 添加排除食材过滤
-      if (filters.excludeIngredients && filters.excludeIngredients.length > 0) {
-        userPrompt += `，不包含以下食材：${filters.excludeIngredients.join('、')}`
-      }
-
       // 添加标签过滤
       if (filters.tags && filters.tags.length > 0) {
         userPrompt += `，包含以下标签：${filters.tags.join('、')}`
       }
 
-      // 添加菜系过滤
-      if (filters.cuisine) {
-        userPrompt += `，菜系为${filters.cuisine}`
+      // 添加饮食限制过滤
+      if (filters.dietaryRestrictions && filters.dietaryRestrictions.length > 0) {
+        userPrompt += `，符合以下饮食要求：${filters.dietaryRestrictions.join('、')}`
       }
 
-      // 添加餐点类型过滤
-      if (filters.mealType) {
-        userPrompt += `，适合${filters.mealType}`
+      // 添加健康目标过滤
+      if (filters.healthGoals && filters.healthGoals.length > 0) {
+        userPrompt += `，符合以下健康目标：${filters.healthGoals.join('、')}`
       }
     }
 
@@ -382,40 +428,54 @@ export async function searchRecipes(
     console.log('搜索菜谱的提示词:', userPrompt)
 
     // 调用GLM API
-    const response = await glmService.callGLM(userPrompt, {
+    const response = await callGLM(userPrompt, {
       temperature: 0.7,
       maxTokens: 4096,
-      systemPrompt,
     })
 
     console.log('GLM API响应:', response)
 
     // 解析JSON响应
-    const recipesData = glmService.parseJsonResponse<any[]>(response)
+    const recipesData = parseJsonResponse<Recipe[]>(response)
 
     // 转换为Recipe对象数组
     const recipes: Recipe[] = recipesData.map((recipeData, _index) => {
       const recipe: Recipe = {
         id: generateUUID(),
+        title: recipeData.name || '未命名菜谱',
         name: recipeData.name || '未命名菜谱',
         description: recipeData.description || '',
         ingredients:
-          recipeData.ingredients?.map((ing: any, i: number) => ({
-            id: i + 1,
-            name: ing.name,
-            category: ing.category || '其他',
-            amount: ing.amount,
-            unit: ing.unit,
-          })) || [],
-        method: findCookingMethod(recipeData.cookingMethod) || cookingMethods[0],
-        steps:
-          recipeData.steps?.map((step: any, i: number) => ({
-            id: i + 1,
-            title: step.title || `步骤 ${i + 1}`,
-            description: step.description,
-            tips: step.tips,
-          })) || [],
-        cookingTime: recipeData.cookingTime || 30,
+          recipeData.ingredients?.map(
+            (ing: { name: string; category?: string; amount?: number; unit?: string }, i: number) =>
+              ({
+                id: String(i + 1),
+                name: ing.name,
+                category: ing.category || '其他',
+                amount: ing.amount,
+                unit: ing.unit,
+              }) as Ingredient
+          ) || [],
+        method: findCookingMethod(recipeData.cookingMethods?.[0]) || cookingMethods[0],
+        cookingMethods: recipeData.cookingMethods || [cookingMethods[0].name],
+        steps: (() => {
+          if (!Array.isArray(recipeData.steps)) return []
+          
+          const isStringSteps = recipeData.steps.every((step: unknown) => typeof step === 'string')
+          if (isStringSteps) {
+            return recipeData.steps as string[]
+          }
+          
+          return recipeData.steps.map(
+            (step: RawStepData, i: number) =>
+              ({
+                order: i + 1,
+                description: step.description || step.title || '',
+                tips: [],
+              }) as RecipeStep
+          )
+        })(),
+        cookingTime: String(recipeData.cookingTime || 30),
         difficulty: recipeData.difficulty || 3,
         servings: recipeData.servings || 2,
         nutrition: recipeData.nutrition || {
@@ -427,11 +487,8 @@ export async function searchRecipes(
         },
         tags: recipeData.tags || [],
         createdAt: new Date(),
-        cuisine: recipeData.cuisine || '',
         cookingTips: recipeData.cookingTips || [],
         healthBenefits: recipeData.healthBenefits || [],
-        aiGenerated: true,
-        originalGLMResponse: response,
       }
 
       // 缓存生成的菜谱
@@ -443,8 +500,9 @@ export async function searchRecipes(
     return {
       recipes,
       total: recipes.length,
+      page: 1,
+      pageSize: recipes.length,
       filters,
-      query,
     }
   } catch (error) {
     console.error('搜索菜谱失败:', error)
@@ -459,29 +517,23 @@ export async function searchRecipes(
  */
 export async function enhanceRecipeDescription(recipe: Recipe): Promise<Recipe> {
   try {
-    // 构建系统提示词
-    const systemPrompt = `你是一位美食作家和专业厨师，擅长撰写生动、吸引人的菜品描述。请根据提供的菜谱信息，创作一段更加详细、生动、有吸引力的菜品描述。
-    描述应该包括菜品的外观、香气、口感、风味特点，以及可能的文化背景或历史渊源。使用生动的形容词和比喻，让读者能够通过文字"看到"、"闻到"和"品尝到"这道菜。
-    请直接返回描述文本，不要包含任何额外的解释或格式。`
-
     // 构建用户提示词
-    const userPrompt = `请为这道名为"${recipe.name}"的菜品创作一段更加生动、详细的描述。
+    const userPrompt = `你是一位美食作家和专业厨师，请为这道名为"${recipe.name || recipe.title}"的菜品创作一段更加生动、详细的描述。
     
     原始描述：${recipe.description}
     
-    主要食材：${recipe.ingredients.map(ing => ing.name).join('、')}
+    主要食材：${recipe.ingredients.map(ing => (typeof ing === 'string' ? ing : ing.name)).join('、')}
     
-    烹饪方式：${recipe.method.name}
+    烹饪方式：${recipe.method?.name || recipe.cookingMethods?.[0] || '未指定'}
     
-    菜系：${recipe.cuisine || '未指定'}
+    特点标签：${recipe.tags?.join('、') || '未指定'}
     
-    特点标签：${recipe.tags.join('、')}`
+    请创作一段生动、吸引人的菜品描述，包括外观、香气、口感、风味特点等。`
 
     // 调用GLM API
-    const response = await glmService.callGLM(userPrompt, {
+    const response = await callGLM(userPrompt, {
       temperature: 0.8, // 稍微提高创意性
       maxTokens: 1024,
-      systemPrompt,
     })
 
     // 创建增强后的菜谱副本
@@ -508,27 +560,23 @@ export async function enhanceRecipeDescription(recipe: Recipe): Promise<Recipe> 
  */
 export async function generateCookingTips(recipe: Recipe): Promise<Recipe> {
   try {
-    // 构建系统提示词
-    const systemPrompt = `你是一位经验丰富的厨师，擅长分享实用的烹饪技巧和窍门。请根据提供的菜谱信息，提供5-8条专业、实用的烹饪技巧，帮助用户更好地完成这道菜。
-    技巧应该简洁明了，直接可行，并且针对这道特定菜品的特点和可能的难点。
-    请直接返回技巧列表，每条技巧一行，不要包含任何额外的解释或格式。`
-
     // 构建用户提示词
-    const userPrompt = `请为这道名为"${recipe.name}"的菜品提供5-8条专业、实用的烹饪技巧。
+    const userPrompt = `你是一位经验丰富的厨师，请为这道名为"${recipe.name || recipe.title}"的菜品提供5-8条专业、实用的烹饪技巧。
     
     菜品描述：${recipe.description}
     
-    主要食材：${recipe.ingredients.map(ing => ing.name).join('、')}
+    主要食材：${recipe.ingredients.map(ing => (typeof ing === 'string' ? ing : ing.name)).join('、')}
     
-    烹饪方式：${recipe.method.name}
+    烹饪方式：${recipe.method?.name || recipe.cookingMethods?.[0] || '未指定'}
     
-    烹饪步骤：${recipe.steps.map(step => step.description).join(' ')}`
+    烹饪步骤：${recipe.instructions ? recipe.instructions.join(' ') : '无步骤'}
+    
+    请提供5-8条专业、实用的烹饪技巧，帮助用户更好地完成这道菜。`
 
     // 调用GLM API
-    const response = await glmService.callGLM(userPrompt, {
+    const response = await callGLM(userPrompt, {
       temperature: 0.7,
       maxTokens: 1024,
-      systemPrompt,
     })
 
     // 处理响应，将文本分割为技巧数组
@@ -561,25 +609,22 @@ export async function generateCookingTips(recipe: Recipe): Promise<Recipe> {
  */
 export async function generateHealthBenefits(recipe: Recipe): Promise<Recipe> {
   try {
-    // 构建系统提示词
-    const systemPrompt = `你是一位营养学专家，擅长分析食材和菜品的营养价值和健康益处。请根据提供的菜谱信息，分析这道菜的主要健康益处，包括其中食材的营养价值、对人体各系统的益处等。
+    // 构建用户提示词
+    const userPrompt = `你是一位营养学专家，请分析这道名为"${recipe.name}"的菜品的健康益处。
+    
+    主要食材：${recipe.ingredients.map(ing => (typeof ing === 'string' ? ing : ing.name)).join('、')}
+    
+    烹饪方式：${recipe.method ? recipe.method.name : '未知'}
+    
+    营养成分：热量 ${recipe.nutrition?.calories || 0}卡路里，蛋白质 ${recipe.nutrition?.protein || 0}克，碳水 ${recipe.nutrition?.carbs || 0}克，脂肪 ${recipe.nutrition?.fat || 0}克，膳食纤维 ${recipe.nutrition?.fiber || 0}克
+    
     请提供4-6条健康益处，每条应该简洁明了，科学准确，避免夸大或不实的健康声明。
     请直接返回健康益处列表，每条一行，不要包含任何额外的解释或格式。`
 
-    // 构建用户提示词
-    const userPrompt = `请分析这道名为"${recipe.name}"的菜品的健康益处。
-    
-    主要食材：${recipe.ingredients.map(ing => ing.name).join('、')}
-    
-    烹饪方式：${recipe.method.name}
-    
-    营养成分：热量 ${recipe.nutrition.calories}卡路里，蛋白质 ${recipe.nutrition.protein}克，碳水 ${recipe.nutrition.carbs}克，脂肪 ${recipe.nutrition.fat}克，膳食纤维 ${recipe.nutrition.fiber}克`
-
     // 调用GLM API
-    const response = await glmService.callGLM(userPrompt, {
+    const response = await callGLM(userPrompt, {
       temperature: 0.7,
       maxTokens: 1024,
-      systemPrompt,
     })
 
     // 处理响应，将文本分割为健康益处数组

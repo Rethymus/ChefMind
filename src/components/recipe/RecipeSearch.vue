@@ -218,7 +218,9 @@
     const ingredientSet = new Set<string>()
     allRecipes.value.forEach(recipe => {
       recipe.ingredients.forEach(ingredient => {
-        const ingredientName = ingredient.split(' ')[0] // 去掉数量部分
+        const ingredientName = typeof ingredient === 'string' 
+          ? ingredient.split(' ')[0] // 去掉数量部分
+          : ingredient.name
         if (ingredientName.toLowerCase().includes(query)) {
           ingredientSet.add(ingredientName)
         }
@@ -366,13 +368,15 @@
         const recipe = aiResult.recipe
         aiRecommendedRecipes.value = [
           {
-            id: parseInt(recipe.id.toString()),
+            id: recipe.id?.toString() || `ai-recipe-${Date.now()}`,
+            title: recipe.name || `AI推荐：${query}创意料理`,
             name: recipe.name || `AI推荐：${query}创意料理`,
             description: recipe.description || `基于"${query}"搜索词，AI为您量身定制的创意美食。`,
             cookingTime: recipe.cookingTime || '25分钟',
             difficulty: recipe.difficulty?.toString() || '简单',
             servings: recipe.servings || 2,
             rating: recipe.rating || 4.8,
+            cookingMethods: ['炒制', '调味'], // 添加必需的烹饪方法
             ingredients: Array.isArray(recipe.ingredients)
               ? recipe.ingredients.map(ing =>
                   typeof ing === 'string' ? ing : ing.name || ing.toString()
@@ -383,7 +387,7 @@
                   typeof step === 'string' ? step : step.description || step.toString()
                 )
               : ['准备食材', '预处理', '调味腌制', '烹饪制作', '装盘上桌'],
-          },
+          } as Recipe,
         ]
       } else {
         throw new Error('AI服务返回空结果')
@@ -391,15 +395,17 @@
     } catch (error) {
       console.error('AI推荐生成失败:', error)
       // 如果AI服务失败，使用备用模板
-      const templates = [
+      const templates: Recipe[] = [
         {
-          id: Date.now(),
+          id: Date.now().toString(),
+          title: `AI推荐：${query}创意料理`,
           name: `AI推荐：${query}创意料理`,
           description: `基于"${query}"搜索词，AI为您量身定制的创意美食，融合经典与创新。`,
           cookingTime: '25分钟',
           difficulty: '简单',
           servings: 2,
           rating: 4.8,
+          cookingMethods: ['炒制', '调味'], // 添加必需的烹饪方法
           ingredients: [`新鲜${query}`, '橄榄油', '蒜蓉', '黑胡椒', '香草', '柠檬汁'],
           steps: ['准备食材', '预处理', '调味腌制', '烹饪制作', '装盘上桌'],
         },
@@ -429,7 +435,10 @@
         const query = searchQuery.value.toLowerCase()
         const nameMatch = recipe.name.toLowerCase().includes(query)
         const descriptionMatch = recipe.description.toLowerCase().includes(query)
-        const ingredientMatch = recipe.ingredients.some(i => i.toLowerCase().includes(query))
+        const ingredientMatch = recipe.ingredients.some(i => {
+          const ingredientName = typeof i === 'string' ? i : i.name
+          return ingredientName.toLowerCase().includes(query)
+        })
 
         return nameMatch || descriptionMatch || ingredientMatch
       })
@@ -506,7 +515,11 @@
     // 获取前3个主要食材
     return recipe.ingredients
       .slice(0, 3)
-      .map(ing => ing.split(' ')[0]) // 去掉数量部分
+      .map(ing => {
+        return typeof ing === 'string' 
+          ? ing.split(' ')[0] // 去掉数量部分
+          : ing.name
+      })
       .join('、')
   }
 
@@ -518,28 +531,8 @@
     }
   }
 
-  // 声明全局类型
-  // Global Window interface extension for event listeners
-  declare global {
-    interface Window {
-      addEventListener(type: string, listener: EventListener): void
-      removeEventListener(type: string, listener: EventListener): void
-    }
-  }
-
   const performSearchHandler = (_event: Event) => {
     performSearch()
-  }
-
-  const clearSearch = () => {
-    searchQuery.value = ''
-    searchResults.value = []
-    hasSearched.value = false
-    showSuggestions.value = false
-  }
-
-  const clearSearchHandler = (_event: Event) => {
-    clearSearch()
   }
 
   // 外部调用方法：设置搜索查询并执行搜索

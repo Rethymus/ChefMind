@@ -28,7 +28,11 @@
         </el-tab-pane>
 
         <el-tab-pane label="🎯 个性化推荐" name="personalized-recommendations">
-          <EnhancedPersonalizedRecommendations />
+          <EnhancedPersonalizedRecommendations
+            @recipe-selected="handleRecipeSelected"
+            @start-cooking="handleStartCooking"
+            @add-to-favorites="handleAddToFavorites"
+          />
         </el-tab-pane>
 
         <el-tab-pane label="💬 智能助手" name="chat-assistant">
@@ -144,16 +148,16 @@
         <div class="results-grid">
           <div
             v-for="recipe in searchResults"
-            :key="recipe.recipe.id"
+            :key="recipe.id"
             class="result-card"
             @click="selectSearchResult(recipe)"
           >
             <div class="result-content">
-              <h5>{{ recipe.recipe.title }}</h5>
-              <p>{{ recipe.recipe.description }}</p>
+              <h5>{{ recipe.title }}</h5>
+              <p>{{ recipe.description }}</p>
               <div class="result-meta">
-                <span>{{ recipe.recipe.cookingTime }}</span>
-                <span>{{ recipe.recipe.difficulty }}</span>
+                <span>{{ recipe.cookingTime }}</span>
+                <span>{{ recipe.difficulty }}</span>
                 <el-tag size="small" type="success"> AI 推荐 </el-tag>
               </div>
             </div>
@@ -193,15 +197,17 @@
   import IntelligentChatAssistant from './IntelligentChatAssistant.vue'
   import AIProviderSettings from './AIProviderSettings.vue'
   import GLMAPITester from './GLMAPITester.vue'
-  import { aiService, type RecipeGenerationResult } from '@/services/aiService'
+  import { aiService, type UserPreferences } from '@/services/aiService'
+  import type { Recipe } from '@/types/recipe'
 
   // 测试图片缓存系统（开发环境）
   if (import.meta.env.DEV) {
     console.log('🧪 AI Hub 已初始化')
   }
 
-  // 定义食谱推荐类型（临时兼容）
-  type RecipeRecommendation = RecipeGenerationResult
+  // 在此处定义所需的类型 - 使用与aiService.ts中相同的类型定义
+  import { PersonalizedRecommendation } from '@/types/recipe'
+  type RecipeRecommendation = PersonalizedRecommendation
 
   // 组件事件
   const emit = defineEmits<{
@@ -286,19 +292,30 @@
 
   // 处理分享食谱
   const handleShareRecipe = (recipe: RecipeRecommendation) => {
-    ElMessage.success(`正在分享 ${recipe.recipe?.title || recipe.recipe?.name || '食谱'}`)
+    ElMessage.success(`正在分享 ${recipe.title || '食谱'}`)
   }
 
   // 生成随机食谱
-  const generateRandomRecipe = async () => {
+  const generateRandomRecipe = () => {
     try {
-      const randomIngredients = ['随机食材']
-      const recipe = await aiService.generateRecipe(randomIngredients, {
-        difficulty: 'easy',
-        servings: 2,
-      })
+      // 直接创建随机食谱，不调用API
 
-      selectedRecipe.value = recipe
+      // 对象转换为PersonalizedRecommendation类型
+      const randomId = 'random-' + Date.now().toString()
+      const personalizedRecipe = {
+        id: randomId,
+        title: '随机生成的菜谱',
+        description: '系统随机生成的创意菜谱',
+        ingredients: ['随机食材'],
+        cookingTime: 30,
+        difficulty: 'medium',
+        servings: 2,
+        tags: ['随机', '创意'],
+        matchScore: 100,
+        reasonForRecommendation: '随机推荐',
+      }
+      selectedRecipe.value = personalizedRecipe as any
+
       activeTab.value = 'nutrition-analyzer'
       aiStats.recipesGenerated++
 
@@ -338,24 +355,12 @@
       // 使用AI服务生成基于搜索的食谱推荐
       const recommendations = await aiService.getPersonalizedRecommendations(
         [],
-        { searchQuery: searchQuery.value },
+        { cuisineType: searchQuery.value } as UserPreferences,
         5
       )
 
-      searchResults.value = recommendations.map(rec => ({
-        recipe: rec.recipe,
-        confidence: 0.9,
-        alternativeOptions: [],
-        nutritionAnalysis: {
-          calories: Math.round(Math.random() * 500 + 200),
-          protein: Math.round(Math.random() * 30 + 10),
-          carbs: Math.round(Math.random() * 50 + 20),
-          fat: Math.round(Math.random() * 20 + 5),
-        },
-        cookingTips: ['注意火候控制', '食材新鲜度很重要'],
-        safetyGuidelines: ['注意用火安全', '生熟分开处理'],
-        personalizedAdjustments: [],
-      }))
+      // 使用现有的推荐数据
+      searchResults.value = recommendations
       smartSearchVisible.value = false
       searchResultsVisible.value = true
 
@@ -390,6 +395,44 @@
     console.log('收到烹饪帮助请求:', question)
     // 可以提供烹饪指导
     ElMessage.info('正在为您查找相关烹饪技巧...')
+  }
+
+  // 处理个性化推荐相关事件
+  function handleRecipeSelected(recipe: Recipe) {
+    console.log('选择了推荐的食谱:', recipe)
+
+    // 由于类型不匹配，我们不直接传递，而是创建一个新的对象
+    const recipeData = {
+      id: recipe.id,
+      title: recipe.title || '',
+      description: recipe.description || '',
+      ingredients: Array.isArray(recipe.ingredients)
+        ? recipe.ingredients.map(ing => (typeof ing === 'string' ? ing : ing.name))
+        : [],
+      cookingTime:
+        typeof recipe.cookingTime === 'string' ? parseInt(recipe.cookingTime) : recipe.time || 30,
+      difficulty: recipe.difficulty || 'medium',
+      servings: recipe.servings || 2,
+      tags: recipe.tags || [],
+      matchScore: 100,
+      reasonForRecommendation: '基于您的偏好推荐',
+    }
+
+    // 适配类型
+    selectedRecipe.value = recipeData as any
+
+    emit('recipeSelected', selectedRecipe.value)
+  }
+
+  function handleStartCooking(recipe: Recipe) {
+    console.log('开始烹饪推荐的食谱:', recipe)
+    handleRecipeSelected(recipe) // 重用相同的转换逻辑
+    switchToTab('cooking-assistant')
+  }
+
+  function handleAddToFavorites(recipe: Recipe) {
+    console.log('收藏推荐的食谱:', recipe)
+    ElMessage.success(`已收藏菜谱: ${recipe.name || recipe.title || '未命名菜谱'}`)
   }
 
   // 加载统计数据

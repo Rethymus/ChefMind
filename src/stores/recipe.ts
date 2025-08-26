@@ -18,7 +18,7 @@ export const useRecipeStore = defineStore('recipe', () => {
     // 兼容字段
     time: null as number | null,
     people: null as number | null,
-    taste: null as string | null
+    taste: null as string | null,
   })
   const generatedRecipes = ref<Recipe[]>([])
   const currentStep = ref(1)
@@ -82,31 +82,39 @@ export const useRecipeStore = defineStore('recipe', () => {
   const generateRecipes = async () => {
     try {
       isGenerating.value = true
-      
+
       // 构建AI菜谱生成请求
       const requests: RecipeGenerationRequest[] = []
-      
+
       // 为每种选择的烹饪方式生成一个菜谱
       for (const method of selectedMethods.value) {
         const request: RecipeGenerationRequest = {
           ingredients: selectedIngredients.value.map(ing => ing.name),
-          cookingMethod: method.name,
-          difficulty: constraints.value.difficulty || undefined,
-          cookingTime: constraints.value.cookingTime || undefined,
+          cookingMethods: [method.name],
+          difficulty: constraints.value.difficulty
+            ? String(constraints.value.difficulty)
+            : undefined,
+          cookingTime: constraints.value.cookingTime
+            ? String(constraints.value.cookingTime)
+            : undefined,
           servings: constraints.value.servings || undefined,
-          dietaryRestrictions: constraints.value.dietaryRestrictions
+          dietaryRestrictions: constraints.value.dietaryRestrictions,
         }
         requests.push(request)
       }
-      
+
       // 如果没有选择烹饪方式，生成一个通用菜谱
       if (requests.length === 0) {
         const request: RecipeGenerationRequest = {
           ingredients: selectedIngredients.value.map(ing => ing.name),
-          difficulty: constraints.value.difficulty || undefined,
-          cookingTime: constraints.value.cookingTime || undefined,
+          difficulty: constraints.value.difficulty
+            ? String(constraints.value.difficulty)
+            : undefined,
+          cookingTime: constraints.value.cookingTime
+            ? String(constraints.value.cookingTime)
+            : undefined,
           servings: constraints.value.servings || undefined,
-          dietaryRestrictions: constraints.value.dietaryRestrictions
+          dietaryRestrictions: constraints.value.dietaryRestrictions,
         }
         requests.push(request)
       }
@@ -130,7 +138,7 @@ export const useRecipeStore = defineStore('recipe', () => {
       if (existingIndex === -1) {
         savedRecipes.value.push(recipe)
       }
-      
+
       // 保存到本地存储
       localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes.value))
       return true
@@ -152,7 +160,7 @@ export const useRecipeStore = defineStore('recipe', () => {
       // 兼容字段
       time: null,
       people: null,
-      taste: null
+      taste: null,
     }
     generatedRecipes.value = []
     currentStep.value = 1
@@ -165,11 +173,14 @@ export const useRecipeStore = defineStore('recipe', () => {
       const savedData = localStorage.getItem('savedRecipes')
       if (savedData) {
         const recipes = JSON.parse(savedData)
-        savedRecipes.value = recipes.map((recipe: any) => ({
-          ...recipe,
-          createdAt: new Date(recipe.createdAt),
-          updatedAt: recipe.updatedAt ? new Date(recipe.updatedAt) : undefined
-        }))
+        savedRecipes.value = recipes.map((recipe: unknown) => {
+          const r = recipe as Partial<Recipe>
+          return {
+            ...r,
+            createdAt: r.createdAt ? new Date(r.createdAt) : new Date(),
+            updatedAt: r.updatedAt ? new Date(r.updatedAt) : undefined,
+          } as Recipe
+        })
       }
     } catch (error) {
       console.error('加载收藏菜谱失败:', error)
@@ -186,12 +197,12 @@ export const useRecipeStore = defineStore('recipe', () => {
     currentStep,
     isGenerating,
     savedRecipes,
-    
+
     // 计算属性
     canProceedToStep2,
     canProceedToStep3,
     canGenerateRecipes,
-    
+
     // 方法
     toggleIngredient,
     toggleMethod,
@@ -202,6 +213,6 @@ export const useRecipeStore = defineStore('recipe', () => {
     generateRecipes,
     saveRecipe,
     resetSelection,
-    loadSavedRecipes
+    loadSavedRecipes,
   }
 })

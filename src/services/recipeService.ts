@@ -1,24 +1,12 @@
 import { ref } from 'vue'
+import type { Recipe } from '@/types/recipe'
 
-// 食谱类型定义
-export interface Recipe {
-  id: number
-  name: string
-  description: string
-  cookingTime: string
-  difficulty: string
-  servings: number
-  rating: number
-  ingredients: string[]
-  steps: string[]
-  tips?: string
-  image?: string
-  nutritionInfo?: {
-    calories: number
-    protein: number
-    carbs: number
-    fat: number
-  }
+export type { Recipe } // 重新导出Recipe类型
+
+// AI响应类型
+interface AIResponse {
+  recipe?: unknown
+  [key: string]: unknown
 }
 
 // 食谱生成参数
@@ -76,14 +64,14 @@ export const useRecipeService = () => {
 
     try {
       // 先从内存中查找
-      let recipe = recipes.find(r => r.id === id)
+      let recipe = recipes.find(r => r.id === id.toString())
 
       // 如果内存中没有，从本地存储中查找
       if (!recipe) {
         const savedRecipes = localStorage.getItem('chefmind_recipes')
         if (savedRecipes) {
           const parsedRecipes = JSON.parse(savedRecipes)
-          recipe = parsedRecipes.find((r: Recipe) => r.id === id)
+          recipe = parsedRecipes.find((r: Recipe) => r.id === id.toString())
         }
       }
 
@@ -155,33 +143,89 @@ export const useRecipeService = () => {
   const callAIService = async (prompt: string, params: RecipeGenerateParams): Promise<Recipe[]> => {
     try {
       // 导入AI服务
-      const aiService = await import('./aiService')
+      const { aiService } = await import('./aiService')
 
-      // 调用真实的AI服务生成食谱
-      const response = await aiService.generateRecipe(prompt)
+      // 调用真实的AI服务生成食谱，使用prompt作为参数
+      const response = await (
+        aiService as unknown as { generateRecipe: (prompt: string) => Promise<AIResponse> }
+      ).generateRecipe(prompt)
 
-      // 尝试解析AI返回的JSON
-      try {
-        const parsedResponse = JSON.parse(response)
+      // AI服务返回的数据，需要处理成Recipe格式
+      if (response) {
+        // 检查是否有recipe属性（如果是RecipeGenerationResult结构）
+        const recipeData = response.recipe || response
 
-        // 如果返回的是单个食谱对象，转换为数组
-        if (parsedResponse && !Array.isArray(parsedResponse)) {
-          return [parsedResponse]
+        // 安全地处理ingredients类型转换
+        const ingredientsList = (recipeData as { ingredients?: unknown[] }).ingredients || []
+        const processedIngredients = ingredientsList.map((ingredient: unknown) => {
+          if (typeof ingredient === 'string') {
+            return ingredient
+          }
+          if (ingredient && typeof ingredient === 'object' && 'name' in ingredient) {
+            const name = (ingredient as { name: unknown }).name
+            if (typeof name === 'string') {
+              return name
+            }
+            if (typeof name === 'number') {
+              return String(name)
+            }
+            return ''
+          }
+          return typeof ingredient === 'string' ? ingredient : ''
+        })
+
+        // 安全地访问recipeData的属性
+        const safeGet = (obj: unknown, key: string) =>
+          obj && typeof obj === 'object' && key in obj
+            ? (obj as Record<string, unknown>)[key]
+            : undefined
+
+        const safeString = (value: unknown, defaultValue: string = '') =>
+          typeof value === 'string' ? value : defaultValue
+
+        const safeNumber = (value: unknown, defaultValue: number = 0) => {
+          if (typeof value === 'number') {
+            return value
+          }
+          if (typeof value === 'string') {
+            return parseInt(value) || defaultValue
+          }
+          return defaultValue
         }
 
-        // 如果返回的是数组，直接返回
-        if (Array.isArray(parsedResponse)) {
-          return parsedResponse.map((recipe, index) => ({
-            ...recipe,
-            id: Date.now() + index, // 生成唯一ID
-          }))
-        }
-
-        return []
-      } catch (parseError) {
-        console.warn('AI返回的不是有效JSON，尝试生成备选食谱')
-        return generateFallbackRecipes(params)
+        return [
+          {
+            id: Date.now().toString(), // Recipe接口中id是string类型
+            title: safeString(safeGet(recipeData, 'title')) ||
+              safeString(safeGet(recipeData, 'name')) ||
+              '未命名食谱',
+            name:
+              safeString(safeGet(recipeData, 'title')) ||
+              safeString(safeGet(recipeData, 'name')) ||
+              '未命名食谱',
+            description: safeString(safeGet(recipeData, 'description')),
+            servings: safeNumber(safeGet(recipeData, 'servings'), 4),
+            cookingTime: safeString(safeGet(recipeData, 'cookingTime'), '30分钟'),
+            difficulty: safeString(safeGet(recipeData, 'difficulty'), 'easy'),
+            rating: 4.0,
+            ingredients: processedIngredients,
+            steps: (safeGet(recipeData, 'instructions') ||
+              safeGet(recipeData, 'steps') ||
+              []) as string[],
+            cookingMethods: (safeGet(recipeData, 'cookingMethods') as string[]) || ['炒'],
+            nutritionInfo: (safeGet(recipeData, 'nutrition') ||
+              safeGet(recipeData, 'nutritionInfo') || {
+                calories: 0,
+                protein: 0,
+                carbs: 0,
+                fat: 0,
+              }) as { calories: number; protein: number; carbs: number; fat: number },
+          },
+        ]
       }
+
+      // 如果没有返回有效数据，生成备选食谱
+      return generateFallbackRecipes(params)
     } catch (error) {
       console.error('AI服务调用失败:', error)
       throw error
@@ -199,136 +243,160 @@ export const useRecipeService = () => {
     const { ingredients, constraints } = params
     const mainIngredients = ingredients.slice(0, 3)
 
-    // 根据食材和烹饪方式生成菜名
-    let recipeName = `${cookingMethod}${mainIngredients.join('、')}`
-
-    // 如果有约束条件，可能会影响菜名
-    if (constraints && constraints.includes('素食')) {
-      recipeName = `素食${recipeName}`
+    return {
+      id: (1000 + index).toString(),
+      title: generateRecipeName(mainIngredients, cookingMethod, constraints),
+      name: generateRecipeName(mainIngredients, cookingMethod, constraints),
+      description: generateDescription(mainIngredients, cookingMethod, constraints),
+      cookingTime: generateCookingTime(cookingMethod),
+      difficulty: generateDifficulty(),
+      servings: generateServings(),
+      rating: 3.5 + Math.random() * 1.5,
+      ingredients: generateIngredientsList(mainIngredients, cookingMethod),
+      steps: generateCookingSteps(mainIngredients, cookingMethod),
+      cookingMethods: [cookingMethod],
+      cookingTips: [generateCookingTips(mainIngredients, cookingMethod)],
+      nutritionInfo: generateNutritionInfo(),
     }
+  }
 
-    // 生成描述
-    let description = `精选${mainIngredients.join('、')}，采用${cookingMethod}的方式制作`
+  /**
+   * 生成食谱名称
+   */
+  const generateRecipeName = (
+    ingredients: string[],
+    method: string,
+    constraints?: string[]
+  ): string => {
+    let name = `${method}${ingredients.join('、')}`
+    if (constraints?.includes('素食')) {
+      name = `素食${name}`
+    }
+    return name
+  }
+
+  /**
+   * 生成食谱描述
+   */
+  const generateDescription = (
+    ingredients: string[],
+    method: string,
+    constraints?: string[]
+  ): string => {
+    let description = `精选${ingredients.join('、')}，采用${method}的方式制作`
     if (constraints && constraints.length > 0) {
       description += `，符合${constraints.join('、')}的饮食需求`
     }
+    return description
+  }
 
-    // 生成烹饪时间（根据烹饪方式调整）
-    let cookingTime = '30分钟'
-    if (['炖', '蒸', '烤'].includes(cookingMethod)) {
-      cookingTime = `${40 + Math.floor(Math.random() * 20)}分钟`
-    } else if (['炒', '煎'].includes(cookingMethod)) {
-      cookingTime = `${15 + Math.floor(Math.random() * 15)}分钟`
+  /**
+   * 生成烹饪时间
+   */
+  const generateCookingTime = (method: string): string => {
+    if (['炖', '蒸', '烤'].includes(method)) {
+      return `${40 + Math.floor(Math.random() * 20)}分钟`
     }
+    if (['炒', '煎'].includes(method)) {
+      return `${15 + Math.floor(Math.random() * 15)}分钟`
+    }
+    return '30分钟'
+  }
 
-    // 生成难度
+  /**
+   * 生成难度等级
+   */
+  const generateDifficulty = (): string => {
     const difficulties = ['简单', '中等', '困难']
-    const difficulty = difficulties[Math.floor(Math.random() * 2)] // 偏向简单和中等
+    return difficulties[Math.floor(Math.random() * 2)] // 偏向简单和中等
+  }
 
-    // 生成份量
-    const servings = `${2 + Math.floor(Math.random() * 4)}人份`
+  /**
+   * 生成份量
+   */
+  const generateServings = (): number => {
+    return 2 + Math.floor(Math.random() * 4)
+  }
 
-    // 生成食材清单
-    const fullIngredients = [...mainIngredients.map(ing => `${ing} 适量`), '盐 适量', '食用油 适量']
+  /**
+   * 生成食材清单
+   */
+  const generateIngredientsList = (mainIngredients: string[], method: string): string[] => {
+    const ingredients = [...mainIngredients.map(ing => `${ing} 适量`), '盐 适量', '食用油 适量']
 
-    // 根据烹饪方式添加额外调料
-    if (['炒', '煎'].includes(cookingMethod)) {
-      fullIngredients.push('葱 适量', '姜 适量', '蒜 适量', '生抽 1勺')
-    } else if (['炖', '蒸'].includes(cookingMethod)) {
-      fullIngredients.push('料酒 1勺', '姜片 几片', '葱段 几段')
-    } else if (cookingMethod === '烤') {
-      fullIngredients.push('孜然粉 适量', '辣椒粉 适量', '橄榄油 适量')
+    if (['炒', '煎'].includes(method)) {
+      ingredients.push('葱 适量', '姜 适量', '蒜 适量', '生抽 1勺')
+    } else if (['炖', '蒸'].includes(method)) {
+      ingredients.push('料酒 1勺', '姜片 几片', '葱段 几段')
+    } else if (method === '烤') {
+      ingredients.push('孜然粉 适量', '辣椒粉 适量', '橄榄油 适量')
     }
 
-    // 生成步骤
-    const steps = []
+    return ingredients
+  }
 
-    // 根据烹饪方式生成不同的步骤
-    if (cookingMethod === '炒') {
-      steps.push(
-        `准备食材：将${mainIngredients.join('、')}洗净切好备用`,
+  /**
+   * 生成烹饪步骤
+   */
+  const generateCookingSteps = (mainIngredients: string[], method: string): string[] => {
+    const basePrep = `准备食材：将${mainIngredients.join('、')}洗净切好备用`
+
+    const stepsByMethod: Record<string, string[]> = {
+      炒: [
+        basePrep,
         '热锅下油，爆香葱姜蒜',
         `放入${mainIngredients[0]}翻炒至变色`,
         `加入其余食材${mainIngredients.slice(1).join('、')}继续翻炒`,
         '加入调味料，翻炒均匀',
-        '调整口味，出锅装盘即可'
-      )
-    } else if (cookingMethod === '煮') {
-      steps.push(
-        `准备食材：将${mainIngredients.join('、')}洗净切好备用`,
+        '调整口味，出锅装盘即可',
+      ],
+      煮: [
+        basePrep,
         '锅中加入适量清水，大火烧开',
         `放入${mainIngredients.join('、')}和调味料`,
         '转中小火煮至食材熟透',
-        '调整口味，出锅装盘即可'
-      )
-    } else if (cookingMethod === '蒸') {
-      steps.push(
-        `准备食材：将${mainIngredients.join('、')}洗净切好备用`,
+        '调整口味，出锅装盘即可',
+      ],
+      蒸: [
+        basePrep,
         '将食材放入蒸盘中，加入调味料拌匀',
         '锅中加水烧开，放入蒸盘',
-        `盖上锅盖，中火蒸${cookingMethod === '蒸' ? '15-20分钟' : '30-40分钟'}`,
-        '关火后等待2分钟再开盖，取出装盘即可'
-      )
-    } else if (cookingMethod === '炖') {
-      steps.push(
-        `准备食材：将${mainIngredients.join('、')}洗净切好备用`,
-        '锅中加油，将主要食材煎至表面金黄',
-        '加入清水没过食材，放入调味料',
-        '大火烧开后转小火慢炖1小时左右',
-        '调整口味，出锅装盘即可'
-      )
-    } else if (cookingMethod === '煎') {
-      steps.push(
-        `准备食材：将${mainIngredients.join('、')}洗净切好备用`,
-        '食材加入调味料腌制10分钟',
-        '平底锅加油烧热，放入食材',
-        '中小火煎至两面金黄',
-        '调整口味，出锅装盘即可'
-      )
-    } else if (cookingMethod === '烤') {
-      steps.push(
-        `准备食材：将${mainIngredients.join('、')}洗净切好备用`,
-        '食材加入调味料腌制20分钟',
-        '预热烤箱至180度',
-        '将食材放入烤盘中，刷上油',
-        '放入烤箱中层，烤制20-30分钟',
-        '取出装盘即可'
-      )
+        '盖上锅盖，中火蒸15-20分钟',
+        '关火后等待2分钟再开盖，取出装盘即可',
+      ],
     }
 
-    // 生成小贴士
-    let tips = `${cookingMethod}${mainIngredients[0]}时火候要掌握好，保持食材的鲜嫩口感。`
+    return stepsByMethod[method] || stepsByMethod['炒']
+  }
 
-    if (['炒', '煎'].includes(cookingMethod)) {
+  /**
+   * 生成烹饪小贴士
+   */
+  const generateCookingTips = (mainIngredients: string[], method: string): string => {
+    let tips = `${method}${mainIngredients[0]}时火候要掌握好，保持食材的鲜嫩口感。`
+
+    if (['炒', '煎'].includes(method)) {
       tips += '火候不要太大，以免食材煎糊。'
-    } else if (['炖', '煮'].includes(cookingMethod)) {
+    } else if (['炖', '煮'].includes(method)) {
       tips += '炖煮时间可以根据个人口感偏好适当调整。'
-    } else if (cookingMethod === '蒸') {
+    } else if (method === '蒸') {
       tips += '蒸制时间不要过长，以免食材口感变老。'
-    } else if (cookingMethod === '烤') {
+    } else if (method === '烤') {
       tips += '烤制过程中可以适当翻面，确保受热均匀。'
     }
 
-    // 生成营养信息
-    const nutritionInfo = {
+    return tips
+  }
+
+  /**
+   * 生成营养信息
+   */
+  const generateNutritionInfo = () => {
+    return {
       calories: 200 + Math.floor(Math.random() * 300),
       protein: 8 + Math.floor(Math.random() * 20),
       carbs: 15 + Math.floor(Math.random() * 30),
       fat: 5 + Math.floor(Math.random() * 15),
-    }
-
-    return {
-      id: 1000 + index,
-      name: recipeName,
-      description,
-      cookingTime,
-      difficulty,
-      servings,
-      rating: 3.5 + Math.random() * 1.5, // 3.5-5星
-      ingredients: fullIngredients,
-      steps,
-      tips,
-      nutritionInfo,
     }
   }
 
@@ -336,7 +404,7 @@ export const useRecipeService = () => {
    * 生成备选食谱（当AI服务失败时使用）
    */
   const generateFallbackRecipes = (params: RecipeGenerateParams): Recipe[] => {
-    const { ingredients, cookingMethods } = params
+    const { cookingMethods } = params
 
     // 确保生成至少2个不同烹饪方式的食谱
     const availableMethods = cookingMethods?.length ? cookingMethods : ['炒', '煮', '蒸', '炖']
@@ -413,19 +481,25 @@ export const useRecipeService = () => {
         const lowerQuery = query.toLowerCase()
         localResults = parsedRecipes.filter(
           (recipe: Recipe) =>
-            recipe.name.toLowerCase().includes(lowerQuery) ||
+            recipe.name?.toLowerCase().includes(lowerQuery) ||
             recipe.description.toLowerCase().includes(lowerQuery) ||
-            recipe.ingredients.some(ing => ing.toLowerCase().includes(lowerQuery))
+            recipe.ingredients.some(ing => 
+              typeof ing === 'string' 
+                ? ing.toLowerCase().includes(lowerQuery)
+                : ing.name.toLowerCase().includes(lowerQuery)
+            )
         )
       }
 
       // 如果本地搜索结果不足，使用AI生成相关食谱
       if (localResults.length < 3) {
         try {
-          const aiService = await import('./aiService')
+          const { aiService } = await import('./aiService')
           const prompt = `根据搜索关键词"${query}"，生成3个相关的中文食谱。请返回JSON格式的食谱数组，每个食谱包含name、description、cookingTime、difficulty、servings、ingredients、steps、tips、nutritionInfo等字段。`
 
-          const response = await aiService.generateRecipe(prompt)
+          const response = await (
+            aiService as unknown as { generateRecipe: (prompt: string) => Promise<string> }
+          ).generateRecipe(prompt)
           const aiResults = JSON.parse(response)
 
           if (Array.isArray(aiResults)) {

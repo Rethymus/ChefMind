@@ -69,9 +69,10 @@
                 >
                   <div class="ingredient-checkbox">
                     <input type="checkbox" :id="`ingredient-${index}`" />
-                    <label :for="`ingredient-${index}`"></label>
+                    <label :for="`ingredient-${index}`">
+                      <span class="ingredient-text">{{ ingredient }}</span>
+                    </label>
                   </div>
-                  <span class="ingredient-text">{{ ingredient }}</span>
                 </li>
               </ul>
 
@@ -98,7 +99,7 @@
                 <li v-for="(step, index) in recipe.steps" :key="index" class="step-item">
                   <div class="step-number">{{ index + 1 }}</div>
                   <div class="step-content">
-                    <p>{{ step }}</p>
+                    <p>{{ getStepDescription(step) }}</p>
                     <div class="step-timer" v-if="stepHasTime(step)">
                       <button class="timer-button" @click="startStepTimer(step)">
                         <span class="timer-icon">⏱️</span>
@@ -111,13 +112,15 @@
             </div>
 
             <!-- 烹饪小贴士 -->
-            <div v-if="recipe.tips" class="tips-section">
+            <div v-if="recipe.cookingTips && recipe.cookingTips.length > 0" class="tips-section">
               <h2 class="section-title">
                 <span class="section-icon">💡</span>
                 小贴士
               </h2>
               <div class="tips-content">
-                {{ recipe.tips }}
+                <ul>
+                  <li v-for="tip in recipe.cookingTips" :key="tip">{{ tip }}</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -229,6 +232,7 @@
   import { ref, onMounted, onBeforeUnmount } from 'vue'
   import { useRouter } from 'vue-router'
   import { useRecipeService, type Recipe } from '@/services/recipeService'
+  import type { RecipeStep } from '@/types/recipe'
   import RecipeComments from '@/components/recipe/RecipeComments.vue'
   import RecipeShare from '@/components/recipe/RecipeShare.vue'
   import RecipePrintPreview from '@/components/recipe/RecipePrintPreview.vue'
@@ -315,19 +319,19 @@
         const index = savedRecipes.findIndex((r: Recipe) => r.id === recipe.value?.id)
         if (index !== -1) {
           savedRecipes.splice(index, 1)
-          showNotification('success', '已取消收藏')
+          showNotification({ type: 'success', title: '成功', message: '已取消收藏' })
         }
       } else {
         // 添加收藏
         savedRecipes.push(recipe.value)
-        showNotification('success', '已添加到收藏')
+        showNotification({ type: 'success', title: '成功', message: '已添加到收藏' })
       }
 
       localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes))
       isFavorite.value = !isFavorite.value
     } catch (error) {
       console.error('切换收藏状态失败:', error)
-      showNotification('error', '操作失败，请重试')
+      showNotification({ type: 'error', title: '错误', message: '操作失败，请重试' })
     }
   }
 
@@ -342,18 +346,6 @@
 
     // 显示分享模态框
     showShareModal.value = true
-  }
-
-  // 复制链接到剪贴板
-  const copyToClipboard = () => {
-    const dummyTextArea = document.createElement('textarea')
-    dummyTextArea.value = window.location.href
-    document.body.appendChild(dummyTextArea)
-    dummyTextArea.select()
-    document.execCommand('copy')
-    document.body.removeChild(dummyTextArea)
-
-    showNotification('success', '链接已复制到剪贴板')
   }
 
   // 打印食谱
@@ -390,35 +382,38 @@
       })
 
       localStorage.setItem('shoppingList', JSON.stringify(shoppingList))
-      showNotification('success', '已添加食材到购物清单')
+      showNotification({ type: 'success', title: '成功', message: '已添加食材到购物清单' })
     } catch (error) {
       console.error('添加到购物清单失败:', error)
-      showNotification('error', '添加失败，请重试')
+      showNotification({ type: 'error', title: '错误', message: '添加失败，请重试' })
     }
   }
 
   // 显示通知
-  const showNotification = (type: string, message: string) => {
+  const showNotification = (notification: { type: string; title: string; message: string }) => {
     const event = new CustomEvent('notification', {
-      detail: {
-        type,
-        title: type === 'success' ? '成功' : '错误',
-        message,
-      },
+      detail: notification,
     })
     window.dispatchEvent(event)
   }
 
+  // 获取步骤描述文本
+  const getStepDescription = (step: string | RecipeStep): string => {
+    return typeof step === 'string' ? step : step.description
+  }
+
   // 检查步骤是否包含时间信息
-  const stepHasTime = (step: string) => {
-    return /\d+\s*(分钟|秒钟|小时)/.test(step)
+  const stepHasTime = (step: string | RecipeStep): boolean => {
+    const description = getStepDescription(step)
+    return /\d+\s*(分钟|秒钟|小时)/.test(description)
   }
 
   // 从步骤文本中提取时间（秒）
-  const extractTimeFromStep = (step: string) => {
-    const minuteMatch = step.match(/(\d+)\s*分钟/)
-    const secondMatch = step.match(/(\d+)\s*秒钟/)
-    const hourMatch = step.match(/(\d+)\s*小时/)
+  const extractTimeFromStep = (step: string | RecipeStep): number => {
+    const description = getStepDescription(step)
+    const minuteMatch = description.match(/(\d+)\s*分钟/)
+    const secondMatch = description.match(/(\d+)\s*秒钟/)
+    const hourMatch = description.match(/(\d+)\s*小时/)
 
     let seconds = 0
     if (minuteMatch) seconds += parseInt(minuteMatch[1]) * 60
@@ -429,8 +424,9 @@
   }
 
   // 开始步骤计时
-  const startStepTimer = (step: string) => {
-    timerStep.value = step
+  const startStepTimer = (step: string | RecipeStep) => {
+    const description = getStepDescription(step)
+    timerStep.value = description
     timerSeconds.value = extractTimeFromStep(step)
     showTimerModal.value = true
   }
@@ -448,7 +444,7 @@
         // 播放提示音
         const audio = new Audio('/notification.mp3')
         audio.play().catch(e => console.error('无法播放提示音:', e))
-        showNotification('info', '计时完成！')
+        showNotification({ type: 'info', title: '提示', message: '计时完成！' })
       }
     }, 1000)
   }
@@ -497,10 +493,10 @@
       }
 
       // 显示通知
-      showNotification('success', '评分已更新')
+      showNotification({ type: 'success', title: '成功', message: '评分已更新' })
     } catch (error) {
       console.error('更新评分失败:', error)
-      showNotification('error', '更新评分失败，请重试')
+      showNotification({ type: 'error', title: '错误', message: '更新评分失败，请重试' })
     }
   }
 

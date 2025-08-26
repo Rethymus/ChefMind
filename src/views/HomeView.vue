@@ -107,10 +107,9 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { popularRecipes } from '@/data/mockData'
-  import type { Recipe } from '@/data/mockData'
+  import type { Recipe } from '@/types/recipe'
 
   const router = useRouter()
 

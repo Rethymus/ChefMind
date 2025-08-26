@@ -434,28 +434,6 @@
     window.dispatchEvent(event)
   }
 
-  // 烹饪方式处理
-  const handleMethodToggle = (method: CookingMethod) => {
-    const index = selectedMethodObjects.value.findIndex(m => m.id === method.id)
-    if (index > -1) {
-      selectedMethodObjects.value.splice(index, 1)
-    } else {
-      selectedMethodObjects.value.push(method)
-    }
-
-    // 如果选择了烹饪方式，取消"不限制"选项
-    if (selectedMethodObjects.value.length > 0) {
-      noMethodRestriction.value = false
-    }
-  }
-
-  const handleNoMethodRestrictionChange = (value: boolean) => {
-    if (value) {
-      // 如果选择了"不限制"，清空已选烹饪方式
-      selectedMethodObjects.value = []
-    }
-  }
-
   // 更新烹饪方式选择
   const updateSelectedMethods = (methodIds: string[]) => {
     selectedMethodIds.value = methodIds

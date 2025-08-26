@@ -3,17 +3,17 @@ import type {
   Recipe,
   RecipeGenerationParams,
   IngredientValidationResult,
-  RecipeGenerationResult,
   IngredientAnalysisResult,
   NutritionAnalysisResult,
   PersonalizedRecommendation,
 } from '@/types/recipe'
+import type { UserHistoryItem, UserPreferences } from '@/services/aiService'
 import { callGLM, parseJsonResponse } from '@/services/glmService'
 
 export class GLMProvider implements BaseAIProvider {
-  private apiKey: string
-  private baseURL: string
-  private model: string
+  private readonly apiKey: string
+  private readonly baseURL: string
+  private readonly model: string
 
   constructor(apiKey?: string, baseURL: string = 'https://open.bigmodel.cn/api/paas/v4/') {
     this.apiKey = apiKey || import.meta.env.VITE_GLM_API_KEY || ''
@@ -86,7 +86,7 @@ export class GLMProvider implements BaseAIProvider {
     }
   }
 
-  async analyzeNutrition(recipe: any): Promise<NutritionAnalysisResult> {
+  async analyzeNutrition(recipe: Recipe): Promise<NutritionAnalysisResult> {
     try {
       // 构建提示词
       const prompt = `
@@ -94,7 +94,7 @@ export class GLMProvider implements BaseAIProvider {
       
       食谱名称: ${recipe.title || '未命名食谱'}
       食材列表: ${JSON.stringify(recipe.ingredients || [])}
-      烹饪方法: ${recipe.cookingMethod || '未指定'}
+      烹饪方法: ${recipe.cookingMethods?.join(', ') || '未指定'}
       
       请严格按照以下JSON格式返回营养分析结果：
       {
@@ -331,7 +331,7 @@ export class GLMProvider implements BaseAIProvider {
   // 推断自动补充的食材
   private inferAutoCompletedIngredients(
     originalIngredients: string[],
-    allIngredients: (string | any)[]
+    allIngredients: (string | { name?: string })[]
   ): string[] {
     try {
       // 将复杂对象转换为字符串
@@ -401,9 +401,9 @@ export class GLMProvider implements BaseAIProvider {
   }
 
   async getPersonalizedRecommendations(
-    userHistory: any[],
-    preferences: any,
-    limit: number
+    userHistory: UserHistoryItem[],
+    preferences: UserPreferences,
+    limit: number = 5
   ): Promise<PersonalizedRecommendation[]> {
     try {
       // 构建提示词
@@ -448,7 +448,7 @@ export class GLMProvider implements BaseAIProvider {
   }
 
   async getCookingGuidance(
-    recipe: any,
+    recipe: Recipe,
     currentStep: number
   ): Promise<{
     guidance: string
@@ -585,7 +585,7 @@ export class GLMProvider implements BaseAIProvider {
       const reader = new FileReader()
       reader.readAsDataURL(file)
       reader.onload = () => resolve(reader.result as string)
-      reader.onerror = error => reject(error)
+      reader.onerror = () => reject(new Error('文件读取失败'))
     })
   }
 }

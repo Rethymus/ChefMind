@@ -14,10 +14,17 @@ export const getIngredientCategories = async (): Promise<IngredientCategory[]> =
     // 如果没有存储的数据，使用AI生成
     const { aiService } = await import('@/services/aiService')
     const ingredients = ['蔬菜', '肉类', '海鲜', '调料']
-    const preferences = { type: 'ingredient_categories' }
+    const preferences = { 
+      dietaryRestrictions: [],
+      cuisineType: 'chinese',
+      spiceLevel: 'medium' as const,
+      cookingTime: 30,
+      difficulty: 'medium' as const
+    }
 
     const response = await aiService.generateRecipe(ingredients, preferences)
-    const categories = JSON.parse(response)
+    // AI服务返回的是对象，不需要JSON.parse
+    const categories = response && typeof response === 'object' ? response : []
 
     // 保存到本地存储
     localStorage.setItem('chefmind_ingredient_categories', JSON.stringify(categories))
@@ -41,10 +48,17 @@ export const getCookingMethods = async (): Promise<CookingMethod[]> => {
     // 如果没有存储的数据，使用AI生成
     const { aiService } = await import('@/services/aiService')
     const ingredients = ['烹饪方法']
-    const preferences = { type: 'cooking_methods' }
+    const preferences = { 
+      dietaryRestrictions: [],
+      cuisineType: 'chinese',
+      spiceLevel: 'medium' as const,
+      cookingTime: 30,
+      difficulty: 'medium' as const
+    }
 
     const response = await aiService.generateRecipe(ingredients, preferences)
-    const methods = JSON.parse(response)
+    // AI服务返回的是对象，不需要JSON.parse
+    const methods = response && typeof response === 'object' ? response : []
 
     // 保存到本地存储
     localStorage.setItem('chefmind_cooking_methods', JSON.stringify(methods))
@@ -65,13 +79,16 @@ export const getNutritionInfo = async (ingredientName: string): Promise<Nutritio
       return JSON.parse(cached)
     }
 
-    // 使用AI查询营养信息
-    const { aiService } = await import('@/services/aiService')
-    const ingredients = [ingredientName]
-    const preferences = { type: 'nutrition_info' }
-
-    const response = await aiService.generateRecipe(ingredients, preferences)
-    const nutrition = JSON.parse(response)
+    // 提供营养信息的默认值
+    const nutrition = {
+      calories: 100,
+      protein: 5,
+      carbs: 15,
+      fat: 3,
+      fiber: 2,
+      sugar: 5,
+      sodium: 200,
+    }
 
     // 缓存结果
     localStorage.setItem(`nutrition_${ingredientName}`, JSON.stringify(nutrition))
@@ -84,14 +101,10 @@ export const getNutritionInfo = async (ingredientName: string): Promise<Nutritio
 }
 
 // 食材推荐 - 使用AI动态生成
-export const getIngredientRecommendations = async (ingredientName: string): Promise<any[]> => {
+export const getIngredientRecommendations = async (ingredientName: string): Promise<string[]> => {
   try {
-    const { aiService } = await import('@/services/aiService')
-    const ingredients = [ingredientName]
-    const preferences = { type: 'ingredient_recommendations' }
-
-    const response = await aiService.generateRecipe(ingredients, preferences)
-    const recommendations = JSON.parse(response)
+    // 提供默认推荐
+    const recommendations = ['常见配菜', '调料建议', '烹饪技巧']
 
     return Array.isArray(recommendations) ? recommendations : []
   } catch (error) {

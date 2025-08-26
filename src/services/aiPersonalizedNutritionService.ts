@@ -1,13 +1,29 @@
 // AI 驱动的营养分析服务
 import { aiService } from './aiService'
 import { nutritionAnalysisService } from './nutritionAnalysisService'
-import type { UserProfile, NutrientAnalysis } from './nutritionAnalysisService'
+import type { UserProfile } from './nutritionAnalysisService'
+
+// 营养分析结果接口
+interface NutrientAnalysis {
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  fiber: number
+  sugar: number
+  sodium: number
+  calcium: number
+  iron: number
+  vitaminC: number
+  nutrients?: Record<string, number>
+  recommendations?: string[]
+}
 
 // 扩展用户配置文件
-export interface ExtendedUserProfile extends UserProfile {
+export interface ExtendedUserProfile extends Omit<UserProfile, 'meals' | 'allergies'> {
   meals: MealRecord[]
   medicalConditions: string[]
-  allergies: string
+  allergies: string[]
   dietaryPreferences: string[]
 }
 
@@ -55,7 +71,7 @@ class AIPersonalizedNutritionService {
       const parsedResult = this.parseAIResponse(aiResponse)
 
       // 4. 结合传统营养计算进行验证和补充
-      const traditionalAnalysis = this.performTraditionalAnalysis(request.userProfile)
+      const traditionalAnalysis = await this.performTraditionalAnalysis(request.userProfile)
 
       // 5. 合并AI分析和传统分析结果
       const finalResult = this.mergeAnalysisResults(
@@ -69,7 +85,7 @@ class AIPersonalizedNutritionService {
       console.error('AI营养分析失败:', error)
 
       // 降级到传统分析方法
-      return this.fallbackAnalysis(request.userProfile)
+      return await this.fallbackAnalysis(request.userProfile)
     }
   }
 
@@ -123,7 +139,7 @@ ${userProfile.meals.map(meal => `${this.getMealName(meal.type)}：${meal.descrip
   /**
    * 解析AI响应
    */
-  private parseAIResponse(content: string | unknown): Partial<AIAnalysisResult> {
+  private parseAIResponse(content: unknown): Partial<AIAnalysisResult> {
     try {
       // 确保content是字符串类型
       if (typeof content !== 'string') {
@@ -166,25 +182,36 @@ ${userProfile.meals.map(meal => `${this.getMealName(meal.type)}：${meal.descrip
 
               const parsed = JSON.parse(cleanJsonStr)
               console.log('成功解析AI响应:', parsed)
-              
+
               // 将营养分析中的字符串数值转换为数字
               const nutritionAnalysis = parsed.nutritionEstimate || {}
-              const convertedNutrition: Partial<NutrientAnalysis> = {}
-              
+              const convertedNutrition: Record<string, number> = {}
+
               // 定义营养素字段名称
-              const nutrientFields = ['calories', 'protein', 'carbs', 'fat', 'fiber', 'sodium', 'calcium', 'iron', 'vitaminC', 'sugar']
-              
+              const nutrientFields = [
+                'calories',
+                'protein',
+                'carbs',
+                'fat',
+                'fiber',
+                'sodium',
+                'calcium',
+                'iron',
+                'vitaminC',
+                'sugar',
+              ]
+
               for (const field of nutrientFields) {
                 const value = nutritionAnalysis[field]
                 if (typeof value === 'string' && /^\d+(\.\d+)?$/.test(value)) {
-                  convertedNutrition[field as keyof NutrientAnalysis] = parseFloat(value)
+                  convertedNutrition[field] = parseFloat(value)
                 } else if (typeof value === 'number') {
-                  convertedNutrition[field as keyof NutrientAnalysis] = value
+                  convertedNutrition[field] = value
                 }
               }
-              
+
               return {
-                nutritionAnalysis: convertedNutrition as NutrientAnalysis,
+                nutritionAnalysis: convertedNutrition as unknown as NutrientAnalysis,
                 personalizedRecommendations: parsed.recommendations || [],
                 healthInsights: parsed.insights || [],
                 riskAssessments: parsed.risks || [],
@@ -229,29 +256,40 @@ ${userProfile.meals.map(meal => `${this.getMealName(meal.type)}：${meal.descrip
   /**
    * 执行传统营养分析
    */
-  private performTraditionalAnalysis(userProfile: ExtendedUserProfile): Partial<AIAnalysisResult> {
+  private async performTraditionalAnalysis(
+    userProfile: ExtendedUserProfile
+  ): Promise<Partial<AIAnalysisResult>> {
     // 使用现有的营养分析服务
-    const basicProfile = {
+    const basicProfile: UserProfile = {
+      name: '用户',
       age: userProfile.age,
       gender: userProfile.gender,
       weight: userProfile.weight,
       height: userProfile.height,
       activityLevel: userProfile.activityLevel,
       healthGoals: userProfile.healthGoals,
+      meals: userProfile.meals.map(meal => ({
+        type: meal.type,
+        foods: [
+          {
+            name: meal.description,
+            amount: 1,
+            unit: '份',
+          },
+        ],
+      })),
     }
 
     // 估算营养摄入（基于饮食描述的关键词分析）
     const estimatedIntake = this.estimateNutritionFromMeals(userProfile.meals)
 
     // 生成个性化建议
-    const personalizedNutrition = nutritionAnalysisService.generatePersonalizedRecommendations(
-      basicProfile,
-      estimatedIntake
-    )
+    const personalizedNutrition =
+      await nutritionAnalysisService.generatePersonalizedRecommendations(basicProfile)
 
     return {
       nutritionAnalysis: estimatedIntake,
-      personalizedRecommendations: personalizedNutrition.recommendations,
+      personalizedRecommendations: personalizedNutrition,
       confidenceScore: 60,
     }
   }
@@ -276,9 +314,17 @@ ${userProfile.meals.map(meal => `${this.getMealName(meal.type)}：${meal.descrip
     // 基于食物关键词的简单估算
     meals.forEach(meal => {
       const nutrition = this.estimateMealNutrition(meal.description)
-      Object.keys(totalNutrition).forEach(key => {
-        totalNutrition[key as keyof NutrientAnalysis] += nutrition[key as keyof NutrientAnalysis]
-      })
+      // 累加数值字段
+      totalNutrition.calories += nutrition.calories
+      totalNutrition.protein += nutrition.protein
+      totalNutrition.carbs += nutrition.carbs
+      totalNutrition.fat += nutrition.fat
+      totalNutrition.fiber += nutrition.fiber
+      totalNutrition.sugar += nutrition.sugar
+      totalNutrition.sodium += nutrition.sodium
+      totalNutrition.calcium += nutrition.calcium
+      totalNutrition.iron += nutrition.iron
+      totalNutrition.vitaminC += nutrition.vitaminC
     })
 
     return totalNutrition
@@ -388,8 +434,8 @@ ${userProfile.meals.map(meal => `${this.getMealName(meal.type)}：${meal.descrip
   /**
    * 降级分析方法
    */
-  private fallbackAnalysis(userProfile: ExtendedUserProfile): AIAnalysisResult {
-    const traditionalResult = this.performTraditionalAnalysis(userProfile)
+  private async fallbackAnalysis(userProfile: ExtendedUserProfile): Promise<AIAnalysisResult> {
+    const traditionalResult = await this.performTraditionalAnalysis(userProfile)
 
     return {
       nutritionAnalysis: traditionalResult.nutritionAnalysis || this.getDefaultNutrition(),
@@ -497,7 +543,7 @@ ${userProfile.meals.map(meal => `${this.getMealName(meal.type)}：${meal.descrip
       risks.push('注意钙质补充，预防骨质疏松')
     }
 
-    if (userProfile.activityLevel === 'low') {
+    if (userProfile.activityLevel === 'sedentary') {
       risks.push('久坐生活方式可能影响代谢，建议增加运动')
     }
 

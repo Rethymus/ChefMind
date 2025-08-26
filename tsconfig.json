@@ -20,7 +20,7 @@
     "paths": {
       "@/*": ["src/*"]
     },
-    "types": ["vite/client", "element-plus/global"]
+    "types": ["vite/client", "element-plus/global", "node"]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "tests/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.js"],

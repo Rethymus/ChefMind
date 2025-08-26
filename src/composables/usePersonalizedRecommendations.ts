@@ -173,7 +173,8 @@ export function usePersonalizedRecommendations() {
 
     // 技能水平匹配
     const skillMatch = (() => {
-      const difficulty = recipe.difficulty.toLowerCase()
+      // 检查难度等级
+      const difficulty = String(recipe.difficulty).toLowerCase()
       const userSkill = preferences.cookingSkillLevel
 
       if (userSkill === 'beginner' && difficulty === 'easy') return 1
