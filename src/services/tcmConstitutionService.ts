@@ -252,93 +252,170 @@ ${mealDescriptions}
     try {
       console.log('开始解析TCM AI响应:', aiResponse.substring(0, 200) + '...')
 
-      // 尝试解析JSON响应
-      let analysisData
-      try {
-        // 移除可能的 markdown 标记
-        const cleanResponse = aiResponse.replace(/```json\s*|\s*```/g, '').trim()
+      // 解析AI响应数据
+      const analysisData = this.extractAnalysisData(aiResponse)
 
-        // 尝试提取第一个完整的 JSON 对象
-        const firstBraceIndex = cleanResponse.indexOf('{')
-        if (firstBraceIndex !== -1) {
-          let braceCount = 0
-          let i = firstBraceIndex
-
-          for (; i < cleanResponse.length; i++) {
-            if (cleanResponse[i] === '{') braceCount++
-            else if (cleanResponse[i] === '}') braceCount--
-
-            if (braceCount === 0) {
-              const firstJsonStr = cleanResponse.substring(firstBraceIndex, i + 1)
-              analysisData = JSON.parse(firstJsonStr)
-              console.log('成功解析TCM JSON:', analysisData)
-              break
-            }
-          }
-        } else {
-          throw new Error('No JSON found in response')
-        }
-      } catch (parseError) {
-        console.warn('JSON解析失败，使用文本解析:', parseError)
-        analysisData = this.parseTextResponse(aiResponse)
-      }
-
-      // 获取体质类型详细信息
-      const primaryType =
-        CONSTITUTION_TYPES[this.mapConstitutionType(analysisData.primaryConstitution)]
-      const secondaryType = analysisData.secondaryConstitution
-        ? CONSTITUTION_TYPES[this.mapConstitutionType(analysisData.secondaryConstitution)]
-        : undefined
-
-      return {
-        primaryConstitution: {
-          type: this.mapConstitutionType(analysisData.primaryConstitution),
-          name: primaryType.name,
-          characteristics: analysisData.characteristics || primaryType.characteristics,
-          susceptibleDiseases: analysisData.susceptibleDiseases || primaryType.susceptibleDiseases,
-          dietaryRecommendations: analysisData.dietaryRecommendations || [],
-          lifestyleAdvice: analysisData.lifestyleAdvice || [],
-          seasonalAdjustments: {
-            spring: [],
-            summer: [],
-            autumn: [],
-            winter: analysisData.seasonalAdjustments || [],
-          },
-          confidence: analysisData.confidence || 85,
-        },
-        secondaryConstitution: secondaryType
-          ? {
-              type: this.mapConstitutionType(analysisData.secondaryConstitution),
-              name: secondaryType.name,
-              characteristics: secondaryType.characteristics,
-              susceptibleDiseases: secondaryType.susceptibleDiseases,
-              dietaryRecommendations: [],
-              lifestyleAdvice: [],
-              seasonalAdjustments: {
-                spring: [],
-                summer: [],
-                autumn: [],
-                winter: [],
-              },
-              confidence: 70,
-            }
-          : undefined,
-        mixedConstitutionAnalysis: secondaryType
-          ? `检测到混合体质特征，主要表现为${primaryType.name}，兼有${secondaryType.name}特征`
-          : undefined,
-        overallHealthScore: this.calculateHealthScore(userProfile, analysisData),
-        nutritionalGuidance: analysisData.dietaryRecommendations || [],
-        seasonalDietPlan: {
-          currentSeason: this.getCurrentSeason(),
-          recommendations: analysisData.seasonalAdjustments || [],
-        },
-        aiInsights: analysisData.aiInsights || analysisData.personalizedGuidance || [],
-        analysisTimestamp: new Date().toISOString(),
-      }
+      // 构建分析结果
+      return this.buildAnalysisResult(analysisData, userProfile)
     } catch (error) {
       console.error('解析AI体质分析响应失败:', error)
       return this.getFallbackAnalysis(userProfile)
     }
+  }
+
+  /**
+   * 提取分析数据
+   */
+  private extractAnalysisData(aiResponse: string): Record<string, unknown> {
+    try {
+      return this.parseJsonResponse(aiResponse)
+    } catch (parseError) {
+      console.warn('JSON解析失败，使用文本解析:', parseError)
+      return this.parseTextResponse(aiResponse)
+    }
+  }
+
+  /**
+   * 解析JSON响应
+   */
+  private parseJsonResponse(aiResponse: string): Record<string, unknown> {
+    // 移除可能的 markdown 标记
+    const cleanResponse = aiResponse.replace(/```json\s*|\s*```/g, '').trim()
+
+    // 提取第一个完整的 JSON 对象
+    const jsonString = this.extractJsonFromResponse(cleanResponse)
+    if (!jsonString) {
+      throw new Error('No JSON found in response')
+    }
+
+    const analysisData = JSON.parse(jsonString)
+    console.log('成功解析TCM JSON:', analysisData)
+    return analysisData
+  }
+
+  /**
+   * 从响应中提取JSON字符串
+   */
+  private extractJsonFromResponse(response: string): string | null {
+    const firstBraceIndex = response.indexOf('{')
+    if (firstBraceIndex === -1) {
+      return null
+    }
+
+    let braceCount = 0
+    let i = firstBraceIndex
+
+    for (; i < response.length; i++) {
+      if (response[i] === '{') braceCount++
+      else if (response[i] === '}') braceCount--
+
+      if (braceCount === 0) {
+        return response.substring(firstBraceIndex, i + 1)
+      }
+    }
+
+    return null
+  }
+
+  /**
+   * 构建分析结果
+   */
+  private buildAnalysisResult(
+    analysisData: Record<string, unknown>,
+    userProfile: ExtendedUserProfile
+  ): TCMAnalysisResult {
+    const primaryConstitution = this.buildPrimaryConstitution(analysisData)
+    const secondaryConstitution = this.buildSecondaryConstitution(analysisData)
+
+    return {
+      primaryConstitution,
+      secondaryConstitution,
+      mixedConstitutionAnalysis: this.buildMixedAnalysis(primaryConstitution, secondaryConstitution),
+      overallHealthScore: this.calculateHealthScore(userProfile, analysisData),
+      nutritionalGuidance: this.extractStringArray(analysisData.dietaryRecommendations),
+      seasonalDietPlan: {
+        currentSeason: this.getCurrentSeason(),
+        recommendations: this.extractStringArray(analysisData.seasonalAdjustments),
+      },
+      aiInsights: this.extractStringArray(analysisData.aiInsights || analysisData.personalizedGuidance),
+      analysisTimestamp: new Date().toISOString(),
+    }
+  }
+
+  /**
+   * 构建主要体质信息
+   */
+  private buildPrimaryConstitution(analysisData: Record<string, unknown>): TCMConstitution {
+    const constitutionType = this.mapConstitutionType(analysisData.primaryConstitution as string)
+    const primaryType = CONSTITUTION_TYPES[constitutionType]
+
+    return {
+      type: constitutionType,
+      name: primaryType.name,
+      characteristics: this.extractStringArray(analysisData.characteristics) || primaryType.characteristics,
+      susceptibleDiseases: this.extractStringArray(analysisData.susceptibleDiseases) || primaryType.susceptibleDiseases,
+      dietaryRecommendations: this.extractStringArray(analysisData.dietaryRecommendations),
+      lifestyleAdvice: this.extractStringArray(analysisData.lifestyleAdvice),
+      seasonalAdjustments: {
+        spring: [],
+        summer: [],
+        autumn: [],
+        winter: this.extractStringArray(analysisData.seasonalAdjustments),
+      },
+      confidence: typeof analysisData.confidence === 'number' ? analysisData.confidence : 85,
+    }
+  }
+
+  /**
+   * 构建次要体质信息
+   */
+  private buildSecondaryConstitution(analysisData: Record<string, unknown>): TCMConstitution | undefined {
+    if (!analysisData.secondaryConstitution) {
+      return undefined
+    }
+
+    const constitutionType = this.mapConstitutionType(analysisData.secondaryConstitution as string)
+    const secondaryType = CONSTITUTION_TYPES[constitutionType]
+
+    return {
+      type: constitutionType,
+      name: secondaryType.name,
+      characteristics: secondaryType.characteristics,
+      susceptibleDiseases: secondaryType.susceptibleDiseases,
+      dietaryRecommendations: [],
+      lifestyleAdvice: [],
+      seasonalAdjustments: {
+        spring: [],
+        summer: [],
+        autumn: [],
+        winter: [],
+      },
+      confidence: 70,
+    }
+  }
+
+  /**
+   * 构建混合体质分析
+   */
+  private buildMixedAnalysis(
+    primary: TCMConstitution,
+    secondary?: TCMConstitution
+  ): string | undefined {
+    if (!secondary) {
+      return undefined
+    }
+
+    return `检测到混合体质特征，主要表现为${primary.name}，兼有${secondary.name}特征`
+  }
+
+  /**
+   * 提取字符串数组
+   */
+  private extractStringArray(value: unknown): string[] {
+    if (Array.isArray(value)) {
+      return value.filter((item): item is string => typeof item === 'string')
+    }
+    return []
   }
 
   /**

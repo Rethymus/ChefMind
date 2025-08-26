@@ -12,80 +12,9 @@ export class MockAIProvider implements BaseAIProvider {
     // 模拟API调用延迟
     await new Promise(resolve => setTimeout(resolve, 1500))
 
-    // 处理自动补充食材
-    const ingredients = [...params.ingredients]
-    const autoCompletedIngredients: string[] = []
-
-    if (params.autoCompleteIngredients) {
-      // 自动补充调料和辅料
-      const basicSeasonings = ['盐', '生抽', '料酒', '白糖', '香油']
-      const additionalSeasonings = [
-        '葱',
-        '姜',
-        '蒜',
-        '八角',
-        '花椒',
-        '胡椒粉',
-        '醋',
-        '蚝油',
-        '辣椒粉',
-      ]
-
-      // 根据食材数量决定补充多少调料
-      const seasoningCount = Math.min(3 + Math.floor(Math.random() * 3), basicSeasonings.length)
-      const additionalCount = Math.min(
-        2 + Math.floor(Math.random() * 3),
-        additionalSeasonings.length
-      )
-
-      // 添加基础调料
-      for (let i = 0; i < seasoningCount; i++) {
-        const seasoning = basicSeasonings[i]
-        if (!ingredients.includes(seasoning)) {
-          ingredients.push(seasoning)
-          autoCompletedIngredients.push(seasoning)
-        }
-      }
-
-      // 添加额外调料
-      const shuffledAdditional = [...additionalSeasonings].sort(() => 0.5 - Math.random())
-      for (let i = 0; i < additionalCount; i++) {
-        const seasoning = shuffledAdditional[i]
-        if (!ingredients.includes(seasoning)) {
-          ingredients.push(seasoning)
-          autoCompletedIngredients.push(seasoning)
-        }
-      }
-
-      // 根据烹饪方式补充辅料
-      if (params.cookingMethods && params.cookingMethods.length > 0) {
-        if (params.cookingMethods.includes('炒') || params.cookingMethods.includes('煎')) {
-          if (!ingredients.includes('食用油')) {
-            ingredients.push('食用油')
-            autoCompletedIngredients.push('食用油')
-          }
-        }
-
-        if (params.cookingMethods.includes('蒸')) {
-          if (!ingredients.includes('清水')) {
-            ingredients.push('清水')
-            autoCompletedIngredients.push('清水')
-          }
-        }
-
-        if (params.cookingMethods.includes('炖') || params.cookingMethods.includes('煮')) {
-          if (!ingredients.includes('清水')) {
-            ingredients.push('清水')
-            autoCompletedIngredients.push('清水')
-          }
-        }
-      }
-    }
-
-    // 生成菜品标题
+    const { ingredients, autoCompletedIngredients } = this.processIngredients(params)
     const recipeTitle = this.generateRecipeTitle(params.ingredients)
 
-    // 根据参数生成模拟食谱
     const recipe: Recipe = {
       id: 'mock-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
       title: recipeTitle,
@@ -111,22 +40,78 @@ export class MockAIProvider implements BaseAIProvider {
       flavorPreferences: params.flavorPreferences || [],
       spiceLevel: params.spiceLevel || 'medium',
       sweetnessLevel: params.sweetnessLevel || 'medium',
-      nutrition: {
-        calories: 350,
-        protein: 15,
-        carbs: 40,
-        fat: 12,
-      },
+      nutrition: { calories: 350, protein: 15, carbs: 40, fat: 12 },
       cookingTips: [
         '食材最好新鲜，可以提前准备好',
         '注意火候控制，避免食材过熟或不熟',
         '可以根据个人口味调整调料用量',
       ],
       tags: this.generateTags(params),
-      autoCompletedIngredients: autoCompletedIngredients, // 添加自动补充的食材列表
+      autoCompletedIngredients: autoCompletedIngredients,
     }
 
     return recipe
+  }
+
+  private processIngredients(params: RecipeGenerationParams): { ingredients: string[], autoCompletedIngredients: string[] } {
+    const ingredients = [...params.ingredients]
+    const autoCompletedIngredients: string[] = []
+
+    if (!params.autoCompleteIngredients) {
+      return { ingredients, autoCompletedIngredients }
+    }
+
+    this.addBasicSeasonings(ingredients, autoCompletedIngredients)
+    this.addAdditionalSeasonings(ingredients, autoCompletedIngredients)
+    this.addCookingMethodSpecificIngredients(ingredients, autoCompletedIngredients, params.cookingMethods)
+
+    return { ingredients, autoCompletedIngredients }
+  }
+
+  private addBasicSeasonings(ingredients: string[], autoCompletedIngredients: string[]): void {
+    const basicSeasonings = ['盐', '生抽', '料酒', '白糖', '香油']
+    const seasoningCount = Math.min(3 + Math.floor(Math.random() * 3), basicSeasonings.length)
+
+    for (let i = 0; i < seasoningCount; i++) {
+      const seasoning = basicSeasonings[i]
+      if (!ingredients.includes(seasoning)) {
+        ingredients.push(seasoning)
+        autoCompletedIngredients.push(seasoning)
+      }
+    }
+  }
+
+  private addAdditionalSeasonings(ingredients: string[], autoCompletedIngredients: string[]): void {
+    const additionalSeasonings = ['葱', '姜', '蒜', '八角', '花椒', '胡椒粉', '醋', '蚝油', '辣椒粉']
+    const additionalCount = Math.min(2 + Math.floor(Math.random() * 3), additionalSeasonings.length)
+    const shuffledAdditional = [...additionalSeasonings].sort(() => 0.5 - Math.random())
+
+    for (let i = 0; i < additionalCount; i++) {
+      const seasoning = shuffledAdditional[i]
+      if (!ingredients.includes(seasoning)) {
+        ingredients.push(seasoning)
+        autoCompletedIngredients.push(seasoning)
+      }
+    }
+  }
+
+  private addCookingMethodSpecificIngredients(ingredients: string[], autoCompletedIngredients: string[], cookingMethods?: string[]): void {
+    if (!cookingMethods || cookingMethods.length === 0) {
+      return
+    }
+
+    const needsOil = cookingMethods.includes('炒') || cookingMethods.includes('煎')
+    const needsWater = cookingMethods.includes('蒸') || cookingMethods.includes('炖') || cookingMethods.includes('煮')
+
+    if (needsOil && !ingredients.includes('食用油')) {
+      ingredients.push('食用油')
+      autoCompletedIngredients.push('食用油')
+    }
+
+    if (needsWater && !ingredients.includes('清水')) {
+      ingredients.push('清水')
+      autoCompletedIngredients.push('清水')
+    }
   }
 
   async validateIngredient(ingredient: string): Promise<IngredientValidationResult> {

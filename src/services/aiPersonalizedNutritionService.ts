@@ -149,90 +149,152 @@ ${userProfile.meals.map(meal => `${this.getMealName(meal.type)}：${meal.descrip
 
       console.log('开始解析AI响应:', content.substring(0, 200) + '...')
 
-      // 移除可能的 markdown 标记
-      const cleanContent = content.replace(/```json\s*|\s*```/g, '').trim()
-      console.log('移除markdown后:', cleanContent.substring(0, 200) + '...')
+      // 清理内容
+      const cleanContent = this.cleanResponseContent(content)
 
-      // 尝试提取第一个完整的 JSON 对象
-      const firstBraceIndex = cleanContent.indexOf('{')
-      console.log('找到第一个{的位置:', firstBraceIndex)
-
-      if (firstBraceIndex !== -1) {
-        let braceCount = 0
-        let i = firstBraceIndex
-
-        for (; i < cleanContent.length; i++) {
-          if (cleanContent[i] === '{') braceCount++
-          else if (cleanContent[i] === '}') braceCount--
-
-          if (braceCount === 0) {
-            const firstJsonStr = cleanContent.substring(firstBraceIndex, i + 1)
-            console.log('提取的JSON字符串:', firstJsonStr.substring(0, 300) + '...')
-            try {
-              // 简化的JSON清理：处理所有单位问题
-              let cleanJsonStr = firstJsonStr
-
-              // 第一步：处理不带引号的数字+单位组合: 45g -> "45"
-              cleanJsonStr = cleanJsonStr.replace(/:\s*(\d+(?:\.\d+)?)([a-zA-Z]+)/g, ': "$1"')
-
-              // 第二步：处理带引号的数字+单位组合: "45g" -> "45"
-              cleanJsonStr = cleanJsonStr.replace(/"(\d+(?:\.\d+)?)([a-zA-Z]+)"/g, '"$1"')
-
-              console.log('清理后的JSON:', cleanJsonStr.substring(0, 300) + '...')
-
-              const parsed = JSON.parse(cleanJsonStr)
-              console.log('成功解析AI响应:', parsed)
-
-              // 将营养分析中的字符串数值转换为数字
-              const nutritionAnalysis = parsed.nutritionEstimate || {}
-              const convertedNutrition: Record<string, number> = {}
-
-              // 定义营养素字段名称
-              const nutrientFields = [
-                'calories',
-                'protein',
-                'carbs',
-                'fat',
-                'fiber',
-                'sodium',
-                'calcium',
-                'iron',
-                'vitaminC',
-                'sugar',
-              ]
-
-              for (const field of nutrientFields) {
-                const value = nutritionAnalysis[field]
-                if (typeof value === 'string' && /^\d+(\.\d+)?$/.test(value)) {
-                  convertedNutrition[field] = parseFloat(value)
-                } else if (typeof value === 'number') {
-                  convertedNutrition[field] = value
-                }
-              }
-
-              return {
-                nutritionAnalysis: convertedNutrition as unknown as NutrientAnalysis,
-                personalizedRecommendations: parsed.recommendations || [],
-                healthInsights: parsed.insights || [],
-                riskAssessments: parsed.risks || [],
-                improvementSuggestions: parsed.improvements || [],
-                confidenceScore: parsed.confidence || 75,
-              }
-            } catch (parseError) {
-              console.error('JSON解析失败:', parseError)
-              console.error('失败的JSON字符串:', firstJsonStr.substring(0, 500))
-            }
-            break
-          }
-        }
+      // 尝试JSON解析
+      const jsonResult = this.tryParseAsJson(cleanContent)
+      if (jsonResult) {
+        return jsonResult
       }
 
-      // 如果没有JSON格式，尝试文本解析
+      // 如果JSON解析失败，尝试文本解析
       return this.parseTextResponse(cleanContent)
     } catch (error) {
       console.error('解析AI响应失败:', error)
       return this.getDefaultAnalysis()
     }
+  }
+
+  /**
+   * 清理响应内容
+   */
+  private cleanResponseContent(content: string): string {
+    // 移除可能的 markdown 标记
+    const cleanContent = content.replace(/```json\s*|\s*```/g, '').trim()
+    console.log('移除markdown后:', cleanContent.substring(0, 200) + '...')
+    return cleanContent
+  }
+
+  /**
+   * 尝试将内容解析为JSON
+   */
+  private tryParseAsJson(content: string): Partial<AIAnalysisResult> | null {
+    const jsonString = this.extractJsonFromContent(content)
+    if (!jsonString) {
+      return null
+    }
+
+    try {
+      const cleanedJson = this.cleanJsonString(jsonString)
+      const parsed = JSON.parse(cleanedJson)
+      console.log('成功解析AI响应:', parsed)
+      
+      return this.convertToAnalysisResult(parsed)
+    } catch (parseError) {
+      console.error('JSON解析失败:', parseError)
+      console.error('失败的JSON字符串:', jsonString.substring(0, 500))
+      return null
+    }
+  }
+
+  /**
+   * 从内容中提取JSON字符串
+   */
+  private extractJsonFromContent(content: string): string | null {
+    // 尝试提取第一个完整的 JSON 对象
+    const firstBraceIndex = content.indexOf('{')
+    console.log('找到第一个{的位置:', firstBraceIndex)
+
+    if (firstBraceIndex === -1) {
+      return null
+    }
+
+    let braceCount = 0
+    let i = firstBraceIndex
+
+    for (; i < content.length; i++) {
+      if (content[i] === '{') braceCount++
+      else if (content[i] === '}') braceCount--
+
+      if (braceCount === 0) {
+        const jsonString = content.substring(firstBraceIndex, i + 1)
+        console.log('提取的JSON字符串:', jsonString.substring(0, 300) + '...')
+        return jsonString
+      }
+    }
+
+    return null
+  }
+
+  /**
+   * 清理JSON字符串
+   */
+  private cleanJsonString(jsonStr: string): string {
+    let cleanJsonStr = jsonStr
+
+    // 第一步：处理不带引号的数字+单位组合: 45g -> "45"
+    cleanJsonStr = cleanJsonStr.replace(/:\s*(\d+(?:\.\d+)?)([a-zA-Z]+)/g, ': "$1"')
+
+    // 第二步：处理带引号的数字+单位组合: "45g" -> "45"
+    cleanJsonStr = cleanJsonStr.replace(/"(\d+(?:\.\d+)?)([a-zA-Z]+)"/g, '"$1"')
+
+    console.log('清理后的JSON:', cleanJsonStr.substring(0, 300) + '...')
+    return cleanJsonStr
+  }
+
+  /**
+   * 转换解析结果为分析结果
+   */
+  private convertToAnalysisResult(parsed: Record<string, unknown>): Partial<AIAnalysisResult> {
+    const convertedNutrition = this.convertNutritionAnalysis(parsed.nutritionEstimate || {})
+
+    return {
+      nutritionAnalysis: convertedNutrition as unknown as NutrientAnalysis,
+      personalizedRecommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
+      healthInsights: Array.isArray(parsed.insights) ? parsed.insights : [],
+      riskAssessments: Array.isArray(parsed.risks) ? parsed.risks : [],
+      improvementSuggestions: Array.isArray(parsed.improvements) ? parsed.improvements : [],
+      confidenceScore: typeof parsed.confidence === 'number' ? parsed.confidence : 75,
+    }
+  }
+
+  /**
+   * 转换营养分析数据
+   */
+  private convertNutritionAnalysis(nutritionAnalysis: unknown): Record<string, number> {
+    const convertedNutrition: Record<string, number> = {}
+
+    if (typeof nutritionAnalysis !== 'object' || nutritionAnalysis === null) {
+      return convertedNutrition
+    }
+
+    const nutritionData = nutritionAnalysis as Record<string, unknown>
+
+    // 定义营养素字段名称
+    const nutrientFields = [
+      'calories',
+      'protein',
+      'carbs',
+      'fat',
+      'fiber',
+      'sodium',
+      'calcium',
+      'iron',
+      'vitaminC',
+      'sugar',
+    ]
+
+    for (const field of nutrientFields) {
+      const value = nutritionData[field]
+      if (typeof value === 'string' && /^\d+(\.\d+)?$/.test(value)) {
+        convertedNutrition[field] = parseFloat(value)
+      } else if (typeof value === 'number') {
+        convertedNutrition[field] = value
+      }
+    }
+
+    return convertedNutrition
   }
 
   /**

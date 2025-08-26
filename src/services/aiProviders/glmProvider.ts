@@ -153,143 +153,16 @@ export class GLMProvider implements BaseAIProvider {
     try {
       console.log('GLM生成食谱，参数:', params)
 
-      // 处理自动补充食材
-      let autoCompleteInstructions = ''
-      if (params.autoCompleteIngredients) {
-        autoCompleteInstructions = `
-        请自动添加必要的调料和辅料，使食谱更加完整。
-        在返回的JSON中，请添加一个"autoCompletedIngredients"字段，列出所有自动添加的食材。
-        `
-      }
-
-      // 检查请求类型并构建不同的提示词
-      let prompt = ''
-
-      if (params.requestType === 'dish_recreation' && params.dishName) {
-        // 菜品复现模式
-        prompt = `
-        请为"${params.dishName}"这道菜生成一个详细的制作食谱。请注意这是一道具体的菜品，不是食材。
-        
-        请分析这道菜的特点，推断出所需的食材和制作方法，并以JSON格式返回完整的食谱：
-        
-        菜品名称: ${params.dishName}
-        ${params.servings ? `份量: ${params.servings}人份` : ''}
-        ${params.cookingTime ? `制作时间: ${params.cookingTime}` : ''}
-        ${params.difficulty ? `难度: ${params.difficulty}` : ''}
-        ${autoCompleteInstructions}
-        
-        请确保：
-        1. 准确还原这道菜的传统做法
-        2. 提供详细的食材清单（包括用量）
-        3. 详细的制作步骤
-        4. 相关的烹饪技巧和注意事项
-        `
-      } else {
-        // 传统食材基础模式
-        prompt = `
-        请根据以下食材和要求，生成一个详细的食谱，并以JSON格式返回：
-        
-        食材: ${params.ingredients.join(', ')}
-        ${params.cookingMethods && params.cookingMethods.length > 0 ? `烹饪方式: ${params.cookingMethods.join(', ')}` : ''}
-        ${params.noMethodRestriction ? '不限制烹饪方式（请选择最适合的烹饪方式）' : ''}
-        ${params.kitchenware && params.kitchenware.length > 0 ? `厨具: ${params.kitchenware.join(', ')}` : ''}
-        ${params.dietaryRestrictions && params.dietaryRestrictions.length > 0 ? `饮食限制: ${params.dietaryRestrictions.join(', ')}` : ''}
-        ${params.healthGoals && params.healthGoals.length > 0 ? `健康目标: ${params.healthGoals.join(', ')}` : ''}
-        ${params.allergies && params.allergies.length > 0 ? `过敏原: ${params.allergies.join(', ')}` : ''}
-        ${params.flavorPreferences && params.flavorPreferences.length > 0 ? `口味偏好: ${params.flavorPreferences.join(', ')}` : ''}
-        ${params.spiceLevel ? `辣度: ${params.spiceLevel}` : ''}
-        ${params.sweetnessLevel ? `甜度: ${params.sweetnessLevel}` : ''}
-        ${params.servings ? `份量: ${params.servings}人份` : ''}
-        ${params.cookingTime ? `制作时间: ${params.cookingTime}` : ''}
-        ${params.difficulty ? `难度: ${params.difficulty}` : ''}
-        `
-      }
-
-      prompt += `
-      
-      请严格按照以下JSON格式返回食谱：
-      {
-        "title": "食谱标题",
-        "description": "食谱简短描述",
-        "ingredients": ["配料1及用量", "配料2及用量"],
-        "instructions": ["步骤1", "步骤2", "步骤3"],
-        "cookingTime": "30分钟内",
-        "servings": 2,
-        "difficulty": "简单",
-        "cookingMethods": ["炒", "煎"],
-        "kitchenware": ["炒锅", "铲子"],
-        "dietaryRestrictions": [],
-        "healthGoals": [],
-        "allergies": [],
-        "flavorPreferences": [],
-        "spiceLevel": "中辣",
-        "sweetnessLevel": "微甜",
-        "nutrition": {
-          "calories": 280,
-          "protein": 15,
-          "carbs": 35,
-          "fat": 8
-        },
-        "cookingTips": ["小贴士1", "小贴士2"],
-        "tags": ["标签1", "标签2"]
-        ${params.autoCompleteIngredients ? ',"autoCompletedIngredients": ["自动添加的食材1", "自动添加的食材2"]' : ''}
-      }
-      
-      请确保食谱创意独特、可行，并且充分利用所有提供的食材。
-      ${params.autoCompleteIngredients ? '请务必添加必要的调料和辅料，使食谱更加完整，并在autoCompletedIngredients字段中列出所有自动添加的食材。' : ''}
-      `
-
-      // 调用GLM API
+      const prompt = this.buildRecipePrompt(params)
       const response = await callGLM(prompt, {
         temperature: 0.7,
         maxTokens: 2000,
       })
 
-      // 解析JSON响应
       const recipeResult = parseJsonResponse<Recipe>(response)
+      const recipe = this.buildRecipeFromResult(recipeResult, params)
 
-      // 确保返回的对象符合Recipe接口
-      const recipeTitle = recipeResult.title || '未命名食谱'
-      const recipe: Recipe = {
-        id: 'glm-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
-        title: recipeTitle,
-        name: recipeTitle,
-        description:
-          recipeResult.description || `使用${params.ingredients.join('、')}制作的美味食谱`,
-        ingredients: recipeResult.ingredients || params.ingredients.map(i => `${i} 适量`),
-        instructions: recipeResult.instructions || ['准备食材', '烹饪', '装盘'],
-        steps: recipeResult.steps || recipeResult.instructions || ['准备食材', '烹饪', '装盘'],
-        cookingTime: recipeResult.cookingTime || params.cookingTime || '30分钟内',
-        time: parseInt(recipeResult.cookingTime?.replace(/\D/g, '') || '30'),
-        servings: recipeResult.servings || params.servings || 2,
-        difficulty: recipeResult.difficulty || params.difficulty || '中等',
-        cookingMethods: recipeResult.cookingMethods || params.cookingMethods || ['炒'],
-        kitchenware: recipeResult.kitchenware || params.kitchenware || ['炒锅'],
-        dietaryRestrictions: recipeResult.dietaryRestrictions || params.dietaryRestrictions || [],
-        healthGoals: recipeResult.healthGoals || params.healthGoals || [],
-        allergies: recipeResult.allergies || params.allergies || [],
-        flavorPreferences: recipeResult.flavorPreferences || params.flavorPreferences || [],
-        spiceLevel: recipeResult.spiceLevel || params.spiceLevel || 'medium',
-        sweetnessLevel: recipeResult.sweetnessLevel || params.sweetnessLevel || 'medium',
-        nutrition: recipeResult.nutrition || {
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0,
-        },
-        cookingTips: recipeResult.cookingTips || [
-          '食材最好新鲜，可以提前准备好',
-          '注意火候控制，避免食材过熟或不熟',
-        ],
-        tags: recipeResult.tags || this.generateTags(params),
-        autoCompletedIngredients: recipeResult.autoCompletedIngredients || [],
-      }
-
-      // 如果启用了自动补充食材但没有返回自动补充的食材列表，尝试推断
-      if (
-        params.autoCompleteIngredients &&
-        (!recipe.autoCompletedIngredients || recipe.autoCompletedIngredients.length === 0)
-      ) {
+      if (params.autoCompleteIngredients && (!recipe.autoCompletedIngredients || recipe.autoCompletedIngredients.length === 0)) {
         recipe.autoCompletedIngredients = this.inferAutoCompletedIngredients(
           params.ingredients,
           recipe.ingredients
@@ -299,32 +172,160 @@ export class GLMProvider implements BaseAIProvider {
       return recipe
     } catch (error) {
       console.error('GLM生成食谱失败:', error)
+      return this.createFallbackRecipe(params)
+    }
+  }
 
-      // 返回一个基本的食谱作为备选
-      const fallbackTitle = `${params.ingredients[0] || '食材'}食谱`
-      return {
-        id: 'glm-fallback-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
-        title: fallbackTitle,
-        name: fallbackTitle,
-        description: `使用${params.ingredients.join('、')}制作的美味食谱`,
-        ingredients: params.ingredients.map(i => `${i} 适量`),
-        instructions: ['准备食材', '烹饪', '装盘'],
-        steps: ['准备食材', '烹饪', '装盘'],
-        cookingTime: params.cookingTime || '30分钟内',
-        time: parseInt(params.cookingTime?.replace(/\D/g, '') || '30'),
-        servings: params.servings || 2,
-        difficulty: params.difficulty || '中等',
-        cookingMethods: params.cookingMethods || ['炒'],
-        nutrition: {
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0,
-        },
-        cookingTips: ['食材最好新鲜，可以提前准备好', '注意火候控制，避免食材过熟或不熟'],
-        tags: this.generateTags(params),
-        autoCompletedIngredients: [],
-      }
+  private buildRecipePrompt(params: RecipeGenerationParams): string {
+    const autoCompleteInstructions = params.autoCompleteIngredients 
+      ? `请自动添加必要的调料和辅料，使食谱更加完整。在返回的JSON中，请添加一个"autoCompletedIngredients"字段，列出所有自动添加的食材。`
+      : ''
+
+    const basePrompt = params.requestType === 'dish_recreation' && params.dishName
+      ? this.buildDishRecreationPrompt(params, autoCompleteInstructions)
+      : this.buildIngredientBasedPrompt(params, autoCompleteInstructions)
+
+    return basePrompt + this.getJsonFormatTemplate(params.autoCompleteIngredients)
+  }
+
+  private buildDishRecreationPrompt(params: RecipeGenerationParams, autoCompleteInstructions: string): string {
+    return `
+    请为"${params.dishName}"这道菜生成一个详细的制作食谱。请注意这是一道具体的菜品，不是食材。
+    
+    请分析这道菜的特点，推断出所需的食材和制作方法，并以JSON格式返回完整的食谱：
+    
+    菜品名称: ${params.dishName}
+    ${params.servings ? `份量: ${params.servings}人份` : ''}
+    ${params.cookingTime ? `制作时间: ${params.cookingTime}` : ''}
+    ${params.difficulty ? `难度: ${params.difficulty}` : ''}
+    ${autoCompleteInstructions}
+    
+    请确保：
+    1. 准确还原这道菜的传统做法
+    2. 提供详细的食材清单（包括用量）
+    3. 详细的制作步骤
+    4. 相关的烹饪技巧和注意事项
+    `
+  }
+
+  private buildIngredientBasedPrompt(params: RecipeGenerationParams, autoCompleteInstructions: string): string {
+    const parameterLines = [
+      `食材: ${params.ingredients.join(', ')}`,
+      params.cookingMethods?.length ? `烹饪方式: ${params.cookingMethods.join(', ')}` : '',
+      params.noMethodRestriction ? '不限制烹饪方式（请选择最适合的烹饪方式）' : '',
+      params.kitchenware?.length ? `厨具: ${params.kitchenware.join(', ')}` : '',
+      params.dietaryRestrictions?.length ? `饮食限制: ${params.dietaryRestrictions.join(', ')}` : '',
+      params.healthGoals?.length ? `健康目标: ${params.healthGoals.join(', ')}` : '',
+      params.allergies?.length ? `过敏原: ${params.allergies.join(', ')}` : '',
+      params.flavorPreferences?.length ? `口味偏好: ${params.flavorPreferences.join(', ')}` : '',
+      params.spiceLevel ? `辣度: ${params.spiceLevel}` : '',
+      params.sweetnessLevel ? `甜度: ${params.sweetnessLevel}` : '',
+      params.servings ? `份量: ${params.servings}人份` : '',
+      params.cookingTime ? `制作时间: ${params.cookingTime}` : '',
+      params.difficulty ? `难度: ${params.difficulty}` : '',
+      autoCompleteInstructions
+    ].filter(Boolean)
+
+    return `
+    请根据以下食材和要求，生成一个详细的食谱，并以JSON格式返回：
+    
+    ${parameterLines.join('\n')}
+    `
+  }
+
+  private getJsonFormatTemplate(autoCompleteIngredients?: boolean): string {
+    const autoCompleteField = autoCompleteIngredients 
+      ? ',"autoCompletedIngredients": ["自动添加的食材1", "自动添加的食材2"]' 
+      : ''
+
+    return `
+    
+    请严格按照以下JSON格式返回食谱：
+    {
+      "title": "食谱标题",
+      "description": "食谱简短描述",
+      "ingredients": ["配料1及用量", "配料2及用量"],
+      "instructions": ["步骤1", "步骤2", "步骤3"],
+      "cookingTime": "30分钟内",
+      "servings": 2,
+      "difficulty": "简单",
+      "cookingMethods": ["炒", "煎"],
+      "kitchenware": ["炒锅", "铲子"],
+      "dietaryRestrictions": [],
+      "healthGoals": [],
+      "allergies": [],
+      "flavorPreferences": [],
+      "spiceLevel": "中辣",
+      "sweetnessLevel": "微甜",
+      "nutrition": {
+        "calories": 280,
+        "protein": 15,
+        "carbs": 35,
+        "fat": 8
+      },
+      "cookingTips": ["小贴士1", "小贴士2"],
+      "tags": ["标签1", "标签2"]
+      ${autoCompleteField}
+    }
+    
+    请确保食谱创意独特、可行，并且充分利用所有提供的食材。
+    ${autoCompleteIngredients ? '请务必添加必要的调料和辅料，使食谱更加完整，并在autoCompletedIngredients字段中列出所有自动添加的食材。' : ''}
+    `
+  }
+
+  private buildRecipeFromResult(recipeResult: Partial<Recipe>, params: RecipeGenerationParams): Recipe {
+    const recipeTitle = recipeResult.title || '未命名食谱'
+    
+    return {
+      id: 'glm-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+      title: recipeTitle,
+      name: recipeTitle,
+      description: recipeResult.description || `使用${params.ingredients.join('、')}制作的美味食谱`,
+      ingredients: recipeResult.ingredients || params.ingredients.map(i => `${i} 适量`),
+      instructions: recipeResult.instructions || ['准备食材', '烹饪', '装盘'],
+      steps: recipeResult.steps || recipeResult.instructions || ['准备食材', '烹饪', '装盘'],
+      cookingTime: recipeResult.cookingTime || params.cookingTime || '30分钟内',
+      time: parseInt(recipeResult.cookingTime?.replace(/\D/g, '') || '30'),
+      servings: recipeResult.servings || params.servings || 2,
+      difficulty: recipeResult.difficulty || params.difficulty || '中等',
+      cookingMethods: recipeResult.cookingMethods || params.cookingMethods || ['炒'],
+      kitchenware: recipeResult.kitchenware || params.kitchenware || ['炒锅'],
+      dietaryRestrictions: recipeResult.dietaryRestrictions || params.dietaryRestrictions || [],
+      healthGoals: recipeResult.healthGoals || params.healthGoals || [],
+      allergies: recipeResult.allergies || params.allergies || [],
+      flavorPreferences: recipeResult.flavorPreferences || params.flavorPreferences || [],
+      spiceLevel: recipeResult.spiceLevel || params.spiceLevel || 'medium',
+      sweetnessLevel: recipeResult.sweetnessLevel || params.sweetnessLevel || 'medium',
+      nutrition: recipeResult.nutrition || { calories: 0, protein: 0, carbs: 0, fat: 0 },
+      cookingTips: recipeResult.cookingTips || [
+        '食材最好新鲜，可以提前准备好',
+        '注意火候控制，避免食材过熟或不熟',
+      ],
+      tags: recipeResult.tags || this.generateTags(params),
+      autoCompletedIngredients: recipeResult.autoCompletedIngredients || [],
+    }
+  }
+
+  private createFallbackRecipe(params: RecipeGenerationParams): Recipe {
+    const fallbackTitle = `${params.ingredients[0] || '食材'}食谱`
+    
+    return {
+      id: 'glm-fallback-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+      title: fallbackTitle,
+      name: fallbackTitle,
+      description: `使用${params.ingredients.join('、')}制作的美味食谱`,
+      ingredients: params.ingredients.map(i => `${i} 适量`),
+      instructions: ['准备食材', '烹饪', '装盘'],
+      steps: ['准备食材', '烹饪', '装盘'],
+      cookingTime: params.cookingTime || '30分钟内',
+      time: parseInt(params.cookingTime?.replace(/\D/g, '') || '30'),
+      servings: params.servings || 2,
+      difficulty: params.difficulty || '中等',
+      cookingMethods: params.cookingMethods || ['炒'],
+      nutrition: { calories: 0, protein: 0, carbs: 0, fat: 0 },
+      cookingTips: ['食材最好新鲜，可以提前准备好', '注意火候控制，避免食材过熟或不熟'],
+      tags: this.generateTags(params),
+      autoCompletedIngredients: [],
     }
   }
 

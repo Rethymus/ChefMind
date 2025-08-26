@@ -88,61 +88,114 @@ export async function callGLM(prompt: string, options: GLMCallOptions = {}): Pro
  * @returns 解析后的 JSON 对象
  */
 export function parseJsonResponse<T>(response: string): T {
-  try {
-    // 尝试直接解析
+  /**
+   * 尝试直接解析JSON
+   */
+  function tryDirectParse(response: string): T {
+    return JSON.parse(response) as T
+  }
+
+  /**
+   * 清理JSON响应
+   */
+  function cleanJsonResponse(response: string): string {
+    // 移除可能的 markdown 标记
+    return response.replace(/```json\s*|\s*```/g, '').trim()
+  }
+
+  /**
+   * 清理JSON字符串中的单位问题
+   */
+  function cleanJsonString(jsonStr: string): string {
     try {
-      return JSON.parse(response) as T
-    } catch (e) {
-      // 如果直接解析失败，尝试提取第一个完整的 JSON 部分
-      console.log('直接解析失败，尝试提取JSON:', response)
+      let cleanedJson = jsonStr
 
-      // 移除可能的 markdown 标记
-      const cleanResponse = response.replace(/```json\s*|\s*```/g, '').trim()
+      // 第一步：处理不带引号的数字+单位组合: 45g -> "45"
+      cleanedJson = cleanedJson.replace(/:\s*(\d+(?:\.\d+)?)([a-zA-Z]+)/g, ': "$1"')
 
-      // 尝试找到第一个完整的 JSON 对象
-      const firstBraceIndex = cleanResponse.indexOf('{')
-      if (firstBraceIndex !== -1) {
-        let braceCount = 0
-        let i = firstBraceIndex
+      // 第二步：处理带引号的数字+单位组合: "45g" -> "45"
+      cleanedJson = cleanedJson.replace(/"(\d+(?:\.\d+)?)([a-zA-Z]+)"/g, '"$1"')
 
-        for (; i < cleanResponse.length; i++) {
-          if (cleanResponse[i] === '{') braceCount++
-          else if (cleanResponse[i] === '}') braceCount--
-
-          if (braceCount === 0) {
-            let firstJsonStr = cleanResponse.substring(firstBraceIndex, i + 1)
-            try {
-              // 清理所有单位问题
-              // 第一步：处理不带引号的数字+单位组合: 45g -> "45"
-              firstJsonStr = firstJsonStr.replace(/:\s*(\d+(?:\.\d+)?)([a-zA-Z]+)/g, ': "$1"')
-
-              // 第二步：处理带引号的数字+单位组合: "45g" -> "45"
-              firstJsonStr = firstJsonStr.replace(/"(\d+(?:\.\d+)?)([a-zA-Z]+)"/g, '"$1"')
-
-              return JSON.parse(firstJsonStr) as T
-            } catch (parseError) {
-              console.error('第一个JSON解析失败:', parseError)
-            }
-            break
-          }
-        }
-      }
-
-      // 最后尝试正则表达式匹配
-      const jsonRegex = /\{[\s\S]*?\}/
-      const jsonMatch = jsonRegex.exec(cleanResponse)
-      if (jsonMatch) {
-        // 只清理明确的单位问题
-        const cleanJson = jsonMatch[0].replace(/"(\d+(?:\.\d+)?)([a-zA-Z]+)"/g, '"$1"')
-        return JSON.parse(cleanJson) as T
-      }
-
-      throw e
+      return cleanedJson
+    } catch (cleanError) {
+      console.error('JSON清理失败:', cleanError)
+      return jsonStr
     }
-  } catch (error) {
-    console.error('解析 JSON 响应失败:', error)
-    console.error('原始响应:', response)
-    throw new Error('解析 AI 响应失败，请稍后重试')
+  }
+
+  /**
+   * 从响应中提取JSON字符串
+   */
+  function extractJsonFromResponse(cleanResponse: string): string | null {
+    const firstBraceIndex = cleanResponse.indexOf('{')
+    if (firstBraceIndex === -1) {
+      return null
+    }
+
+    let braceCount = 0
+    let i = firstBraceIndex
+
+    for (; i < cleanResponse.length; i++) {
+      if (cleanResponse[i] === '{') braceCount++
+      else if (cleanResponse[i] === '}') braceCount--
+
+      if (braceCount === 0) {
+        const jsonString = cleanResponse.substring(firstBraceIndex, i + 1)
+        return cleanJsonString(jsonString)
+      }
+    }
+
+    return null
+  }
+
+  /**
+   * 使用正则表达式提取JSON
+   */
+  function tryRegexExtraction(cleanResponse: string): T {
+    const jsonRegex = /\{[\s\S]*?\}/
+    const jsonMatch = jsonRegex.exec(cleanResponse)
+    
+    if (!jsonMatch) {
+      throw new Error('无法找到有效的JSON格式')
+    }
+
+    // 只清理明确的单位问题
+    const cleanJson = jsonMatch[0].replace(/"(\d+(?:\.\d+)?)([a-zA-Z]+)"/g, '"$1"')
+    return JSON.parse(cleanJson) as T
+  }
+
+  /**
+   * 尝试高级解析方法
+   */
+  function tryAdvancedParse(): T {
+    console.log('直接解析失败，尝试提取JSON:', response)
+
+    // 清理并提取JSON
+    const cleanResponse = cleanJsonResponse(response)
+    const extractedJson = extractJsonFromResponse(cleanResponse)
+    
+    if (extractedJson) {
+      return JSON.parse(extractedJson) as T
+    }
+
+    // 如果所有方法都失败，使用正则表达式作为最后尝试
+    return tryRegexExtraction(cleanResponse)
+  }
+
+  try {
+    // 首先尝试直接解析
+    return tryDirectParse(response)
+  } catch (directError) {
+    // 直接解析失败，记录错误并尝试高级解析
+    console.log('直接JSON解析失败，尝试高级解析:', directError)
+    
+    try {
+      return tryAdvancedParse()
+    } catch (error) {
+      console.error('解析 JSON 响应失败:', error)
+      console.error('原始响应:', response)
+      throw new Error('解析 AI 响应失败，请稍后重试')
+    }
   }
 }
 
