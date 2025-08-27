@@ -56,7 +56,7 @@ npm run dev
 yarn dev
 ```
 
-访问 [http://localhost:3000](http://localhost:3000) 查看应用。
+访问 [http://localhost:5173](http://localhost:5173) 查看应用。
 
 ## 架构设计
 
@@ -176,31 +176,31 @@ ChefMind 智食谱包含丰富的自定义组件，可在不同场景中复用�
 </template>
 
 <script setup lang="ts">
-// 使用 Composition API 和 TypeScript
-import { ref, computed } from 'vue'
+  // 使用 Composition API 和 TypeScript
+  import { ref, computed } from 'vue'
 
-// 定义Props类型
-interface Props {
-  title: string
-  count?: number
-}
+  // 定义Props类型
+  interface Props {
+    title: string
+    count?: number
+  }
 
-const props = withDefaults(defineProps<Props>(), {
-  count: 0
-})
+  const props = withDefaults(defineProps<Props>(), {
+    count: 0,
+  })
 
-// 定义Emits类型
-interface Emits {
-  (e: 'update', value: string): void
-}
+  // 定义Emits类型
+  interface Emits {
+    (e: 'update', value: string): void
+  }
 
-const emit = defineEmits<Emits>()
+  const emit = defineEmits<Emits>()
 </script>
 
 <style lang="scss" scoped>
-.my-component {
-  // 组件样式
-}
+  .my-component {
+    // 组件样式
+  }
 </style>
 ```
 
@@ -216,27 +216,25 @@ export const useRecipeStore = defineStore('recipe', () => {
   // 状态
   const recipes = ref<Recipe[]>([])
   const currentRecipe = ref<Recipe | null>(null)
-  
+
   // 计算属性
-  const favoriteRecipes = computed(() => 
-    recipes.value.filter(recipe => recipe.isFavorite)
-  )
-  
+  const favoriteRecipes = computed(() => recipes.value.filter(recipe => recipe.isFavorite))
+
   // 方法
   const addRecipe = (recipe: Recipe) => {
     recipes.value.push(recipe)
   }
-  
+
   const setCurrentRecipe = (recipe: Recipe) => {
     currentRecipe.value = recipe
   }
-  
+
   return {
     recipes,
     currentRecipe,
     favoriteRecipes,
     addRecipe,
-    setCurrentRecipe
+    setCurrentRecipe,
   }
 })
 ```
@@ -256,7 +254,7 @@ export const ingredientCategories = [
       { id: 'tomato', name: '番茄' },
       { id: 'potato', name: '土豆' },
       // 添加新的蔬菜
-    ]
+    ],
   },
   // 添加新的分类
 ]
