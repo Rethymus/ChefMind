@@ -359,11 +359,14 @@
               <el-rate v-model="recipeRating" disabled show-score />
             </div>
           </div>
-          <div class="recipe-image" v-if="generatedRecipe.image">
-            <img
-              :src="generatedRecipe.image"
-              :alt="generatedRecipe.title || generatedRecipe.name"
-            />
+          <div class="recipe-image-container">
+            <div v-if="generatedRecipe.image" class="recipe-image">
+              <img
+                :src="generatedRecipe.image"
+                :alt="generatedRecipe.title || generatedRecipe.name"
+              />
+            </div>
+            <div v-else class="recipe-svg-cover" v-html="generateRecipeSvg(generatedRecipe.title || generatedRecipe.name || '土豆煎蛋卷')"></div>
           </div>
         </div>
 
@@ -520,10 +523,11 @@
             class="history-item"
             @click="loadHistoryRecipe(recipe)"
           >
+            <div class="history-svg-cover" v-html="generateRecipeSvg(recipe.title || recipe.name || '历史菜谱')"></div>
             <div class="history-info">
               <div class="history-title">{{ recipe.title || recipe.name }}</div>
               <div class="history-meta">
-                <span>{{ recipe.difficulty }}</span> · <span>{{ recipe.cookingTime }}</span> ·
+                <span>{{ formatDifficulty(recipe.difficulty) }}</span> · <span>{{ formatCookingTime(recipe.cookingTime) }}</span> ·
                 <span>{{ formatTime(recipe.createdAt) }}</span>
               </div>
             </div>
@@ -539,6 +543,7 @@
   import { ref, reactive, onMounted } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useRouter } from 'vue-router'
+  import { formatDifficulty, formatCookingTime } from '@/utils/formatUtils'
   import { shoppingListService } from '@/services/shoppingListService'
   import {
     Setting,
@@ -569,6 +574,7 @@
   import EnhancedDietaryRestrictionSelection from '@/components/recipe/EnhancedDietaryRestrictionSelection.vue'
   // 导入烹饪方式数据
   import cookingMethods from '@/data/cookingMethods'
+  import { generateRecipeCardSvg } from '@/utils/svgGenerator'
 
   // 初始化路由
   const router = useRouter()
@@ -705,6 +711,11 @@
   const recipeHistory = reactive<any[]>([])
 
   // 方法
+  // 生成菜谱SVG封面
+  const generateRecipeSvg = (recipeName: string): string => {
+    return generateRecipeCardSvg(recipeName, 'medium')
+  }
+
   const removeIngredient = (ingredient: string) => {
     const index = selectedIngredients.value.indexOf(ingredient)
     if (index > -1) {
@@ -1400,18 +1411,53 @@
     align-items: center;
   }
 
-  .recipe-image {
+  .recipe-image-container {
     width: 200px;
     height: 200px;
     margin-left: 20px;
     border-radius: 8px;
-    overflow: hidden;
+    overflow: hidden; /* 关键：裁剪出圆角效果 */
+    position: relative; /* 关键：为绝对定位的SVG提供相对定位容器 */
+    /* 添加渐变背景以突出毛玻璃效果 */
+    background: linear-gradient(135deg, 
+      #667eea 0%, 
+      #764ba2 25%, 
+      #f093fb 50%, 
+      #f5576c 75%, 
+      #4facfe 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 6s ease infinite;
+  }
+
+  .recipe-image {
+    width: 100%;
+    height: 100%;
   }
 
   .recipe-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .recipe-svg-cover {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    animation: gradientShift 3s ease-in-out infinite;
+    
+    :deep(svg) {
+      width: 100%;
+      height: 100%;
+      display: block;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
   }
 
   .recipe-description {
@@ -1566,8 +1612,8 @@
 
   .history-item {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 15px;
     padding: 15px 0;
     cursor: pointer;
     border-bottom: 1px solid var(--el-border-color-lighter);
@@ -1575,6 +1621,35 @@
 
   .history-item:last-child {
     border-bottom: none;
+  }
+
+  .history-svg-cover {
+    width: 60px;
+    height: 45px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    /* 添加动态渐变背景 */
+    background: linear-gradient(135deg, 
+      #667eea 0%, 
+      #764ba2 25%, 
+      #f093fb 50%, 
+      #f5576c 75%, 
+      #4facfe 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 6s ease infinite;
+    
+    :deep(svg) {
+      width: 100%;
+      height: 100%;
+      display: block;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
   }
 
   .history-info {
@@ -1631,5 +1706,11 @@
     .recipe-actions .el-button {
       width: 100%;
     }
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
 </style>

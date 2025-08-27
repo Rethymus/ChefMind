@@ -50,7 +50,7 @@
           <div class="info-icon">📊</div>
           <div class="info-content">
             <div class="info-label">难度</div>
-            <div class="info-value">{{ recipe.difficulty }}</div>
+            <div class="info-value">{{ formatDifficulty(recipe.difficulty) }}</div>
           </div>
         </div>
 
@@ -174,7 +174,7 @@
   import { defineProps, defineEmits, ref, watch } from 'vue'
   import { shoppingListService } from '@/services/shoppingListService'
   import type { Recipe } from '@/types/recipe'
-  import { formatCookingTime, formatServings } from '@/utils/formatUtils'
+  import { formatCookingTime, formatServings, formatDifficulty } from '@/utils/formatUtils'
   import { getIngredientIcon } from '@/utils/ingredientIconMapper'
 
   const props = defineProps<{

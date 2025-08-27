@@ -33,7 +33,7 @@
                     <div class="recipe-meta">
                       <span class="meta-item">🕐 {{ formatCookingTime(recipe.cookingTime) }}</span>
                       <span class="meta-item">👥 {{ formatServings(recipe.servings) }}</span>
-                      <span class="meta-item">⭐ {{ recipe.difficulty }}/5</span>
+                      <span class="meta-item">⭐ {{ formatDifficulty(recipe.difficulty) }}</span>
                     </div>
                   </div>
                 </div>
@@ -170,7 +170,7 @@
   import { ref, computed, onMounted } from 'vue'
   import { ElMessage } from 'element-plus'
   import { Search, Plus, Delete, Cpu, Check, Loading } from '@element-plus/icons-vue'
-  import { formatCookingTime, formatServings } from '@/utils/formatUtils'
+  import { formatCookingTime, formatServings, formatDifficulty } from '@/utils/formatUtils'
 
   // 接口定义
   interface Recipe {

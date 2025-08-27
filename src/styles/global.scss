@@ -335,3 +335,36 @@ input, select, textarea {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-color-lighter);
 }
+
+/* SVG封面优化 - 确保SVG完全填充容器并支持圆角 */
+.recipe-svg-cover,
+.result-svg-cover,
+.history-svg-cover {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  
+  svg {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    object-fit: cover !important;
+  }
+}
+
+/* 卡片边框修复 */
+.recipe-card,
+.ai-recipe-card,
+.result-card {
+  border: none !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+  overflow: hidden !important; /* 确保圆角生效 */
+}

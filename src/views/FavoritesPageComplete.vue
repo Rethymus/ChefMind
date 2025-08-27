@@ -43,16 +43,8 @@
         >
           <!-- 菜谱封面 -->
           <div class="recipe-cover" @click="viewRecipeDetail(recipe)">
-            <img 
-              v-if="recipe.image" 
-              :src="recipe.image" 
-              :alt="recipe.name || recipe.title"
-              @error="handleImageError"
-              class="recipe-image"
-            />
-            <div v-else class="recipe-placeholder">
-              🍽️
-            </div>
+            <!-- 使用SVG生成与菜谱名称匹配的封面 -->
+            <div class="recipe-svg-cover" v-html="generateRecipeSvg(recipe.name || recipe.title || '美味菜谱')"></div>
             <div class="recipe-overlay">
               <button class="view-detail-btn">
                 👁️ 查看详情
@@ -71,10 +63,10 @@
             <!-- 菜谱标签 -->
             <div class="recipe-tags">
               <span v-if="recipe.cookingTime" class="tag time-tag">
-                ⏱️ {{ recipe.cookingTime }}分钟
+                ⏱️ {{ formatCookingTime(recipe.cookingTime) }}
               </span>
               <span v-if="recipe.difficulty" class="tag difficulty-tag">
-                ⭐ 难度{{ recipe.difficulty }}/5
+                ⭐ {{ formatDifficulty(recipe.difficulty) }}
               </span>
               <span v-if="recipe.ingredients" class="tag ingredient-tag">
                 🥗 {{ recipe.ingredients.length }}种食材
@@ -130,6 +122,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { generateRecipeCardSvg } from '@/utils/svgGenerator'
+import { formatDifficulty, formatCookingTime } from '@/utils/formatUtils'
 
 // 类型定义
 interface Recipe {
@@ -340,6 +334,11 @@ const handleImageError = (event: Event) => {
   console.log('🖼️ 图片加载失败:', img.src)
 }
 
+// 生成菜谱SVG封面
+const generateRecipeSvg = (recipeName: string): string => {
+  return generateRecipeCardSvg(recipeName, 'medium')
+}
+
 // 组件挂载
 onMounted(() => {
   console.log('🚀 FavoritesPageComplete 组件已挂载')
@@ -539,6 +538,41 @@ onMounted(() => {
   height: 220px;
   overflow: hidden;
   cursor: pointer;
+  border-radius: 16px 16px 0 0;
+  /* 动态渐变背景 - 蓝紫色到粉红色 */
+  background: linear-gradient(135deg, 
+    #667eea 0%, 
+    #764ba2 25%, 
+    #f093fb 50%, 
+    #f5576c 75%, 
+    #4facfe 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 6s ease infinite;
+}
+
+.recipe-svg-cover {
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  width: calc(100% + 24px);
+  height: calc(100% + 24px);
+  padding: 0;
+  margin: 0;
+  
+  :deep(svg) {
+    width: 100%;
+    height: 100%;
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: none;
+  }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .recipe-image {
@@ -565,15 +599,15 @@ onMounted(() => {
 
 .recipe-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  top: 1rem;
+  right: 1rem;
+  bottom: auto;
+  left: auto;
+  background: transparent;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
+  align-items: flex-start;
+  justify-content: flex-end;
+  opacity: 1;
   transition: opacity 0.3s ease;
 }
 
@@ -582,21 +616,20 @@ onMounted(() => {
 }
 
 .view-detail-btn {
-  background: rgba(255, 255, 255, 0.9);
-  color: #2d3748;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
   border: none;
-  padding: 12px 24px;
-  border-radius: 25px;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
   cursor: pointer;
-  font-weight: 600;
-  font-size: 16px;
-  transform: translateY(10px);
+  font-weight: 500;
+  font-size: 0.8rem;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
 }
 
-.recipe-cover:hover .view-detail-btn {
-  transform: translateY(0);
+.view-detail-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
 }
 
 /* 菜谱信息 */

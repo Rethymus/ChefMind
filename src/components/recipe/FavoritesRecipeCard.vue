@@ -1,34 +1,34 @@
 <template>
-  <div class="auto-recipe-card" @click="handleViewDetails">
-    <!-- SVG 封面 -->
+  <div class="favorites-recipe-card" @click="handleViewDetails">
     <div class="recipe-image-container">
-      <div 
-        class="recipe-svg-cover" 
-        v-html="generateRecipeSvg(recipe.name || recipe.title)"
-        style="position: absolute; top: -12px; left: -12px; width: calc(100% + 24px); height: calc(100% + 24px); padding: 0; margin: 0; z-index: 1;"
-      ></div>
+      <!-- 使用SVG生成与菜谱名称匹配的封面 -->
+      <div class="recipe-svg-cover" v-html="generateRecipeSvg(recipe.name || recipe.title)"></div>
       <div class="recipe-overlay">
         <span v-if="recipe.difficulty" class="recipe-difficulty">{{ formatDifficulty(recipe.difficulty) }}</span>
         <span v-if="recipe.cookingTime" class="recipe-time">{{ formatCookingTime(recipe.cookingTime) }}</span>
       </div>
     </div>
 
-    <!-- 菜谱信息 -->
     <div class="recipe-content">
       <h3 class="recipe-title">{{ recipe.name || recipe.title }}</h3>
       <p v-if="recipe.description" class="recipe-description">{{ recipe.description }}</p>
 
-      <!-- 评分 -->
-      <div v-if="recipe.rating" class="recipe-meta">
-        <div class="recipe-rating">
+      <div class="recipe-meta">
+        <div v-if="recipe.rating" class="recipe-rating">
           <div class="stars">
             <span
               v-for="i in 5"
               :key="i"
               :class="['star', { filled: i <= Math.floor(recipe.rating) }]"
-            >★</span>
+              >★</span
+            >
           </div>
           <span class="rating-text">({{ recipe.rating.toFixed(1) }})</span>
+        </div>
+        <div v-if="recipe.tags" class="recipe-tags">
+          <span v-for="tag in recipe.tags.slice(0, 2)" :key="tag" class="recipe-tag">
+            {{ tag }}
+          </span>
         </div>
       </div>
 
@@ -58,6 +58,7 @@
           v-if="showViewButton" 
           class="action-btn primary" 
           @click.stop="handleViewDetails"
+          title="查看详情"
         >
           <span class="btn-icon">👁️</span>
           查看详情
@@ -95,9 +96,14 @@ const emit = defineEmits<{
   editCategory: [recipe: Recipe]
 }>()
 
-// 生成菜谱SVG封面
+// 生成菜谱SVG封面 - 与SearchView完全相同
 const generateRecipeSvg = (recipeName: string): string => {
-  return generateRecipeCardSvg(recipeName, 'medium')
+  console.log('🎨 FavoritesCard - Recipe Name:', recipeName)
+  console.log('🎨 FavoritesCard - Recipe Object:', props.recipe)
+  const svg = generateRecipeCardSvg(recipeName, 'medium')
+  console.log('🎨 FavoritesCard - Generated SVG length:', svg.length)
+  console.log('🎨 FavoritesCard - SVG preview:', svg.substring(0, 200))
+  return svg
 }
 
 // 处理查看详情
@@ -116,17 +122,16 @@ const handleEditCategory = () => {
 }
 </script>
 
-<style scoped lang="scss">
-@import '@/styles/variables.scss';
-
-.auto-recipe-card {
-  background: white;
+<style lang="scss" scoped>
+// 与SearchView完全相同的样式
+.favorites-recipe-card {
+  background: var(--bg-color-secondary);
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   cursor: pointer;
-  padding: 0;
+  padding: 0; /* 确保没有内边距 */
 
   &:hover {
     transform: translateY(-8px);
@@ -151,12 +156,6 @@ const handleEditCategory = () => {
   animation: gradientShift 6s ease infinite;
 }
 
-@keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
 .recipe-svg-cover {
   position: absolute;
   top: -12px;
@@ -176,6 +175,12 @@ const handleEditCategory = () => {
   }
 }
 
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 .recipe-overlay {
   position: absolute;
   top: 1rem;
@@ -187,37 +192,34 @@ const handleEditCategory = () => {
     background: rgba(0, 0, 0, 0.7);
     color: white;
     padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
     font-weight: 500;
   }
 }
 
 .recipe-content {
-  padding: 1.5rem;
+  padding: 1.2rem;
 }
 
 .recipe-title {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 600;
-  margin: 0 0 0.5rem 0;
-  color: #2c3e50;
-  line-height: 1.3;
+  color: var(--heading-color);
+  margin-bottom: 0.5rem;
 }
 
 .recipe-description {
-  color: #6c757d;
-  font-size: 0.9rem;
+  color: var(--text-color-secondary);
+  margin-bottom: 1rem;
   line-height: 1.5;
-  margin: 0 0 1rem 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  font-size: 0.9rem;
 }
 
 .recipe-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1rem;
 }
 
@@ -229,21 +231,34 @@ const handleEditCategory = () => {
 
 .stars {
   display: flex;
-  gap: 1px;
+  gap: 0.1rem;
 }
 
 .star {
   color: #ddd;
   font-size: 1rem;
-
+  
   &.filled {
-    color: #ffc107;
+    color: #ffd700;
   }
 }
 
 .rating-text {
-  font-size: 0.9rem;
-  color: #6c757d;
+  font-size: 0.85rem;
+  color: var(--text-color-secondary);
+}
+
+.recipe-tags {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.recipe-tag {
+  background: var(--primary-color);
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
@@ -256,51 +271,35 @@ const handleEditCategory = () => {
 .action-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
   border: none;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  white-space: nowrap;
-}
+  transition: all 0.3s ease;
 
-.action-btn.primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
+  &.primary {
+    background: var(--primary-color);
+    color: white;
 
-.action-btn.primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
+    &:hover {
+      background: var(--primary-color-dark);
+    }
+  }
 
-.action-btn.secondary {
-  background: #f8f9fa;
-  color: #495057;
-  border: 1px solid #dee2e6;
-}
+  &.secondary {
+    background: var(--bg-color-tertiary);
+    color: var(--text-color-primary);
 
-.action-btn.secondary:hover {
-  background: #e9ecef;
-  transform: translateY(-1px);
+    &:hover {
+      background: var(--hover-color);
+    }
+  }
 }
 
 .btn-icon {
-  font-size: 1rem;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .recipe-actions {
-    flex-direction: column;
-  }
-
-  .action-btn {
-    justify-content: center;
-  }
+  font-size: 0.9rem;
 }
 </style>

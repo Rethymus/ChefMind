@@ -49,6 +49,7 @@ declare module 'vue' {
     EnhancedUserBehaviorAnalytics: typeof import('./src/components/analytics/EnhancedUserBehaviorAnalytics.vue')['default']
     ErrorAlert: typeof import('./src/components/common/ErrorAlert.vue')['default']
     ErrorBoundary: typeof import('./src/components/common/ErrorBoundary.vue')['default']
+    FavoritesRecipeCard: typeof import('./src/components/recipe/FavoritesRecipeCard.vue')['default']
     FeatureIntegrationTest: typeof import('./src/components/recipe/FeatureIntegrationTest.vue')['default']
     GLMAPITester: typeof import('./src/components/ai/GLMAPITester.vue')['default']
     IngredientNutritionAnalysis: typeof import('./src/components/ai/components/IngredientNutritionAnalysis.vue')['default']

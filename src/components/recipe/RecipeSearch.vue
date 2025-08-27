@@ -46,6 +46,10 @@
 
       <div class="ai-recipe-container">
         <div v-for="recipe in aiRecommendedRecipes" :key="recipe.id" class="ai-recipe-card">
+          <div class="recipe-svg-header">
+            <!-- 使用SVG生成与菜谱名称匹配的封面 -->
+            <div class="recipe-svg-cover" v-html="generateRecipeSvg(recipe.name)"></div>
+          </div>
           <div class="recipe-header">
             <div class="recipe-title-section">
               <h3 class="recipe-title">{{ recipe.name }}</h3>
@@ -83,7 +87,7 @@
               <span class="info-icon">📊</span>
               <div class="info-content">
                 <span class="info-label">难度</span>
-                <span class="info-value">{{ recipe.difficulty }}</span>
+                <span class="info-value">{{ formatDifficulty(recipe.difficulty) }}</span>
               </div>
             </div>
             <div class="info-item">
@@ -141,14 +145,19 @@
           class="result-card"
           @click="selectRecipe(recipe)"
         >
-          <div class="result-header">
-            <h3 class="result-title">{{ recipe.name }}</h3>
-            <div class="result-rating">
-              <span v-for="i in 5" :key="i" :class="['star', { filled: i <= recipe.rating }]"
-                >★</span
-              >
-            </div>
+          <div class="result-svg-header">
+            <!-- 使用SVG生成与菜谱名称匹配的封面 -->
+            <div class="result-svg-cover" v-html="generateRecipeSvg(recipe.name)"></div>
           </div>
+          <div class="result-content">
+            <div class="result-header">
+              <h3 class="result-title">{{ recipe.name }}</h3>
+              <div class="result-rating">
+                <span v-for="i in 5" :key="i" :class="['star', { filled: i <= recipe.rating }]"
+                  >★</span
+                >
+              </div>
+            </div>
 
           <p class="result-description">{{ truncateText(recipe.description, 100) }}</p>
 
@@ -159,13 +168,14 @@
             </span>
             <span class="meta-item">
               <span class="meta-icon">📊</span>
-              {{ recipe.difficulty }}
+              {{ formatDifficulty(recipe.difficulty) }}
             </span>
           </div>
 
           <div class="result-ingredients">
             <span class="ingredients-label">主要食材:</span>
             <span class="ingredients-list">{{ getMainIngredients(recipe) }}</span>
+          </div>
           </div>
         </div>
       </div>
@@ -179,7 +189,8 @@
   import { ElMessageBox } from 'element-plus'
   import { useRecipeService, type Recipe } from '@/services/recipeService'
   import { aiService } from '@/services/aiService'
-  import { formatCookingTime, formatServings } from '@/utils/formatUtils'
+  import { formatCookingTime, formatServings, formatDifficulty } from '@/utils/formatUtils'
+  import { generateRecipeCardSvg } from '@/utils/svgGenerator'
 
   const emit = defineEmits(['select-recipe', 'search'])
 
@@ -256,6 +267,11 @@
   })
 
   // 方法
+  // 生成菜谱SVG封面
+  const generateRecipeSvg = (recipeName: string): string => {
+    return generateRecipeCardSvg(recipeName, 'medium')
+  }
+
   // 开始烹饪确认方法
   const startCookingWithConfirm = (recipe: Recipe) => {
     ElMessageBox.confirm('是否开始烹饪这道菜？系统将启动计时器和步骤指导。', '开始烹饪', {
@@ -389,6 +405,7 @@
                   typeof step === 'string' ? step : step.description || step.toString()
                 )
               : ['准备食材', '预处理', '调味腌制', '烹饪制作', '装盘上桌'],
+            image: '/images/recipes/gongbao-jiding.svg', // 添加图片路径
           } as Recipe,
         ]
       } else {
@@ -410,6 +427,7 @@
           cookingMethods: ['炒制', '调味'], // 添加必需的烹饪方法
           ingredients: [`新鲜${query}`, '橄榄油', '蒜蓉', '黑胡椒', '香草', '柠檬汁'],
           steps: ['准备食材', '预处理', '调味腌制', '烹饪制作', '装盘上桌'],
+          image: '/images/recipes/fanqie-jidan-mian.svg', // 添加图片路径
         },
       ]
 
@@ -830,15 +848,63 @@
   .result-card {
     background-color: var(--bg-color-light);
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 0;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     transition: all 0.3s ease;
     cursor: pointer;
+    overflow: hidden;
 
     &:hover {
       transform: translateY(-5px);
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
     }
+  }
+
+  .result-svg-header {
+    position: relative;
+    height: 150px;
+    overflow: hidden; /* 关键：裁剪出圆角效果 */
+    margin: 0;
+    /* 动态渐变背景 - 蓝紫色到粉红色 */
+    background: linear-gradient(135deg, 
+      #667eea 0%, 
+      #764ba2 25%, 
+      #f093fb 50%, 
+      #f5576c 75%, 
+      #4facfe 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 6s ease infinite;
+    border-radius: 12px 12px 0 0; /* 容器的圆角 */
+
+    .result-svg-cover {
+      position: absolute;
+      top: -12px;
+      left: -12px;
+      width: calc(100% + 24px);
+      height: calc(100% + 24px);
+      display: block;
+      padding: 0;
+      margin: 0;
+      
+      :deep(svg) {
+        width: 100%;
+        height: 100%;
+        display: block;
+        margin: 0;
+        padding: 0;
+        border: none;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+      }
+    }
+
+    &:hover :deep(svg) {
+      transform: scale(1.05);
+    }
+  }
+
+  .result-content {
+    padding: 1.5rem;
   }
 
   .result-header {
@@ -981,10 +1047,11 @@
   .ai-recipe-card {
     background: white;
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 0; /* 移除内边距，让SVG可以完全填充 */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
     border: 1px solid #e9ecef;
     transition: all 0.3s ease;
+    overflow: hidden; /* 确保圆角效果 */
   }
 
   .ai-recipe-card:hover {
@@ -992,8 +1059,52 @@
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
   }
 
+  .recipe-svg-header {
+    position: relative;
+    height: 150px;
+    overflow: hidden; /* 关键：裁剪出圆角效果 */
+    margin: 0;
+    /* 动态渐变背景 - 蓝紫色到粉红色 */
+    background: linear-gradient(135deg, 
+      #667eea 0%, 
+      #764ba2 25%, 
+      #f093fb 50%, 
+      #f5576c 75%, 
+      #4facfe 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 6s ease infinite;
+    border-radius: 12px 12px 0 0; /* 容器的圆角 */
+
+    .recipe-svg-cover {
+      position: absolute;
+      top: -12px;
+      left: -12px;
+      width: calc(100% + 24px);
+      height: calc(100% + 24px);
+      display: block;
+      padding: 0;
+      margin: 0;
+      
+      :deep(svg) {
+        width: 100%;
+        height: 100%;
+        display: block;
+        margin: 0;
+        padding: 0;
+        border: none;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+      }
+    }
+
+    &:hover :deep(svg) {
+      transform: scale(1.05);
+    }
+  }
+
   .recipe-header {
     margin-bottom: 1rem;
+    padding: 1.5rem 1.5rem 0 1.5rem; /* 为内容添加内边距 */
   }
 
   .recipe-title-section {
@@ -1051,13 +1162,14 @@
     font-size: 0.9rem;
     line-height: 1.5;
     margin-bottom: 1rem;
+    padding: 0 1.5rem; /* 为描述添加左右内边距 */
   }
 
   .recipe-info-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
-    margin-bottom: 1rem;
+    margin: 0 1.5rem 1rem 1.5rem; /* 调整外边距以配合内边距 */
     padding: 1rem;
     background: #f8f9fa;
     border-radius: 8px;
@@ -1092,6 +1204,7 @@
 
   .ingredients-section {
     margin-bottom: 1.5rem;
+    padding: 0 1.5rem; /* 为食材部分添加左右内边距 */
   }
 
   .ingredients-title {
@@ -1138,6 +1251,7 @@
     display: flex;
     gap: 0.75rem;
     flex-wrap: wrap;
+    padding: 0 1.5rem 1.5rem 1.5rem; /* 为操作按钮添加内边距 */
   }
 
   .action-btn {
@@ -1224,5 +1338,11 @@
     .action-btn {
       justify-content: center;
     }
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
 </style>

@@ -15,7 +15,9 @@
 
         <div class="recipes-grid">
           <div v-for="recipe in popularRecipes" :key="recipe.id" class="recipe-card">
-            <div class="recipe-info">
+            <div class="recipe-image-container">
+              <!-- 使用SVG生成与菜谱名称匹配的封面 -->
+              <div class="recipe-svg-cover" v-html="generateRecipeSvg(recipe.title)"></div>
               <div class="recipe-overlay">
                 <span class="recipe-difficulty">{{ formatDifficulty(recipe.difficulty) }}</span>
                 <span class="recipe-time">{{ formatCookingTime(recipe.cookingTime) }}</span>
@@ -98,6 +100,7 @@
   import type { Recipe } from '@/types/recipe'
   import { popularRecipes } from '@/data/mockData'
   import { formatCookingTime, formatDifficulty } from '@/utils/formatUtils'
+  import { generateRecipeCardSvg } from '@/utils/svgGenerator'
 
   const recipeService = useRecipeService()
   const router = useRouter()
@@ -106,7 +109,10 @@
   const searchHistoryRef = ref<InstanceType<typeof RecipeSearchHistory> | null>(null)
   const recipeSearchRef = ref<InstanceType<typeof RecipeSearch> | null>(null)
 
-  // 处理搜索
+// 生成菜谱SVG封面
+const generateRecipeSvg = (recipeName: string): string => {
+  return generateRecipeCardSvg(recipeName, 'medium')
+}  // 处理搜索
   const handleSearch = (query: string) => {
     // 添加到搜索历史
     if (searchHistoryRef.value) {
@@ -276,6 +282,7 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
     cursor: pointer;
+    padding: 0; /* 确保没有内边距 */
 
     &:hover {
       transform: translateY(-8px);
@@ -283,21 +290,46 @@
     }
   }
 
-  .recipe-image {
-    position: relative;
-    height: 180px;
-    overflow: hidden;
+  .recipe-image-container {
+    width: 100%;
+    height: 150px;
+    border-radius: 16px 16px 0 0;
+    overflow: hidden; /* 关键：裁剪出圆角效果 */
+    position: relative; /* 关键：为绝对定位的SVG提供相对定位容器 */
+    /* 动态渐变背景 - 蓝紫色到粉红色 */
+    background: linear-gradient(135deg, 
+      #667eea 0%, 
+      #764ba2 25%, 
+      #f093fb 50%, 
+      #f5576c 75%, 
+      #4facfe 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 6s ease infinite;
+  }
 
-    img {
+  .recipe-svg-cover {
+    position: absolute;
+    top: -12px;
+    left: -12px;
+    width: calc(100% + 24px);
+    height: calc(100% + 24px);
+    padding: 0;
+    margin: 0;
+    
+    :deep(svg) {
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      transition: transform 0.3s ease;
+      display: block;
+      margin: 0;
+      padding: 0;
+      border: none;
     }
+  }
 
-    &:hover img {
-      transform: scale(1.05);
-    }
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
 
   .recipe-overlay {

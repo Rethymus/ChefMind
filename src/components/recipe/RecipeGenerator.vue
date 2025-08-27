@@ -149,8 +149,8 @@
                 </div>
                 <p class="recipe-description">{{ recipe.description }}</p>
                 <div class="recipe-meta">
-                  <span class="cooking-time">{{ recipe.cookingTime }}</span>
-                  <span class="difficulty">{{ recipe.difficulty }}</span>
+                  <span class="cooking-time">{{ formatCookingTime(recipe.cookingTime) }}</span>
+                  <span class="difficulty">{{ formatDifficulty(recipe.difficulty) }}</span>
                 </div>
               </div>
             </div>
@@ -200,6 +200,7 @@
 <script setup lang="ts">
   import { ref, computed } from 'vue'
   import IngredientRecognition from './IngredientRecognition.vue'
+  import { formatDifficulty, formatCookingTime } from '@/utils/formatUtils'
   import {
     useRecipeService,
     type Recipe,
