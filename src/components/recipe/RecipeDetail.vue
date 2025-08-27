@@ -28,6 +28,14 @@
         </div>
       </div>
 
+      <!-- 多媒体平台跳转 -->
+      <RecipeMultimediaPlatforms 
+        v-if="recipe"
+        :recipe-name="recipe.name || recipe.title || ''"
+        :compact="true"
+        @platform-click="handlePlatformClick"
+      />
+
       <!-- 食谱描述 -->
       <div class="recipe-media-section">
         <div class="recipe-tags" v-if="recipe.tags && recipe.tags.length">
@@ -176,6 +184,7 @@
   import type { Recipe } from '@/types/recipe'
   import { formatCookingTime, formatServings, formatDifficulty } from '@/utils/formatUtils'
   import { getIngredientIcon } from '@/utils/ingredientIconMapper'
+  import RecipeMultimediaPlatforms from '@/components/recipe/RecipeMultimediaPlatforms.vue'
 
   const props = defineProps<{
     recipe?: Recipe
@@ -286,6 +295,16 @@
         message: '无法添加食材到购物清单，请稍后重试',
       })
     }
+  }
+
+  // 多媒体平台跳转事件处理
+  const handlePlatformClick = (platform: string, recipeName: string) => {
+    console.log(`用户点击了${platform}平台，搜索菜谱: ${recipeName}`)
+    emit('notification', {
+      type: 'info',
+      title: '跳转提示',
+      message: `正在为您跳转到${platform}搜索相关教程`,
+    })
   }
 </script>
 
@@ -632,6 +651,59 @@
 
   .action-button.print:hover {
     background-color: var(--hover-color);
+  }
+
+  /* 多媒体平台跳转样式 */
+  .multimedia-section {
+    background-color: var(--bg-color-secondary);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .multimedia-description {
+    color: var(--text-color-secondary);
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+  }
+
+  .multimedia-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.8rem;
+  }
+
+  .multimedia-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+    font-size: 0.9rem;
+  }
+
+  .multimedia-button:hover {
+    border-color: var(--primary-color);
+    background-color: var(--hover-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .platform-icon {
+    font-size: 1.2rem;
+  }
+
+  .platform-name {
+    font-weight: 500;
+    color: var(--heading-color);
   }
 
   .shopping-button {

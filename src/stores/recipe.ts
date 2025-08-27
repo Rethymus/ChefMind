@@ -148,6 +148,27 @@ export const useRecipeStore = defineStore('recipe', () => {
     }
   }
 
+  const removeRecipe = async (recipeId: string) => {
+    try {
+      // 从收藏列表中移除菜谱
+      const index = savedRecipes.value.findIndex(r => r.id === recipeId)
+      if (index > -1) {
+        savedRecipes.value.splice(index, 1)
+        // 更新本地存储
+        localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes.value))
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('移除菜谱失败:', error)
+      return false
+    }
+  }
+
+  const isRecipeSaved = (recipeId: string) => {
+    return savedRecipes.value.some(r => r.id === recipeId)
+  }
+
   const resetSelection = () => {
     selectedIngredients.value = []
     selectedMethods.value = []
@@ -212,6 +233,8 @@ export const useRecipeStore = defineStore('recipe', () => {
     setStep,
     generateRecipes,
     saveRecipe,
+    removeRecipe,
+    isRecipeSaved,
     resetSelection,
     loadSavedRecipes,
   }

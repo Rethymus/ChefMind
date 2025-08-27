@@ -8,11 +8,23 @@
 tests/
 ├── unit/           # 单元测试
 │   ├── components/ # 组件测试
+│   │   ├── ai/     # AI组件测试
+│   │   ├── recipe/ # 菜谱组件测试
+│   │   └── common/ # 通用组件测试
 │   ├── services/   # 服务测试
+│   │   ├── aiService.test.ts      # AI服务测试
+│   │   ├── glmService.test.ts     # GLM服务测试
+│   │   └── analyticsService.test.ts # 分析服务测试
 │   ├── stores/     # 状态管理测试
+│   │   ├── recipe.test.ts         # 菜谱状态测试
+│   │   └── theme.test.ts          # 主题状态测试
 │   └── utils/      # 工具函数测试
+│       ├── aiUtils.test.ts        # AI工具测试
+│       ├── svgGenerator.test.ts   # SVG生成器测试
+│       └── formatUtils.test.ts    # 格式化工具测试
 ├── e2e/            # 端到端测试
-└── integration/    # 集成测试
+├── integration/    # 集成测试
+└── setup.ts        # 测试环境配置
 ```
 
 ## 运行测试
@@ -21,13 +33,14 @@ tests/
 # 运行所有测试
 npm run test
 
-# 运行单元测试
-npm run test:unit
-
-# 运行端到端测试
-npm run test:e2e
+# 运行测试并显示覆盖率
+npm run test:coverage
 
 # 使用 UI 界面运行测试
+npm run test:ui
+
+# 持续监听测试
+npm run test -- --watch
 npm run test:ui
 ```
 

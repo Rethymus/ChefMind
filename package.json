@@ -1,6 +1,6 @@
 {
   "name": "chefmind-vue",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "description": "ChefMind 智食谱 - AI驱动的智能菜谱生成平台",
   "type": "module",
   "scripts": {

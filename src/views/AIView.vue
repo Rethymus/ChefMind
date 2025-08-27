@@ -479,10 +479,25 @@
 
         <!-- 操作按钮 -->
         <div class="recipe-actions">
-          <el-button type="success" size="large" @click="saveRecipe">
-            <el-icon><Collection /></el-icon>
-            保存食谱
-          </el-button>
+          <div class="favorite-section">
+            <el-button 
+              :type="isRecipeFavorited ? 'danger' : 'success'" 
+              size="large" 
+              @click="toggleFavorite"
+              :loading="favoriteLoading"
+              class="favorite-btn">
+              <el-icon>
+                <Collection v-if="!isRecipeFavorited" />
+                <Star v-else />
+              </el-icon>
+              {{ isRecipeFavorited ? '取消收藏' : '收藏食谱' }}
+            </el-button>
+            <!-- 收藏状态指示器 -->
+            <div v-if="isRecipeFavorited" class="favorite-indicator">
+              <el-icon class="favorite-icon"><Star /></el-icon>
+              <span class="favorite-text">已收藏</span>
+            </div>
+          </div>
           <el-button type="info" size="large" @click="shareRecipe">
             <el-icon><Share /></el-icon>
             分享食谱
@@ -540,11 +555,12 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, onMounted } from 'vue'
+  import { ref, reactive, onMounted, computed } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useRouter } from 'vue-router'
   import { formatDifficulty, formatCookingTime } from '@/utils/formatUtils'
   import { shoppingListService } from '@/services/shoppingListService'
+  import { useRecipeStore } from '@/stores/recipe'
   import {
     Setting,
     Apple,
@@ -576,8 +592,9 @@
   import cookingMethods from '@/data/cookingMethods'
   import { generateRecipeCardSvg } from '@/utils/svgGenerator'
 
-  // 初始化路由
+  // 初始化路由和store
   const router = useRouter()
+  const recipeStore = useRecipeStore()
 
   // 响应式数据
   const selectedIngredients = ref<string[]>([])
@@ -601,6 +618,7 @@
   const customIngredient = ref('')
   const isValidatingIngredient = ref(false)
   const autoCompleteIngredients = ref(true) // 默认开启自动补充食材
+  const favoriteLoading = ref(false) // 收藏操作加载状态
 
   // 常见食材（显示在主界面）
   const commonIngredients = [
@@ -847,6 +865,12 @@
       console.log('生成食谱参数:', params)
 
       const recipe = await provider.generateRecipe(params)
+      
+      // 为生成的菜谱添加唯一ID（如果没有的话）
+      if (!recipe.id) {
+        recipe.id = `recipe_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      }
+      
       generatedRecipe.value = recipe
 
       // 更新统计数据
@@ -885,11 +909,89 @@
     return generatedRecipe.value.autoCompletedIngredients.includes(ingredientName)
   }
 
-  const saveRecipe = () => {
-    if (!generatedRecipe.value) return
+  // 检查当前菜谱是否已收藏
+  const isRecipeFavorited = computed(() => {
+    if (!generatedRecipe.value || !generatedRecipe.value.id) return false
+    const result = recipeStore.isRecipeSaved(generatedRecipe.value.id)
+    console.log('计算属性 isRecipeFavorited 更新:', {
+      recipeId: generatedRecipe.value.id,
+      isRecipeFavorited: result,
+      savedRecipesCount: recipeStore.savedRecipes.length
+    })
+    return result
+  })
 
-    // 这里可以调用保存食谱的API
-    ElMessage.success(`已保存食谱：${generatedRecipe.value.title || generatedRecipe.value.name}`)
+  // 切换收藏状态
+  const toggleFavorite = async () => {
+    if (!generatedRecipe.value) {
+      ElMessage.warning('请先生成菜谱后再进行收藏操作')
+      return
+    }
+
+    // 实时检查收藏状态（不依赖计算属性）
+    const currentFavoriteStatus = recipeStore.isRecipeSaved(generatedRecipe.value.id)
+    
+    // 添加调试信息
+    console.log('toggleFavorite 调用:', {
+      recipeId: generatedRecipe.value.id,
+      computedIsRecipeFavorited: isRecipeFavorited.value,
+      realTimeIsRecipeFavorited: currentFavoriteStatus,
+      recipe: generatedRecipe.value
+    })
+
+    favoriteLoading.value = true
+    
+    try {
+      if (currentFavoriteStatus) {
+        // 取消收藏
+        console.log('执行取消收藏操作...')
+        const success = await recipeStore.removeRecipe(generatedRecipe.value.id)
+        console.log('取消收藏结果:', success)
+        
+        // 等待状态更新
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        if (success) {
+          ElMessage({
+            message: '✨ 已成功取消收藏，您可以在收藏页面中查看其他收藏的菜谱',
+            type: 'info',
+            duration: 3000,
+            showClose: true
+          })
+        } else {
+          ElMessage.error('❌ 取消收藏失败，请稍后重试')
+        }
+      } else {
+        // 添加收藏
+        console.log('执行添加收藏操作...')
+        const success = await recipeStore.saveRecipe(generatedRecipe.value)
+        console.log('添加收藏结果:', success)
+        
+        // 等待状态更新
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        if (success) {
+          ElMessage({
+            message: '🎉 菜谱已成功添加到收藏！您可以在"我的收藏"页面中查看和管理所有收藏的菜谱',
+            type: 'success',
+            duration: 4000,
+            showClose: true
+          })
+        } else {
+          ElMessage.error('❌ 收藏失败，请检查网络连接后重试')
+        }
+      }
+    } catch (error) {
+      console.error('切换收藏状态失败:', error)
+      ElMessage({
+        message: '⚠️ 操作失败，请刷新页面后重试。如问题持续存在，请联系技术支持',
+        type: 'error',
+        duration: 5000,
+        showClose: true
+      })
+    } finally {
+      favoriteLoading.value = false
+    }
   }
 
   const shareRecipe = () => {
@@ -1046,9 +1148,11 @@
 
   // 生命周期钩子
   onMounted(() => {
-    // 加载历史记录
-    // 这里可以从本地存储或API加载历史记录
+    // 加载历史记录和已收藏的菜谱
     console.log('AI食谱生成页面已加载')
+    
+    // 加载已收藏的菜谱
+    recipeStore.loadSavedRecipes()
 
     // 模拟加载一些历史记录
     if (recipeHistory.length === 0) {
@@ -1595,6 +1699,53 @@
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
+  }
+
+  .favorite-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .favorite-btn {
+    transition: all 0.3s ease;
+  }
+
+  .favorite-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .favorite-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--el-color-warning);
+    background: var(--el-color-warning-light-9);
+    padding: 2px 8px;
+    border-radius: 12px;
+    border: 1px solid var(--el-color-warning-light-7);
+    animation: favoriteGlow 2s ease-in-out infinite alternate;
+  }
+
+  .favorite-icon {
+    font-size: 14px;
+    color: var(--el-color-warning);
+  }
+
+  .favorite-text {
+    font-weight: 500;
+  }
+
+  @keyframes favoriteGlow {
+    0% {
+      box-shadow: 0 0 5px rgba(255, 193, 7, 0.3);
+    }
+    100% {
+      box-shadow: 0 0 15px rgba(255, 193, 7, 0.6);
+    }
   }
 
   .history-section {

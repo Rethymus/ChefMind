@@ -6,6 +6,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.0+-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Element Plus](https://img.shields.io/badge/Element%20Plus-2.4+-409EFF?style=flat-square&logo=element&logoColor=white)](https://element-plus.org/)
+[![Version](https://img.shields.io/badge/Version-2.1.0-brightgreen?style=flat-square)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
 
 ## 📖 项目简介
@@ -16,14 +17,16 @@ ChefMind 智食谱是一个基于AI技术的智能菜谱生成平台，通过三
 
 - 🤖 **AI智能生成** - 支持智谱GLM、OpenAI GPT等多个AI提供商
 - 🎯 **三步式交互** - 食材选择 → 烹饪方式 → 约束条件
+- 🎨 **动态封面生成** - AI生成精美SVG菜谱封面，支持毛玻璃效果
 - 📱 **响应式设计** - 完美适配移动端和桌面端
 - 🌙 **暗色主题** - 支持亮色/暗色主题切换
 - 🔗 **多媒体跳转** - 一键跳转B站、抖音、下厨房等平台
 - ⭐ **评分系统** - 难度星级、营养评分、时间估算
 - 📋 **详细指导** - 完整制作步骤和营养信息
-- 📊 **数据分析** - 用户行为分析和个性化推荐
+- 📊 **数据分析** - 用户健康数据分析和个性化推荐
 - 🛒 **购物清单** - 自动生成购物清单功能
-- 👥 **社区功能** - 用户分享和评论系统
+- 👥 **备注功能** - 为用户提供人性化的备注功能
+- 🎯 **个性化推荐** - 基于用户行为的智能推荐系统
 
 ## 🚀 快速开始
 
@@ -81,24 +84,43 @@ ChefMind/
 │   │   ├── ai/            # AI相关组件
 │   │   ├── analytics/     # 数据分析组件
 │   │   ├── common/        # 通用组件
+│   │   ├── demo/          # 演示组件
 │   │   ├── layout/        # 布局组件
 │   │   └── recipe/        # 菜谱相关组件
 │   ├── views/             # 页面视图
 │   │   ├── AIView.vue     # AI助手页面
 │   │   ├── AnalyticsView.vue  # 数据分析页面
 │   │   ├── CommunityView.vue  # 社区页面
+│   │   ├── FavoritesPageComplete.vue  # 收藏页面
 │   │   ├── HomeView.vue   # 首页
+│   │   ├── SearchView.vue # 搜索页面
+│   │   ├── ShoppingListView.vue  # 购物清单页面
 │   │   └── ...            # 其他页面
 │   ├── stores/            # Pinia状态管理
 │   ├── services/          # API服务层
 │   │   ├── aiProviders/   # AI提供商实现
 │   │   ├── aiService.ts   # AI服务
+│   │   ├── glmService.ts  # 智谱GLM服务
+│   │   ├── analyticsService.ts  # 数据分析服务
 │   │   └── ...            # 其他服务
 │   ├── composables/       # 组合式函数
+│   │   ├── useI18n.ts     # 国际化
+│   │   ├── useNotification.ts  # 通知系统
+│   │   └── usePersonalizedRecommendations.ts  # 个性化推荐
 │   ├── types/             # TypeScript类型定义
 │   ├── data/              # 静态数据配置
+│   │   ├── cookingMethods.ts  # 烹饪方式数据
+│   │   └── chineseDietaryGuidelines.ts  # 中式饮食指南
 │   ├── styles/            # 全局样式
+│   │   ├── global.scss    # 全局样式
+│   │   ├── variables.scss # 样式变量
+│   │   └── ai-recipe.scss # AI菜谱样式
 │   ├── utils/             # 工具函数
+│   │   ├── aiUtils.ts     # AI工具函数
+│   │   ├── apiCache.ts    # API缓存
+│   │   ├── errorHandler.ts # 错误处理
+│   │   ├── imageUtils.ts  # 图片处理
+│   │   └── svgGenerator.ts # SVG生成器
 │   ├── config/            # 配置文件
 │   ├── router/            # 路由配置
 │   ├── App.vue            # 根组件
@@ -140,12 +162,17 @@ ChefMind/
 - **axios** - HTTP客户端
 - **lodash-es** - JavaScript实用工具库
 - **animate.css** - CSS动画库
+- **chart.js** - 图表库
+- **html2canvas** - 网页截图
+- **qrcode** - 二维码生成
 
 ### 开发工具
 
 - **ESLint** - 代码质量检查
 - **Prettier** - 代码格式化
 - **Sass** - CSS预处理器
+- **Vitest** - 单元测试框架
+- **TypeScript** - 类型检查
 
 ## ⚙️ 配置说明
 
@@ -198,6 +225,100 @@ VITE_GLM_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
 - 🥬 分类展示：蔬菜、肉类、海鲜、主食、调料
 - 🔍 智能搜索：支持食材名称搜索
 - 🏷️ 多选标签：实时显示已选食材
+- 📷 食材图片：直观展示每种食材
+
+#### 第二步：烹饪方式
+
+- 🍳 多种方式：炒、煮、蒸、烤、炸、凉拌等
+- 🎯 精准匹配：根据食材推荐最佳烹饪方式
+- ⚡ 一键选择：常用烹饪方式快速选择
+
+#### 第三步：约束条件
+
+- ⏱️ 时间控制：设置烹饪时间范围
+- 👥 分量选择：1-8人份灵活调整
+- 🌶️ 口味偏好：清淡、适中、重口味
+- 🥗 饮食限制：素食、无糖、低盐等选项
+
+### 2. AI 菜谱生成
+
+#### 智能生成引擎
+
+- 🧠 **多模型支持**：智谱GLM、OpenAI GPT等
+- 📊 **营养分析**：自动计算营养成分和热量
+- 🎨 **动态封面**：AI生成精美SVG菜谱封面
+- 🔄 **实时优化**：根据用户反馈不断改进
+
+#### 生成结果展示
+
+- 📝 **详细步骤**：分步骤详细制作指导
+- 📊 **营养信息**：蛋白质、脂肪、碳水化合物等
+- ⭐ **评分系统**：难度星级、营养评分、时间估算
+- 🏷️ **标签分类**：菜系、口味、适宜人群等
+
+### 3. 个性化推荐系统
+
+#### 用户行为分析
+
+- 📈 **浏览记录**：分析用户浏览偏好
+- ❤️ **收藏分析**：基于收藏菜谱推荐相似内容
+- 🎯 **智能推荐**：机器学习算法个性化推荐
+- 📊 **数据可视化**：用户行为数据图表展示
+
+#### 健康管理
+
+- 🏥 **中医体质**：传统中医体质评估
+- 💊 **营养建议**：基于体质的饮食建议
+- 📅 **膳食计划**：个性化一周膳食规划
+- 🎯 **目标管理**：减脂、增肌、养生等目标
+
+### 4. 社区功能
+
+#### 内容分享
+
+- 📷 **菜谱分享**：用户上传原创菜谱
+- 💬 **评论互动**：菜谱评论和讨论
+- ⭐ **评分系统**：用户为菜谱评分
+- 🏆 **热门排行**：基于评分和热度的排行榜
+
+#### 用户系统
+
+- 👤 **个人资料**：用户信息和偏好设置
+- 📊 **成就系统**：烹饪达人等级和徽章
+- 👥 **关注功能**：关注喜欢的美食达人
+- 📱 **消息通知**：评论、点赞等互动通知
+
+### 5. 实用工具
+
+#### 购物清单
+
+- 🛒 **自动生成**：根据菜谱自动生成购物清单
+- 📝 **分类管理**：按食材类别分组显示
+- ✅ **采购标记**：购买完成状态标记
+- 📱 **离线使用**：PWA支持离线查看
+
+#### 烹饪助手
+
+- ⏰ **定时提醒**：烹饪步骤定时器
+- 📐 **单位换算**：重量、体积单位自动换算
+- 🥄 **用量计算**：根据人数自动调整用量
+- 📊 **营养计算器**：实时计算营养成分
+
+### 6. 多媒体跳转
+
+#### 平台整合
+
+- 📺 **B站跳转**：一键搜索相关烹饪视频
+- 📱 **抖音跳转**：查看短视频烹饪教程
+- 🥘 **下厨房**：跳转查看详细制作方法
+- 🍜 **美食天下**：获取更多菜谱变化
+
+#### 内容丰富
+
+- 🎥 **视频教程**：图文结合视频指导
+- 📸 **步骤图片**：每个步骤配图说明
+- 🎧 **语音指导**：支持语音播放制作步骤
+- 📋 **打印功能**：菜谱内容一键打印
 - 💡 AI建议：食材搭配合理性提示
 
 #### 第二步：烹饪方式选择
@@ -339,6 +460,22 @@ export const useExampleStore = defineStore('example', () => {
 })
 ```
 
+## 📄 文档说明
+
+### 项目文档结构
+
+- [`README.md`](./README.md) - 项目主文档
+- [`CHANGELOG.md`](./CHANGELOG.md) - 版本更新记录
+- [`docs/FEATURES.md`](./docs/FEATURES.md) - 功能特性详细说明
+- [`tests/README.md`](./tests/README.md) - 测试文档
+- [`DOCKER_DEPLOYMENT_GUIDE.md`](./DOCKER_DEPLOYMENT_GUIDE.md) - Docker部署指南
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) - 贡献指南
+- [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) - 行为准则
+
+### 开发指南
+
+详细的开发指南请参考 [GitHub Copilot 项目指南](./.github/copilot-instructions.md)
+
 ## 🚀 部署指南
 
 ### 构建生产版本
@@ -348,8 +485,6 @@ npm run build
 ```
 
 构建完成后，`dist` 目录包含了所有静态文件。
-
-## 🚀 部署指南
 
 ### 静态部署
 
@@ -445,13 +580,31 @@ VITE_API_BASE_URL=https://your-api-domain.com
 
 使用 [Conventional Commits](https://www.conventionalcommits.org/) 规范：
 
-- `feat`: 新功能
-- `fix`: 修复bug
+- `feat`: 新功能 (对应MINOR版本号)
+- `fix`: 修复bug (对应PATCH版本号)
 - `docs`: 文档更新
 - `style`: 代码格式调整
 - `refactor`: 代码重构
+- `perf`: 性能优化
 - `test`: 测试相关
 - `chore`: 构建过程或辅助工具的变动
+- `ui`: UI/UX改进
+- `feat!`: 破坏性变更 (对应MAJOR版本号)
+
+### 版本发布流程
+
+1. 更新 `package.json` 中的版本号
+2. 更新 `CHANGELOG.md` 记录变更
+3. 提交代码并创建版本标签
+4. 创建 Release 发布
+
+```bash
+# 发布新版本示例
+git add .
+git commit -m "feat: 添加SVG动态封面生成功能"
+git tag v2.1.0
+git push origin main --tags
+```
 
 ## 📄 许可证
 

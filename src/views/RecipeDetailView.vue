@@ -158,6 +158,13 @@
           </button>
         </div>
 
+        <!-- 多媒体平台跳转 -->
+        <RecipeMultimediaPlatforms 
+          v-if="recipe"
+          :recipe-name="recipe.name"
+          @platform-click="handlePlatformClick"
+        />
+
         <!-- 相关推荐 -->
         <RecipeRelated
           v-if="recipe && allRecipes.length > 0"
@@ -279,6 +286,7 @@
   import RecipeRelated from '@/components/recipe/RecipeRelated.vue'
   import RecipeNutrition from '@/components/recipe/RecipeNutrition.vue'
   import RecipeExport from '@/components/recipe/RecipeExport.vue'
+  import RecipeMultimediaPlatforms from '@/components/recipe/RecipeMultimediaPlatforms.vue'
 
   const router = useRouter()
   const recipeService = useRecipeService()
@@ -423,6 +431,17 @@
 
     // 显示导出模态框
     showExportModal.value = true
+  }
+
+  // 多媒体平台跳转事件处理
+  const handlePlatformClick = (platform: string, recipeName: string) => {
+    console.log(`用户点击了${platform}平台，搜索菜谱: ${recipeName}`)
+    // 这里可以添加数据统计逻辑
+    showNotification({
+      type: 'info',
+      title: '跳转提示',
+      message: `正在为您跳转到${platform}搜索相关教程`,
+    })
   }
 
   // 添加到购物清单

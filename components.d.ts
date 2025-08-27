@@ -71,6 +71,7 @@ declare module 'vue' {
     RecipeDetail: typeof import('./src/components/recipe/RecipeDetail.vue')['default']
     RecipeExport: typeof import('./src/components/recipe/RecipeExport.vue')['default']
     RecipeGenerator: typeof import('./src/components/recipe/RecipeGenerator.vue')['default']
+    RecipeMultimediaPlatforms: typeof import('./src/components/recipe/RecipeMultimediaPlatforms.vue')['default']
     RecipeNutrition: typeof import('./src/components/recipe/RecipeNutrition.vue')['default']
     RecipeNutritionAnalysis: typeof import('./src/components/ai/components/RecipeNutritionAnalysis.vue')['default']
     RecipePrintPreview: typeof import('./src/components/recipe/RecipePrintPreview.vue')['default']
