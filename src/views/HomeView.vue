@@ -96,12 +96,6 @@
           <p class="feature-description">一键生成购物清单，让买菜变得井井有条</p>
         </div>
 
-        <div class="feature-card" @click="goToSvgGenerator">
-          <div class="feature-icon">🎨</div>
-          <h3 class="feature-title">封面生成器</h3>
-          <p class="feature-description">输入菜品名称，自动生成精美的 SVG 封面图片</p>
-        </div>
-
         <div class="feature-card">
           <div class="feature-icon">❤️</div>
           <h3 class="feature-title">收藏管理</h3>
@@ -138,9 +132,7 @@
     })
   }
 
-  const goToSvgGenerator = () => {
-    router.push({ name: 'SvgGenerator' })
-  }
+
 </script>
 
 <style lang="scss" scoped>

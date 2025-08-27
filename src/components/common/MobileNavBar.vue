@@ -11,15 +11,6 @@
         <span class="nav-text">搜索</span>
       </router-link>
 
-      <router-link
-        to="/svg-generator"
-        class="nav-item"
-        :class="{ active: $route.name === 'SvgGenerator' }"
-      >
-        <span class="nav-icon">🎨</span>
-        <span class="nav-text">封面</span>
-      </router-link>
-
       <router-link to="/ai" class="nav-item" :class="{ active: $route.name === 'AI' }">
         <span class="nav-icon">🤖</span>
         <span class="nav-text">AI</span>
