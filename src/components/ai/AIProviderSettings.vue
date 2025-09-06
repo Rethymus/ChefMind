@@ -1,5 +1,8 @@
 <template>
   <div class="ai-provider-settings">
+    <!-- API 密钥提醒 -->
+    <APIKeyReminder ref="apiKeyReminder" />
+    
     <el-card class="settings-card">
       <template #header>
         <div class="card-header">
@@ -163,8 +166,10 @@
   import { ChatDotRound, Connection, Delete, Lightning, Cpu } from '@element-plus/icons-vue'
   import { aiService, AIProviderType as AIProvider } from '@/services/aiService'
   import { AI_CONFIG } from '@/config/aiConfig'
+  import APIKeyReminder from '@/components/common/APIKeyReminder.vue'
 
   // 响应式数据
+  const apiKeyReminder = ref()
   const selectedProvider = ref<AIProvider>(AI_CONFIG.defaultProvider as unknown as AIProvider)
   const currentProvider = ref<AIProvider>(AI_CONFIG.defaultProvider as unknown as AIProvider)
   const testing = ref(false)
@@ -234,6 +239,16 @@
   }
 
   const testConnection = async () => {
+    // 检查是否使用模拟数据
+    if (apiKeyReminder.value?.isUsingMockData) {
+      ElMessage.info('当前使用模拟数据进行演示，无法测试真实 API 连接')
+      testResult.value = {
+        success: false,
+        message: '请先配置 API 密钥后再测试连接'
+      }
+      return
+    }
+
     testing.value = true
     testResult.value = null
 

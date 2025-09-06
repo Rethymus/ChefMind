@@ -1,5 +1,8 @@
 <template>
   <div class="nutrition-analyzer">
+    <!-- API 密钥提醒 -->
+    <APIKeyReminder ref="apiKeyReminder" />
+    
     <el-card class="analyzer-card">
       <template #header>
         <div class="card-header">
@@ -252,6 +255,7 @@
   } from '@element-plus/icons-vue'
   import { aiService, type RecipeRecommendation } from '@/services/aiService'
   import { Chart, registerables } from 'chart.js'
+  import APIKeyReminder from '@/components/common/APIKeyReminder.vue'
 
   // 注册 Chart.js 组件
   Chart.register(...registerables)
@@ -266,6 +270,7 @@
   })
 
   // 响应式数据
+  const apiKeyReminder = ref()
   const nutritionChartRef = ref<HTMLCanvasElement>()
   const chartInstance = ref<Chart | null>(null)
   const isAnalyzing = ref(false)
@@ -307,6 +312,11 @@
     if (!currentRecipe.value) {
       ElMessage.warning('请先选择一个食谱')
       return
+    }
+
+    // 检查是否使用模拟数据
+    if (apiKeyReminder.value?.isUsingMockData) {
+      ElMessage.info('当前使用模拟数据进行演示，营养分析结果为示例内容')
     }
 
     isAnalyzing.value = true

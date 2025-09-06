@@ -11,6 +11,7 @@ declare module 'vue' {
     AIEnhancedFeatures: typeof import('./src/components/recipe/AIEnhancedFeatures.vue')['default']
     AIHub: typeof import('./src/components/ai/AIHub.vue')['default']
     AIProviderSettings: typeof import('./src/components/ai/AIProviderSettings.vue')['default']
+    APIKeyReminder: typeof import('./src/components/common/APIKeyReminder.vue')['default']
     AppFooter: typeof import('./src/components/layout/AppFooter.vue')['default']
     AppHeader: typeof import('./src/components/layout/AppHeader.vue')['default']
     AutoRecipeCard: typeof import('./src/components/recipe/AutoRecipeCard.vue')['default']

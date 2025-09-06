@@ -1,5 +1,8 @@
 <template>
   <div class="ai-view">
+    <!-- API 密钥提醒 -->
+    <APIKeyReminder ref="apiKeyReminder" />
+    
     <!-- 页面头部 -->
     <div class="ai-header">
       <div class="header-content">
@@ -588,6 +591,7 @@
   // import type { CookingMethod } from '@/types/recipe' // 暂时未使用
   import EnhancedCookingMethodSelection from '@/components/recipe/EnhancedCookingMethodSelection.vue'
   import EnhancedDietaryRestrictionSelection from '@/components/recipe/EnhancedDietaryRestrictionSelection.vue'
+  import APIKeyReminder from '@/components/common/APIKeyReminder.vue'
   // 导入烹饪方式数据
   import cookingMethods from '@/data/cookingMethods'
   import { generateRecipeCardSvg } from '@/utils/svgGenerator'
@@ -595,6 +599,7 @@
   // 初始化路由和store
   const router = useRouter()
   const recipeStore = useRecipeStore()
+  const apiKeyReminder = ref()
 
   // 响应式数据
   const selectedIngredients = ref<string[]>([])
@@ -838,6 +843,11 @@
     if (selectedIngredients.value.length === 0) {
       ElMessage.warning('请至少选择一个食材')
       return
+    }
+
+    // 检查是否使用模拟数据
+    if (apiKeyReminder.value?.isUsingMockData) {
+      ElMessage.info('当前使用模拟数据进行演示，生成的食谱为示例内容')
     }
 
     isGenerating.value = true
