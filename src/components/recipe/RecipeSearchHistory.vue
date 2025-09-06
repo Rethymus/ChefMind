@@ -1,9 +1,9 @@
 <template>
   <div class="search-history">
     <div class="history-header">
-      <h3 class="history-title">{{ t('search.recent_searches') }}</h3>
+      <h3 class="history-title">最近搜索</h3>
       <button v-if="searchHistory.length > 0" class="clear-button" @click="clearHistory">
-        {{ t('search.clear_all') }}
+        清除全部
       </button>
     </div>
 
@@ -24,18 +24,14 @@
 
     <div v-else class="empty-history">
       <div class="empty-icon">🔍</div>
-      <p>{{ t('search.no_recent_searches') }}</p>
+      <p>暂无搜索历史</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
-  import { useI18n } from '@/composables/useI18n'
-
-  // 国际化
-  const { t } = useI18n()
-
+  
   // 定义事件
   const emit = defineEmits<{
     select: [query: string]

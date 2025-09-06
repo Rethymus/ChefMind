@@ -417,7 +417,7 @@
     ElSkeleton,
   } from 'element-plus'
   import { Edit, User, DataLine, TrendCharts, MagicStick } from '@element-plus/icons-vue'
-  import UserProfileForm from '@/components/analytics/UserProfileForm.vue'
+  import UserProfileForm from '@/components/common/UserProfileForm.vue'
   import {
     nutritionAnalysisService,
     type UserProfile,

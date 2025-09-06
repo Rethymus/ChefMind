@@ -3,14 +3,14 @@
     <div class="post-detail-container">
       <div v-if="isLoading" class="loading-container">
         <div class="loading-spinner"></div>
-        <p>{{ t('app.loading') }}</p>
+        <p>加载中...</p>
       </div>
       
       <template v-else>
         <div class="post-navigation">
           <button class="back-button" @click="goBack">
             <span class="back-icon">←</span>
-            <span class="back-text">{{ t('app.back') }}</span>
+            <span class="back-text">返回</span>
           </button>
         </div>
         
@@ -30,12 +30,12 @@
             <div class="post-actions">
               <button class="action-button share-button" @click="sharePost">
                 <span class="action-icon">📤</span>
-                <span class="action-text">{{ t('app.share') }}</span>
+                <span class="action-text">分享</span>
               </button>
               
               <button v-if="isCurrentUserPost" class="action-button delete-button" @click="confirmDeletePost">
                 <span class="action-icon">🗑️</span>
-                <span class="action-text">{{ t('app.delete') }}</span>
+                <span class="action-text">删除</span>
               </button>
             </div>
           </div>
@@ -67,10 +67,10 @@
             </div>
             
             <div v-if="post.recipeId" class="post-recipe">
-              <div class="recipe-badge">{{ t('community.recipe') }}</div>
+              <div class="recipe-badge">菜谱</div>
               <div class="recipe-name">{{ post.recipeName }}</div>
               <button class="view-recipe-button" @click="viewRecipe(post.recipeId)">
-                {{ t('community.view_recipe') }}
+                查看菜谱
               </button>
             </div>
           </div>
@@ -91,17 +91,16 @@
         </div>
         
         <div class="comments-section">
-          <h2 class="section-title">{{ t('community.comments') }} ({{ comments.length }})</h2>
+          <h2 class="section-title">评论 ({{ comments.length }})</h2>
           
           <div class="comment-form">
             <div class="form-avatar">
-              <img v-if="currentUser?.avatar" :src="currentUser.avatar" :alt="currentUser?.username" />
-              <div v-else class="avatar-placeholder">{{ getUserInitials(currentUser?.username) }}</div>
+              <div class="avatar-placeholder">美食</div>
             </div>
             <div class="form-input">
               <textarea 
                 v-model="newComment" 
-                :placeholder="t('community.comment_placeholder')"
+                :placeholder="写下你的评论..."
                 rows="3"
               ></textarea>
               <button 
@@ -110,13 +109,13 @@
                 :disabled="isSubmittingComment || !newComment.trim()"
               >
                 <span v-if="isSubmittingComment" class="button-spinner"></span>
-                {{ isSubmittingComment ? t('app.submitting') : t('app.submit') }}
+                {{ isSubmittingComment ? '提交中...' : '提交' }}
               </button>
             </div>
           </div>
           
           <div v-if="comments.length === 0" class="empty-comments">
-            <p>{{ t('community.no_comments') }}</p>
+            <p>暂无评论</p>
           </div>
           
           <div v-else class="comments-list">
@@ -149,7 +148,7 @@
                     class="delete-button"
                     @click="confirmDeleteComment(comment.id)"
                   >
-                    {{ t('app.delete') }}
+                    删除
                   </button>
                 </div>
               </div>
@@ -189,8 +188,8 @@
     <!-- 确认删除模态框 -->
     <div v-if="showDeleteConfirm" class="modal-overlay" @click="showDeleteConfirm = false">
       <div class="modal-content delete-confirm-modal" @click.stop>
-        <h2 class="modal-title">{{ t('community.confirm_delete') }}</h2>
-        <p class="confirm-message">{{ deleteType === 'post' ? t('community.confirm_delete_post') : t('community.confirm_delete_comment') }}</p>
+        <h2 class="modal-title">确认删除</h2>
+        <p class="confirm-message">{{ deleteType === 'post' ? '确定要删除这篇帖子吗？' : '确定要删除这条评论吗？' }}</p>
         
         <div class="modal-actions">
           <button 
@@ -199,10 +198,10 @@
             :disabled="isDeleting"
           >
             <span v-if="isDeleting" class="button-spinner"></span>
-            {{ isDeleting ? t('app.deleting') : t('app.delete') }}
+            {{ isDeleting ? '删除中...' : '删除' }}
           </button>
           <button class="cancel-button" @click="showDeleteConfirm = false">
-            {{ t('app.cancel') }}
+            取消
           </button>
         </div>
       </div>
@@ -211,7 +210,7 @@
     <!-- 分享模态框 -->
     <div v-if="showShareModal" class="modal-overlay" @click="showShareModal = false">
       <div class="modal-content share-modal" @click.stop>
-        <h2 class="modal-title">{{ t('community.share_post') }}</h2>
+        <h2 class="modal-title">分享帖子</h2>
         
         <div class="share-options">
           <button class="share-option" @click="shareViaOption('wechat')">
@@ -244,12 +243,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { communityService } from '@/services/communityService'
+import communityService from '@/services/communityService'
 import { useUserService } from '@/services/userService'
-import { useI18n } from '@/composables/useI18n'
-
-// 国际化
-const { t } = useI18n()
 
 // 路由
 const route = useRoute()
@@ -273,12 +268,8 @@ const isDeleting = ref(false)
 const showShareModal = ref(false)
 
 // 计算属性
-const currentUser = computed(() => {
-  return userService.getCurrentUser();
-})
-
 const isCurrentUserPost = computed(() => {
-  return currentUser.value?.id === post.value.userId;
+  return '1' === post.value.userId;
 })
 
 // 生命周期钩子
@@ -309,8 +300,8 @@ const loadPostData = async (postId: string) => {
     console.error('加载帖子数据失败:', error);
     showNotification({
       type: 'error',
-      title: t('notification.error'),
-      message: t('community.load_error')
+      title: '错误',
+      message: '加载帖子数据失败'
     });
     
     router.push('/community');
@@ -357,13 +348,11 @@ const submitComment = async () => {
   isSubmittingComment.value = true;
   
   try {
-    const user = currentUser.value || { id: '1', username: '美食爱好者', avatar: null };
-    
     const commentData = {
       postId: post.value.id,
-      userId: user.id,
-      username: user.username,
-      userAvatar: user.avatar,
+      userId: '1',
+      username: '美食爱好者',
+      userAvatar: null,
       content: newComment.value.trim()
     };
     
@@ -374,16 +363,16 @@ const submitComment = async () => {
     
     showNotification({
       type: 'success',
-      title: t('notification.success'),
-      message: t('community.comment_success')
+      title: '成功',
+      message: '评论发布成功'
     });
   } catch (error) {
     console.error('提交评论失败:', error);
     
     showNotification({
       type: 'error',
-      title: t('notification.error'),
-      message: t('community.comment_error')
+      title: '错误',
+      message: '评论发布失败'
     });
   } finally {
     isSubmittingComment.value = false;
@@ -440,8 +429,8 @@ const confirmDelete = async () => {
       
       showNotification({
         type: 'success',
-        title: t('notification.success'),
-        message: t('community.post_deleted')
+        title: '成功',
+        message: '帖子删除成功'
       });
       
       router.push('/community');
@@ -453,8 +442,8 @@ const confirmDelete = async () => {
       
       showNotification({
         type: 'success',
-        title: t('notification.success'),
-        message: t('community.comment_deleted')
+        title: '成功',
+        message: '评论删除成功'
       });
       
       showDeleteConfirm.value = false;
@@ -464,8 +453,8 @@ const confirmDelete = async () => {
     
     showNotification({
       type: 'error',
-      title: t('notification.error'),
-      message: t('community.delete_error')
+      title: '错误',
+      message: '删除失败'
     });
   } finally {
     isDeleting.value = false;
@@ -484,8 +473,8 @@ const shareViaOption = (option: string) => {
     navigator.clipboard.writeText(url).then(() => {
       showNotification({
         type: 'success',
-        title: t('notification.success'),
-        message: t('community.link_copied')
+        title: '成功',
+        message: '链接已复制到剪贴板'
       });
     });
   } else {
@@ -494,8 +483,8 @@ const shareViaOption = (option: string) => {
     
     showNotification({
       type: 'success',
-      title: t('notification.success'),
-      message: t('community.shared_via').replace('{platform}', option)
+      title: '成功',
+      message: `已分享到${option}`
     });
   }
   
@@ -503,7 +492,7 @@ const shareViaOption = (option: string) => {
 }
 
 const isCurrentUserComment = (comment: any) => {
-  return currentUser.value?.id === comment.userId;
+  return '1' === comment.userId;
 }
 
 // 辅助方法

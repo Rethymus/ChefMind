@@ -201,15 +201,6 @@
     isLoading.value = true
 
     try {
-      // 加载用户信息
-      const currentUser = userService.getCurrentUser()
-      if (currentUser) {
-        user.value = {
-          ...currentUser,
-          avatar: currentUser.avatar || null,
-        }
-      }
-
       // 加载用户统计
       await loadUserStats()
 

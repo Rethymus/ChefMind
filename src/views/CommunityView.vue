@@ -2,13 +2,13 @@
   <div class="community-view">
     <div class="community-container">
       <div class="community-header">
-        <h1 class="community-title">{{ t('community.title') }}</h1>
-        <p class="community-subtitle">{{ t('community.subtitle') }}</p>
+        <h1 class="community-title">美食社区</h1>
+        <p class="community-subtitle">分享美食心得，交流烹饪技巧</p>
         
         <div class="community-actions">
           <button class="create-post-button" @click="showCreatePostModal = true">
             <span class="button-icon">✏️</span>
-            <span class="button-text">{{ t('community.create_post') }}</span>
+            <span class="button-text">发布帖子</span>
           </button>
         </div>
       </div>
@@ -19,32 +19,32 @@
             <input 
               type="text" 
               v-model="searchQuery" 
-              :placeholder="t('community.search_placeholder')"
+              :placeholder="搜索帖子..."
               @input="handleSearch"
             />
             <span class="search-icon">🔍</span>
           </div>
           
           <div class="filter-section">
-            <h3 class="filter-title">{{ t('community.sort_by') }}</h3>
+            <h3 class="filter-title">排序方式</h3>
             <div class="filter-options">
               <button 
                 :class="['filter-option', { active: sortBy === 'latest' }]"
                 @click="sortBy = 'latest'"
               >
-                {{ t('community.latest') }}
+                最新
               </button>
               <button 
                 :class="['filter-option', { active: sortBy === 'popular' }]"
                 @click="sortBy = 'popular'"
               >
-                {{ t('community.popular') }}
+                最热
               </button>
             </div>
           </div>
           
           <div class="filter-section">
-            <h3 class="filter-title">{{ t('community.popular_tags') }}</h3>
+            <h3 class="filter-title">热门标签</h3>
             <div class="tags-cloud">
               <button 
                 v-for="tag in tags" 
@@ -61,15 +61,15 @@
         <div class="community-main">
           <div v-if="isLoading" class="loading-container">
             <div class="loading-spinner"></div>
-            <p>{{ t('app.loading') }}</p>
+            <p>加载中...</p>
           </div>
           
           <div v-else-if="posts.length === 0" class="empty-state">
             <div class="empty-icon">📝</div>
-            <h3>{{ t('community.no_posts') }}</h3>
-            <p>{{ t('community.no_posts_desc') }}</p>
+            <h3>暂无帖子</h3>
+            <p>成为第一个发布帖子的人吧！</p>
             <button class="create-post-button" @click="showCreatePostModal = true">
-              {{ t('community.create_first_post') }}
+              发布第一篇帖子
             </button>
           </div>
           
@@ -110,7 +110,7 @@
                 </div>
                 
                 <div v-if="post.recipeId" class="post-recipe">
-                  <div class="recipe-badge">{{ t('community.recipe') }}</div>
+                  <div class="recipe-badge">菜谱</div>
                   <div class="recipe-name">{{ post.recipeName }}</div>
                 </div>
                 
@@ -149,11 +149,11 @@
               :disabled="pagination.page === 1"
               @click="changePage(pagination.page - 1)"
             >
-              &lt; {{ t('app.previous') }}
+              &lt; 上一页
             </button>
             
             <div class="pagination-info">
-              {{ t('app.page') }} {{ pagination.page }} / {{ pagination.totalPages }}
+              第 {{ pagination.page }} 页 / 共 {{ pagination.totalPages }} 页
             </div>
             
             <button 
@@ -161,7 +161,7 @@
               :disabled="pagination.page === pagination.totalPages"
               @click="changePage(pagination.page + 1)"
             >
-              {{ t('app.next') }} &gt;
+              下一页 &gt;
             </button>
           </div>
         </div>
@@ -171,24 +171,24 @@
     <!-- 创建帖子模态框 -->
     <div v-if="showCreatePostModal" class="modal-overlay" @click="showCreatePostModal = false">
       <div class="modal-content create-post-modal" @click.stop>
-        <h2 class="modal-title">{{ t('community.create_post') }}</h2>
+        <h2 class="modal-title">发布新帖</h2>
         
         <div class="form-group">
-          <label for="post-title">{{ t('community.post_title') }}</label>
+          <label for="post-title">帖子标题</label>
           <input 
             id="post-title"
             type="text" 
             v-model="newPost.title" 
-            :placeholder="t('community.post_title_placeholder')"
+            :placeholder="输入帖子标题..."
           />
         </div>
         
         <div class="form-group">
-          <label for="post-content">{{ t('community.post_content') }}</label>
+          <label for="post-content">帖子内容</label>
           <textarea 
             id="post-content"
             v-model="newPost.content" 
-            :placeholder="t('community.post_content_placeholder')"
+            :placeholder="分享你的美食心得..."
             rows="5"
           ></textarea>
         </div>
@@ -200,10 +200,10 @@
             :disabled="isSubmitting || !canSubmitPost"
           >
             <span v-if="isSubmitting" class="button-spinner"></span>
-            {{ isSubmitting ? t('app.submitting') : t('app.submit') }}
+            {{ isSubmitting ? '提交中...' : '发布' }}
           </button>
           <button class="cancel-button" @click="showCreatePostModal = false">
-            {{ t('app.cancel') }}
+            取消
           </button>
         </div>
         
@@ -216,12 +216,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { communityService } from '@/services/communityService'
-import { useI18n } from '@/composables/useI18n'
+import communityService from '@/services/communityService'
 import { useUserService } from '@/services/userService'
-
-// 国际化
-const { t } = useI18n()
 
 // 路由
 const router = useRouter()
@@ -291,8 +287,8 @@ const loadPosts = async () => {
     console.error('加载帖子失败:', error);
     showNotification({
       type: 'error',
-      title: t('notification.error'),
-      message: t('community.load_error')
+      title: '错误',
+      message: '加载帖子失败'
     });
   } finally {
     isLoading.value = false;
@@ -345,12 +341,10 @@ const submitPost = async () => {
   isSubmitting.value = true;
   
   try {
-    const currentUser = userService.getCurrentUser();
-    
-    const postData = {
-      userId: currentUser?.id || '1',
-      username: currentUser?.username || '美食爱好者',
-      userAvatar: currentUser?.avatar || null,
+      const postData = {
+      userId: '1',
+      username: '美食爱好者',
+      userAvatar: null,
       title: newPost.value.title,
       content: newPost.value.content,
       images: newPost.value.images,
@@ -380,8 +374,8 @@ const submitPost = async () => {
     // 显示成功通知
     showNotification({
       type: 'success',
-      title: t('notification.success'),
-      message: t('community.post_success')
+      title: '成功',
+      message: '帖子发布成功'
     });
   } catch (error) {
     console.error('发布帖子失败:', error);
@@ -389,8 +383,8 @@ const submitPost = async () => {
     // 显示错误通知
     showNotification({
       type: 'error',
-      title: t('notification.error'),
-      message: t('community.post_error')
+      title: '错误',
+      message: '帖子发布失败'
     });
   } finally {
     isSubmitting.value = false;

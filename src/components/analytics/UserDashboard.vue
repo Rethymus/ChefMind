@@ -1,47 +1,47 @@
 <template>
   <div class="user-dashboard">
     <div class="dashboard-header">
-      <h2 class="dashboard-title">{{ t('dashboard.title') }}</h2>
+      <h2 class="dashboard-title">用户仪表板</h2>
       <router-link to="/analytics" class="view-all-link">
-        {{ t('dashboard.view_all') }} →
+        查看全部 →
       </router-link>
     </div>
     
     <div class="dashboard-content">
       <!-- 活动概览 -->
       <div class="dashboard-card activity-card">
-        <h3 class="card-title">{{ t('dashboard.activity_overview') }}</h3>
+        <h3 class="card-title">活动概览</h3>
         
         <div class="stats-grid">
           <div class="stat-item">
             <div class="stat-icon">👁️</div>
             <div class="stat-value">{{ userStats.viewedRecipes }}</div>
-            <div class="stat-label">{{ t('dashboard.viewed') }}</div>
+            <div class="stat-label">浏览</div>
           </div>
           
           <div class="stat-item">
             <div class="stat-icon">❤️</div>
             <div class="stat-value">{{ userStats.savedRecipes }}</div>
-            <div class="stat-label">{{ t('dashboard.saved') }}</div>
+            <div class="stat-label">收藏</div>
           </div>
           
           <div class="stat-item">
             <div class="stat-icon">✨</div>
             <div class="stat-value">{{ userStats.generatedRecipes }}</div>
-            <div class="stat-label">{{ t('dashboard.generated') }}</div>
+            <div class="stat-label">生成</div>
           </div>
           
           <div class="stat-item">
             <div class="stat-icon">⏱️</div>
             <div class="stat-value">{{ userStats.cookingTime.average }}</div>
-            <div class="stat-label">{{ t('dashboard.avg_time') }}</div>
+            <div class="stat-label">平均时间</div>
           </div>
         </div>
       </div>
       
       <!-- 趋势食谱 -->
       <div class="dashboard-card trending-card">
-        <h3 class="card-title">{{ t('dashboard.trending_recipes') }}</h3>
+        <h3 class="card-title">热门食谱</h3>
         
         <div class="trending-list">
           <div 
@@ -62,7 +62,7 @@
       
       <!-- 个性化推荐 -->
       <div class="dashboard-card recommendations-card">
-        <h3 class="card-title">{{ t('dashboard.for_you') }}</h3>
+        <h3 class="card-title">为您推荐</h3>
         
         <div class="recommendations-list">
           <div 
@@ -84,7 +84,7 @@
       
       <!-- 活动图表 -->
       <div class="dashboard-card chart-card">
-        <h3 class="card-title">{{ t('dashboard.activity_trend') }}</h3>
+        <h3 class="card-title">活动趋势</h3>
         
         <div class="chart-container">
           <canvas ref="activityChart"></canvas>
@@ -98,11 +98,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { analyticsService } from '@/services/analyticsService'
-import { useI18n } from '@/composables/useI18n'
 import Chart from 'chart.js/auto'
-
-// 国际化
-const { t } = useI18n()
 
 // 路由
 const router = useRouter()
@@ -130,7 +126,7 @@ const initActivityChart = () => {
         data: {
           labels: generateDateLabels(7),
           datasets: [{
-            label: t('dashboard.daily_activity'),
+            label: '每日活动',
             data: generateActivityData(7),
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             borderColor: 'rgba(75, 192, 192, 1)',
