@@ -72,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, defineEmits } from 'vue'
+  import { ref } from 'vue'
 
   // 定义事件
   const emit = defineEmits<{

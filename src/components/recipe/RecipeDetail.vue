@@ -179,7 +179,7 @@
 </template>
 
 <script setup lang="ts">
-  import { defineProps, defineEmits, ref, watch } from 'vue'
+  import { ref, watch } from 'vue'
   import { shoppingListService } from '@/services/shoppingListService'
   import type { Recipe } from '@/types/recipe'
   import { formatCookingTime, formatServings, formatDifficulty } from '@/utils/formatUtils'

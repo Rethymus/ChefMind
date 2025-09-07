@@ -47,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-  import { defineProps, defineEmits, computed } from 'vue'
+  import { computed } from 'vue'
   import type { Recipe } from '@/types/recipe'
 
   // 定义属性
