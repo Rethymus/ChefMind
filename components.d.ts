@@ -59,6 +59,7 @@ declare module 'vue' {
     ErrorBoundary: typeof import('./src/components/common/ErrorBoundary.vue')['default']
     FavoritesRecipeCard: typeof import('./src/components/recipe/FavoritesRecipeCard.vue')['default']
     FeatureIntegrationTest: typeof import('./src/components/recipe/FeatureIntegrationTest.vue')['default']
+    GlassFooter: typeof import('./src/components/layout/GlassFooter.vue')['default']
     GLMAPITester: typeof import('./src/components/ai/GLMAPITester.vue')['default']
     IngredientNutritionAnalysis: typeof import('./src/components/ai/components/IngredientNutritionAnalysis.vue')['default']
     IngredientRecognition: typeof import('./src/components/recipe/IngredientRecognition.vue')['default']

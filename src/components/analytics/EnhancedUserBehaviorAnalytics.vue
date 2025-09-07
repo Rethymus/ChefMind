@@ -262,7 +262,7 @@
 
   // 响应式数据
   const isLoading = ref(false)
-  const timeRange = ref<[string, string]>(['2024-01-01', '2024-12-31'])
+  const timeRange = ref<[string, string]>(['2025-01-01', '2025-12-31'])
   const eventFilter = ref('')
   const eventDetailVisible = ref(false)
   const selectedEvent = ref<UserEvent | null>(null)

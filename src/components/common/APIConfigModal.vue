@@ -327,7 +327,7 @@ const providers = [
   { value: 'hunyuan', label: '腾讯混元', icon: 'Connection' }
 ]
 
-// 模型数据 (2024年最新)
+// 模型数据 (2025年最新)
 const providerModels = {
   openai: [
     { value: 'gpt-4o', label: 'GPT-4o', recommended: true },
