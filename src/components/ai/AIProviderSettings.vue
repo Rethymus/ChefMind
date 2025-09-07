@@ -1,7 +1,14 @@
 <template>
   <div class="ai-provider-settings">
     <!-- API 密钥提醒 -->
-    <APIKeyReminder ref="apiKeyReminder" />
+    <APIKeyReminder 
+      ref="apiKeyReminder" 
+      :showQuickConfig="true"
+      @open-config="openAPIConfig"
+    />
+    
+    <!-- API 配置弹窗 -->
+    <APIConfigModal v-model="showAPIConfig" @config-saved="handleAPIConfigSaved" />
     
     <el-card class="settings-card">
       <template #header>
@@ -24,6 +31,66 @@
                   智谱 GLM
                 </div>
                 <div class="provider-desc">国内领先的大语言模型，支持中文优化</div>
+              </div>
+            </el-radio>
+
+            <el-radio :label="AIProvider.ANTHROPIC" class="provider-option">
+              <div class="provider-info">
+                <div class="provider-name">
+                  <el-icon><ChatDotRound /></el-icon>
+                  Anthropic Claude
+                </div>
+                <div class="provider-desc">强大的AI能力，擅长推理和创作</div>
+              </div>
+            </el-radio>
+
+            <el-radio :label="AIProvider.GEMINI" class="provider-option">
+              <div class="provider-info">
+                <div class="provider-name">
+                  <el-icon><VideoCamera /></el-icon>
+                  Google Gemini
+                </div>
+                <div class="provider-desc">Google的多模态AI模型，支持图片分析</div>
+              </div>
+            </el-radio>
+
+            <el-radio :label="AIProvider.DEEPSEEK" class="provider-option">
+              <div class="provider-info">
+                <div class="provider-name">
+                  <el-icon><Cpu /></el-icon>
+                  DeepSeek
+                </div>
+                <div class="provider-desc">高性能AI模型，代码能力强</div>
+              </div>
+            </el-radio>
+
+            <el-radio :label="AIProvider.MOONSHOT" class="provider-option">
+              <div class="provider-info">
+                <div class="provider-name">
+                  <el-icon><Document /></el-icon>
+                  Moonshot
+                </div>
+                <div class="provider-desc">支持长文本的AI模型</div>
+              </div>
+            </el-radio>
+
+            <el-radio :label="AIProvider.QWEN" class="provider-option">
+              <div class="provider-info">
+                <div class="provider-name">
+                  <el-icon><Cloud /></el-icon>
+                  通义千问
+                </div>
+                <div class="provider-desc">阿里云的大语言模型</div>
+              </div>
+            </el-radio>
+
+            <el-radio :label="AIProvider.HUNYUAN" class="provider-option">
+              <div class="provider-info">
+                <div class="provider-name">
+                  <el-icon><Platform /></el-icon>
+                  腾讯混元
+                </div>
+                <div class="provider-desc">腾讯的大语言模型</div>
               </div>
             </el-radio>
 
@@ -69,6 +136,8 @@
             </el-form-item>
             <el-form-item label="模型">
               <el-select v-model="glmConfig.model" placeholder="选择模型">
+                <el-option label="GLM-4-Flash (推荐)" value="glm-4-flash" />
+                <el-option label="GLM-4-Air" value="glm-4-air" />
                 <el-option label="GLM-4" value="glm-4" />
                 <el-option label="GLM-3-Turbo" value="glm-3-turbo" />
               </el-select>
@@ -96,9 +165,11 @@
             </el-form-item>
             <el-form-item label="模型">
               <el-select v-model="openaiConfig.model" placeholder="选择模型">
-                <el-option label="GPT-3.5 Turbo" value="gpt-3.5-turbo" />
-                <el-option label="GPT-4" value="gpt-4" />
+                <el-option label="GPT-4o (推荐)" value="gpt-4o" />
+                <el-option label="GPT-4o Mini" value="gpt-4o-mini" />
                 <el-option label="GPT-4 Turbo" value="gpt-4-turbo-preview" />
+                <el-option label="GPT-4" value="gpt-4" />
+                <el-option label="GPT-3.5 Turbo" value="gpt-3.5-turbo" />
               </el-select>
             </el-form-item>
             <el-form-item label="最大令牌数">
@@ -167,9 +238,11 @@
   import { aiService, AIProviderType as AIProvider } from '@/services/aiService'
   import { AI_CONFIG } from '@/config/aiConfig'
   import APIKeyReminder from '@/components/common/APIKeyReminder.vue'
+  import APIConfigModal from '@/components/common/APIConfigModal.vue'
 
   // 响应式数据
   const apiKeyReminder = ref()
+  const showAPIConfig = ref(false)
   const selectedProvider = ref<AIProvider>(AI_CONFIG.defaultProvider as unknown as AIProvider)
   const currentProvider = ref<AIProvider>(AI_CONFIG.defaultProvider as unknown as AIProvider)
   const testing = ref(false)
@@ -179,7 +252,7 @@
   const glmConfig = reactive({
     apiKey: import.meta.env.VITE_GLM_API_KEY || '',
     baseURL: import.meta.env.VITE_GLM_API_URL || 'https://open.bigmodel.cn/api/paas/v4/',
-    model: 'glm-4',
+    model: 'glm-4-flash',
     maxTokens: 2000,
   })
 
@@ -187,7 +260,7 @@
   const openaiConfig = reactive({
     apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
     baseURL: import.meta.env.VITE_OPENAI_BASE_URL || 'https://api.openai.com/v1',
-    model: 'gpt-3.5-turbo',
+    model: 'gpt-4o',
     maxTokens: 2000,
   })
 
@@ -210,6 +283,12 @@
     const names = {
       [AIProvider.GLM]: '智谱 GLM',
       [AIProvider.OPENAI]: 'OpenAI GPT',
+      [AIProvider.ANTHROPIC]: 'Anthropic Claude',
+      [AIProvider.GEMINI]: 'Google Gemini',
+      [AIProvider.DEEPSEEK]: 'DeepSeek',
+      [AIProvider.MOONSHOT]: 'Moonshot',
+      [AIProvider.QWEN]: '通义千问',
+      [AIProvider.HUNYUAN]: '腾讯混元',
       [AIProvider.MOCK]: '模拟模式',
     }
     return names[provider] || '未知'
@@ -219,6 +298,12 @@
     const types: Record<string, 'primary' | 'success' | 'warning' | 'info'> = {
       [AIProvider.GLM]: 'primary',
       [AIProvider.OPENAI]: 'success',
+      [AIProvider.ANTHROPIC]: 'success',
+      [AIProvider.GEMINI]: 'info',
+      [AIProvider.DEEPSEEK]: 'warning',
+      [AIProvider.MOONSHOT]: 'info',
+      [AIProvider.QWEN]: 'primary',
+      [AIProvider.HUNYUAN]: 'primary',
       [AIProvider.MOCK]: 'warning',
     }
     return types[provider] || 'info'
@@ -253,37 +338,119 @@
     testResult.value = null
 
     try {
-      if (selectedProvider.value === AIProvider.GLM) {
-        if (!glmConfig.apiKey) {
-          throw new Error('请先配置智谱 GLM API密钥')
-        }
-
-        // 导入测试模块
-        const { testGLMAPI } = await import('@/utils/testGLMAPI')
-        const result = await testGLMAPI()
-
-        if (result.success) {
+      const provider = selectedProvider.value
+      
+      switch (provider) {
+        case AIProvider.GLM:
+          if (!glmConfig.apiKey) {
+            throw new Error('请先配置智谱 GLM API密钥')
+          }
+          // 导入测试模块
+          const { testGLMAPI } = await import('@/utils/testGLMAPI')
+          const result = await testGLMAPI()
+          if (result.success) {
+            testResult.value = {
+              success: true,
+              message: '智谱 GLM 连接测试成功: ' + result.data,
+            }
+          } else {
+            throw new Error(result.message)
+          }
+          break
+          
+        case AIProvider.OPENAI:
+          if (!openaiConfig.apiKey) {
+            throw new Error('请先配置OpenAI API密钥')
+          }
+          // 测试OpenAI连接
+          await aiService.generateRecipe(['测试食材'], { difficulty: 'easy', servings: 1 })
           testResult.value = {
             success: true,
-            message: '智谱 GLM 连接测试成功: ' + result.data,
+            message: 'OpenAI连接测试成功',
           }
-        } else {
-          throw new Error(result.message)
-        }
-      } else if (selectedProvider.value === AIProvider.OPENAI) {
-        if (!openaiConfig.apiKey) {
-          throw new Error('请先配置OpenAI API密钥')
-        }
-
-        // 测试OpenAI连接 - 使用简单的文本生成测试
-        await aiService.generateRecipe(['测试食材'], { difficulty: 'easy', servings: 1 })
-
-        testResult.value = {
-          success: true,
-          message: 'OpenAI连接测试成功',
-        }
-      } else {
-        throw new Error('当前提供商不支持测试')
+          break
+          
+        case AIProvider.ANTHROPIC:
+          if (!import.meta.env.VITE_ANTHROPIC_API_KEY) {
+            throw new Error('请先配置Anthropic Claude API密钥')
+          }
+          // 测试Anthropic连接
+          await aiService.generateText('请回复"连接测试成功"')
+          testResult.value = {
+            success: true,
+            message: 'Anthropic Claude连接测试成功',
+          }
+          break
+          
+        case AIProvider.GEMINI:
+          if (!import.meta.env.VITE_GOOGLE_API_KEY) {
+            throw new Error('请先配置Google Gemini API密钥')
+          }
+          // 测试Gemini连接
+          await aiService.generateText('请回复"连接测试成功"')
+          testResult.value = {
+            success: true,
+            message: 'Google Gemini连接测试成功',
+          }
+          break
+          
+        case AIProvider.DEEPSEEK:
+          if (!import.meta.env.VITE_DEEPSEEK_API_KEY) {
+            throw new Error('请先配置DeepSeek API密钥')
+          }
+          // 测试DeepSeek连接
+          await aiService.generateText('请回复"连接测试成功"')
+          testResult.value = {
+            success: true,
+            message: 'DeepSeek连接测试成功',
+          }
+          break
+          
+        case AIProvider.MOONSHOT:
+          if (!import.meta.env.VITE_MOONSHOT_API_KEY) {
+            throw new Error('请先配置Moonshot API密钥')
+          }
+          // 测试Moonshot连接
+          await aiService.generateText('请回复"连接测试成功"')
+          testResult.value = {
+            success: true,
+            message: 'Moonshot连接测试成功',
+          }
+          break
+          
+        case AIProvider.QWEN:
+          if (!import.meta.env.VITE_QWEN_API_KEY) {
+            throw new Error('请先配置通义千问 API密钥')
+          }
+          // 测试Qwen连接
+          await aiService.generateText('请回复"连接测试成功"')
+          testResult.value = {
+            success: true,
+            message: '通义千问连接测试成功',
+          }
+          break
+          
+        case AIProvider.HUNYUAN:
+          if (!import.meta.env.VITE_HUNYUAN_API_KEY) {
+            throw new Error('请先配置腾讯混元 API密钥')
+          }
+          // 测试Hunyuan连接
+          await aiService.generateText('请回复"连接测试成功"')
+          testResult.value = {
+            success: true,
+            message: '腾讯混元连接测试成功',
+          }
+          break
+          
+        case AIProvider.MOCK:
+          testResult.value = {
+            success: true,
+            message: '模拟模式测试成功',
+          }
+          break
+          
+        default:
+          throw new Error('当前提供商不支持测试')
       }
     } catch (error: any) {
       testResult.value = {
@@ -303,6 +470,19 @@
 
   const updateServiceStatus = () => {
     serviceStatus.value = aiService.getStatus()
+  }
+
+  // API 配置相关方法
+  const openAPIConfig = () => {
+    showAPIConfig.value = true
+  }
+
+  const handleAPIConfigSaved = () => {
+    ElMessage.success('API 配置已更新')
+    // 刷新提醒组件的状态
+    if (apiKeyReminder.value) {
+      apiKeyReminder.value.resetReminder()
+    }
   }
 
   // 生命周期

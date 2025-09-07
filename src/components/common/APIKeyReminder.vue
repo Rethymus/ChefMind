@@ -12,6 +12,9 @@
         <button class="dismiss-btn" @click="dismissReminder">
           知道了
         </button>
+        <button v-if="props.showQuickConfig" class="quick-config-btn" @click="openQuickConfig">
+          立即配置
+        </button>
         <button class="config-btn" @click="showConfigGuide">
           配置指南
         </button>
@@ -26,16 +29,19 @@ import { ref, computed, onMounted } from 'vue'
 interface Props {
   provider?: 'openai' | 'glm' | 'all'
   persistent?: boolean
+  showQuickConfig?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   provider: 'all',
-  persistent: false
+  persistent: false,
+  showQuickConfig: false
 })
 
 const emit = defineEmits<{
   dismiss: []
   'show-guide': []
+  'open-config': []
 }>()
 
 const isDismissed = ref(false)
@@ -81,6 +87,11 @@ const showConfigGuide = () => {
   alert('请在项目根目录创建 .env 文件，并添加相应的 API 密钥：\n\n' +
         'OpenAI: VITE_OPENAI_API_KEY=your_openai_key\n' +
         'GLM: VITE_GLM_API_KEY=your_glm_key')
+}
+
+// 快速配置
+const openQuickConfig = () => {
+  emit('open-config')
 }
 
 // 检查是否使用模拟数据
@@ -161,6 +172,22 @@ defineExpose({
 
         &:hover {
           background: #e67e22;
+        }
+      }
+
+      .quick-config-btn {
+        background: #27ae60;
+        color: white;
+        border: 1px solid #27ae60;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: #219a52;
+          border-color: #219a52;
         }
       }
 

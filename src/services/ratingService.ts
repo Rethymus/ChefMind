@@ -179,6 +179,7 @@ function getDefaultComments(recipeId: string, limit: number = 5): RecipeComment[
     {
       id: generateId(),
       recipeId,
+      userId: 'user_001',
       username: '美食爱好者',
       rating: 5,
       content: '这道菜非常美味，我全家都很喜欢！按照步骤做出来的效果很好，推荐大家尝试。',
@@ -189,6 +190,7 @@ function getDefaultComments(recipeId: string, limit: number = 5): RecipeComment[
     {
       id: generateId(),
       recipeId,
+      userId: 'user_002',
       username: '厨房新手',
       rating: 4,
       content: '作为新手，我觉得这个菜谱很容易上手，步骤清晰。就是最后调味有点难把握，可能需要多练习几次。',
@@ -199,6 +201,7 @@ function getDefaultComments(recipeId: string, limit: number = 5): RecipeComment[
     {
       id: generateId(),
       recipeId,
+      userId: 'user_003',
       username: '资深吃货',
       rating: 5,
       content: '这道菜的味道很正宗，和我在餐厅吃到的很像！我稍微调整了一下调料的比例，更符合我的口味。',
@@ -229,6 +232,7 @@ export async function addRecipeComment(
   const newComment: RecipeComment = {
     id: generateId(),
     recipeId,
+    userId: 'current_user',
     username,
     rating,
     content,

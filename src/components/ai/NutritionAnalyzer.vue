@@ -1,7 +1,14 @@
 <template>
   <div class="nutrition-analyzer">
     <!-- API 密钥提醒 -->
-    <APIKeyReminder ref="apiKeyReminder" />
+    <APIKeyReminder 
+      ref="apiKeyReminder" 
+      :showQuickConfig="true"
+      @open-config="openAPIConfig"
+    />
+    
+    <!-- API 配置弹窗 -->
+    <APIConfigModal v-model="showAPIConfig" @config-saved="handleAPIConfigSaved" />
     
     <el-card class="analyzer-card">
       <template #header>
@@ -256,6 +263,7 @@
   import { aiService, type RecipeRecommendation } from '@/services/aiService'
   import { Chart, registerables } from 'chart.js'
   import APIKeyReminder from '@/components/common/APIKeyReminder.vue'
+  import APIConfigModal from '@/components/common/APIConfigModal.vue'
 
   // 注册 Chart.js 组件
   Chart.register(...registerables)
@@ -271,6 +279,7 @@
 
   // 响应式数据
   const apiKeyReminder = ref()
+  const showAPIConfig = ref(false)
   const nutritionChartRef = ref<HTMLCanvasElement>()
   const chartInstance = ref<Chart | null>(null)
   const isAnalyzing = ref(false)
@@ -561,6 +570,19 @@
       analyzeNutrition()
     }
   })
+
+  // API 配置相关方法
+  const openAPIConfig = () => {
+    showAPIConfig.value = true
+  }
+
+  const handleAPIConfigSaved = () => {
+    ElMessage.success('API 配置已更新')
+    // 刷新提醒组件的状态
+    if (apiKeyReminder.value) {
+      apiKeyReminder.value.resetReminder()
+    }
+  }
 
   // 组件销毁时清理图表
   onUnmounted(() => {

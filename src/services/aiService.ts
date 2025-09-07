@@ -1,6 +1,6 @@
 // AI服务 - 智能烹饪助手核心服务
 import { ElMessage } from 'element-plus'
-import { aiProvider } from './aiProviders'
+import { AIProviderFactory } from './aiProviders'
 import type {
   Recipe,
   IngredientValidationResult,
@@ -13,6 +13,12 @@ import type {
 export enum AIProviderType {
   GLM = 'glm',
   OPENAI = 'openai',
+  ANTHROPIC = 'anthropic',
+  GEMINI = 'gemini',
+  DEEPSEEK = 'deepseek',
+  MOONSHOT = 'moonshot',
+  QWEN = 'qwen',
+  HUNYUAN = 'hunyuan',
   MOCK = 'mock',
 }
 
@@ -79,7 +85,8 @@ class AIService {
   private isInitialized = false
   private readonly cache = new Map<string, CacheItem>()
   private readonly cacheExpiry = 5 * 60 * 1000 // 5分钟缓存
-  private readonly currentProvider = aiProvider
+  private providerFactory: AIProviderFactory
+  private currentProvider: any // 当前AI提供者实例
 
   // 单独初始化方法，在实例化后手动调用
   public async init(): Promise<void> {
@@ -91,10 +98,14 @@ class AIService {
 
   private async initialize(): Promise<void> {
     try {
+      // 初始化AI提供者工厂
+      this.providerFactory = AIProviderFactory.getInstance()
+      this.currentProvider = this.providerFactory.getProvider()
+      
       // AI服务初始化
       await new Promise(resolve => setTimeout(resolve, 100))
       this.isInitialized = true
-      console.log('AI服务初始化完成')
+      console.log('AI服务初始化完成，当前提供者:', this.providerFactory.getProviderName())
     } catch (error) {
       console.error('AI服务初始化失败:', error)
       ElMessage.error('AI服务初始化失败')
@@ -123,15 +134,22 @@ class AIService {
 
   // 切换AI提供商
   switchProvider(provider: AIProviderType): void {
-    // 强制使用GLM提供商
-    if (provider !== AIProviderType.GLM) {
-      console.warn('项目已配置为仅使用智谱GLM API，忽略切换到其他提供商的请求')
+    if (!this.providerFactory) {
+      console.error('AI服务未初始化，无法切换提供商')
       return
     }
 
-    // 使用当前提供者，不进行切换
-    this.clearCache() // 切换提供商时清理缓存
-    console.log(`已切换到AI提供商: ${provider}`)
+    try {
+      // 切换提供商
+      this.currentProvider = this.providerFactory.switchProvider(provider)
+      this.clearCache() // 切换提供商时清理缓存
+      console.log(`已切换到AI提供商: ${provider}`)
+      
+      ElMessage.success(`已切换到${this.getProviderName(provider)}`)
+    } catch (error) {
+      console.error('切换AI提供商失败:', error)
+      ElMessage.error('切换AI提供商失败')
+    }
   }
 
   // 食材识别分析
@@ -594,11 +612,28 @@ class AIService {
     cacheSize: number
     currentProvider: string
   } {
+    const providerName = this.providerFactory ? this.providerFactory.getProviderName() : '未初始化'
     return {
       initialized: this.isInitialized,
       cacheSize: this.cache.size,
-      currentProvider: this.currentProvider.constructor.name,
+      currentProvider: providerName,
     }
+  }
+
+  // 获取提供商名称
+  private getProviderName(provider: AIProviderType): string {
+    const names = {
+      [AIProviderType.GLM]: '智谱 GLM',
+      [AIProviderType.OPENAI]: 'OpenAI GPT',
+      [AIProviderType.ANTHROPIC]: 'Anthropic Claude',
+      [AIProviderType.GEMINI]: 'Google Gemini',
+      [AIProviderType.DEEPSEEK]: 'DeepSeek',
+      [AIProviderType.MOONSHOT]: 'Moonshot',
+      [AIProviderType.QWEN]: '通义千问',
+      [AIProviderType.HUNYUAN]: '腾讯混元',
+      [AIProviderType.MOCK]: '模拟模式',
+    }
+    return names[provider] || '未知'
   }
 }
 

@@ -100,7 +100,7 @@
             <div class="form-input">
               <textarea 
                 v-model="newComment" 
-                :placeholder="写下你的评论..."
+                placeholder="写下你的评论..."
                 rows="3"
               ></textarea>
               <button 

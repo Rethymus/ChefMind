@@ -20,6 +20,7 @@
       </div>
 
       <div class="nav-actions">
+        <APIConfigButton />
         <EnhancedThemeToggle />
       </div>
     </div>
@@ -29,6 +30,7 @@
 <script setup lang="ts">
   import { ref, onMounted, onUnmounted } from 'vue'
   import EnhancedThemeToggle from '@/components/common/EnhancedThemeToggle.vue'
+  import APIConfigButton from '@/components/common/APIConfigButton.vue'
 
   const isMobile = ref(false)
 

@@ -26,8 +26,8 @@ export interface IngredientCategory {
 // 约束条件
 export interface Constraints {
   servings?: number
-  cookingTime?: string
-  difficulty?: string
+  cookingTime?: number | null
+  difficulty?: number | null
   dietaryRestrictions?: string[]
   healthGoals?: string[]
   allergens?: string[]
@@ -36,7 +36,7 @@ export interface Constraints {
   season?: string
   occasion?: string
   time?: string // 烹饪时间约束
-  people?: number // 用餐人数
+  people?: string // 用餐人数
   taste?: string // 口味偏好
 }
 
@@ -188,6 +188,8 @@ export interface RecipeRating {
   overall?: number // 总体评分
   count?: number // 评分次数
   taste?: number // 口味评分
+  appearance?: number // 外观评分
+  difficulty?: number // 难度评分
   updatedAt?: Date // 更新时间
 }
 
@@ -215,6 +217,8 @@ export interface CookingMethod {
   icon?: string
   description?: string
   difficulty?: number
+  timeRange?: string
+  healthScore?: number
 }
 
 // 食材

@@ -19,7 +19,7 @@
             <input 
               type="text" 
               v-model="searchQuery" 
-              :placeholder="搜索帖子..."
+              placeholder="搜索帖子..."
               @input="handleSearch"
             />
             <span class="search-icon">🔍</span>
@@ -179,7 +179,7 @@
             id="post-title"
             type="text" 
             v-model="newPost.title" 
-            :placeholder="输入帖子标题..."
+            placeholder="输入帖子标题..."
           />
         </div>
         
@@ -188,7 +188,7 @@
           <textarea 
             id="post-content"
             v-model="newPost.content" 
-            :placeholder="分享你的美食心得..."
+            placeholder="分享你的美食心得..."
             rows="5"
           ></textarea>
         </div>

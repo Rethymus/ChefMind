@@ -1,7 +1,14 @@
 <template>
   <div class="ai-view">
     <!-- API 密钥提醒 -->
-    <APIKeyReminder ref="apiKeyReminder" />
+    <APIKeyReminder 
+      ref="apiKeyReminder" 
+      :showQuickConfig="true"
+      @open-config="openAPIConfig"
+    />
+    
+    <!-- API 配置弹窗 -->
+    <APIConfigModal v-model="showAPIConfig" @config-saved="handleAPIConfigSaved" />
     
     <!-- 页面头部 -->
     <div class="ai-header">
@@ -592,6 +599,7 @@
   import EnhancedCookingMethodSelection from '@/components/recipe/EnhancedCookingMethodSelection.vue'
   import EnhancedDietaryRestrictionSelection from '@/components/recipe/EnhancedDietaryRestrictionSelection.vue'
   import APIKeyReminder from '@/components/common/APIKeyReminder.vue'
+  import APIConfigModal from '@/components/common/APIConfigModal.vue'
   // 导入烹饪方式数据
   import cookingMethods from '@/data/cookingMethods'
   import { generateRecipeCardSvg } from '@/utils/svgGenerator'
@@ -600,6 +608,7 @@
   const router = useRouter()
   const recipeStore = useRecipeStore()
   const apiKeyReminder = ref()
+  const showAPIConfig = ref(false)
 
   // 响应式数据
   const selectedIngredients = ref<string[]>([])
@@ -1131,6 +1140,19 @@
       .catch(() => {
         // 用户取消
       })
+  }
+
+  // API 配置相关方法
+  const openAPIConfig = () => {
+    showAPIConfig.value = true
+  }
+
+  const handleAPIConfigSaved = () => {
+    ElMessage.success('API 配置已更新')
+    // 刷新提醒组件的状态
+    if (apiKeyReminder.value) {
+      apiKeyReminder.value.resetReminder()
+    }
   }
 
   const formatTime = (date: Date) => {
