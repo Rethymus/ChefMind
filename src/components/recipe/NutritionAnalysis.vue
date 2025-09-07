@@ -508,7 +508,7 @@ const healthSuggestions = computed((): HealthSuggestion[] => {
   
   // 蔬菜建议
   const vegetableCount = recipeStore.selectedIngredients.filter(ing => 
-    ing.category === 'vegetables'
+    ing.category === '蔬菜'
   ).length
   if (vegetableCount < 3) {
     suggestions.push({

@@ -459,7 +459,7 @@
 
     if (filters.value.difficulty) {
       results = results.filter(
-        recipe => recipe.difficulty?.toLowerCase() === filters.value.difficulty
+        recipe => String(recipe.difficulty)?.toLowerCase() === filters.value.difficulty
       )
     }
 
@@ -791,8 +791,8 @@
     img.src = '/images/ingredients/default.jpg'
   }
 
-  const getDifficultyText = (difficulty: string): string => {
-    switch (difficulty?.toLowerCase()) {
+  const getDifficultyText = (difficulty: string | number): string => {
+    switch (String(difficulty)?.toLowerCase()) {
       case 'easy':
         return '简单'
       case 'medium':
@@ -800,7 +800,7 @@
       case 'hard':
         return '困难'
       default:
-        return difficulty || ''
+        return String(difficulty ?? '')
     }
   }
 

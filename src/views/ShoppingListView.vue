@@ -258,7 +258,7 @@ const sortMode = ref<'default' | 'completed' | 'recipe'>('default')
 
 // 编辑相关
 const showEditModal = ref(false)
-const editingItem = ref<ShoppingItem>({ name: '', completed: false, category: '食材' })
+const editingItem = ref<ShoppingItem>({ id: '', name: '', completed: false, category: '食材', createdAt: '', updatedAt: '' })
 const editingIndex = ref(-1)
 const customCategory = ref('')
 

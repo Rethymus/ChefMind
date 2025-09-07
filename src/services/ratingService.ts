@@ -1,6 +1,6 @@
 // ChefMind 智食谱 - 评分和评论服务
 
-import type { RecipeRating, RecipeComment } from '@/types/recipe'
+import type { RecipeRating, RecipeComment, RecipeRatingSummary } from '@/types/recipe'
 import { callGLM } from './glmService'
 import { getCachedData, setCachedData } from '@/utils/apiCache'
 
@@ -17,11 +17,11 @@ function generateId(): string {
  * @param recipeId 菜谱ID
  * @returns 菜谱评分信息
  */
-export async function getRecipeRating(recipeId: string): Promise<RecipeRating> {
+export async function getRecipeRating(recipeId: string): Promise<RecipeRatingSummary> {
   const cacheKey = `rating_${recipeId}`;
   
   // 检查缓存
-  const cachedRating = getCachedData<RecipeRating>(cacheKey);
+  const cachedRating = getCachedData<RecipeRatingSummary>(cacheKey);
   if (cachedRating) {
     return cachedRating;
   }
@@ -53,7 +53,7 @@ export async function getRecipeRating(recipeId: string): Promise<RecipeRating> {
       const jsonData = JSON.parse(jsonMatch[0]);
       
       // 构建评分对象
-      const rating: RecipeRating = {
+      const rating: RecipeRatingSummary = {
         recipeId,
         overall: jsonData.overall || 4.5,
         taste: jsonData.taste || 4.5,
@@ -84,7 +84,7 @@ export async function getRecipeRating(recipeId: string): Promise<RecipeRating> {
  * @param recipeId 菜谱ID
  * @returns 默认评分
  */
-function getDefaultRating(recipeId: string): RecipeRating {
+function getDefaultRating(recipeId: string): RecipeRatingSummary {
   return {
     recipeId,
     overall: 4.5,
@@ -264,14 +264,14 @@ export async function addRecipeComment(
  */
 async function updateRecipeRating(recipeId: string, newRating: number): Promise<void> {
   const cacheKey = `rating_${recipeId}`;
-  const currentRating = getCachedData<RecipeRating>(cacheKey) || getDefaultRating(recipeId);
+  const currentRating = getCachedData<RecipeRatingSummary>(cacheKey) || getDefaultRating(recipeId);
   
   // 计算新的平均评分
   const newCount = currentRating.count + 1;
   const newOverall = (currentRating.overall * currentRating.count + newRating) / newCount;
   
   // 更新评分对象
-  const updatedRating: RecipeRating = {
+  const updatedRating: RecipeRatingSummary = {
     ...currentRating,
     overall: parseFloat(newOverall.toFixed(1)),
     count: newCount,

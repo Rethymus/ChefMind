@@ -236,7 +236,7 @@ const pagination = ref({
 })
 const tags = ref<string[]>([])
 const searchQuery = ref('')
-const sortBy = ref('latest')
+const sortBy = ref<'latest' | 'popular'>('latest')
 const selectedTag = ref('')
 const showCreatePostModal = ref(false)
 const isSubmitting = ref(false)

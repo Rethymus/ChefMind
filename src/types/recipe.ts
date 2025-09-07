@@ -185,12 +185,17 @@ export interface RecipeRating {
   rating: number
   review?: string
   createdAt: Date
-  overall?: number // 总体评分
-  count?: number // 评分次数
-  taste?: number // 口味评分
-  appearance?: number // 外观评分
-  difficulty?: number // 难度评分
-  updatedAt?: Date // 更新时间
+}
+
+// 食谱评分摘要
+export interface RecipeRatingSummary {
+  recipeId: string
+  overall: number // 总体评分
+  count: number // 评分次数
+  taste: number // 口味评分
+  appearance: number // 外观评分
+  difficulty: number // 难度评分
+  updatedAt: Date // 更新时间
 }
 
 // 食谱评论
@@ -219,6 +224,7 @@ export interface CookingMethod {
   difficulty?: number
   timeRange?: string
   healthScore?: number
+  equipment?: string[]
 }
 
 // 食材
@@ -288,6 +294,7 @@ export interface Nutrition {
   fiber?: number
   sugar?: number
   sodium?: number
+  healthScore?: number
 }
 
 // 食谱步骤

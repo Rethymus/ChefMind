@@ -13,12 +13,12 @@
         </el-icon>
         <h3>AI正在为你生成菜谱...</h3>
         <p>请稍候，这可能需要几秒钟时间</p>
-        <el-progress
-          :percentage="loadingProgress"
+        <!-- <el-progress
+          :percentage="50"
           :show-text="false"
           stroke-width="6"
           color="#ff6b6b"
-        />
+        /> -->
       </div>
     </div>
 
@@ -43,7 +43,7 @@
         <div v-for="recipe in sortedRecipes" :key="recipe.id" class="recipe-card">
           <!-- 菜谱图片区域 -->
           <div class="recipe-image">
-            <div class="svg-cover" v-html="recipe.image"></div>
+            <div class="svg-cover" v-html="recipe.image || ''"></div>
             <div class="recipe-badges">
               <el-tag v-for="tag in recipe.tags" :key="tag" size="small" type="info">
                 {{ tag }}
@@ -61,7 +61,7 @@
               <div class="rating-item">
                 <span class="rating-label">难度</span>
                 <el-rate
-                  v-model="recipe.difficulty"
+                  v-model="Number(recipe.difficulty)"
                   disabled
                   show-score
                   text-color="#ff9900"
@@ -71,7 +71,7 @@
               <div class="rating-item">
                 <span class="rating-label">营养</span>
                 <el-rate
-                  v-model="recipe.nutrition"
+                  v-model="getNutritionScore(recipe.nutrition)"
                   disabled
                   show-score
                   text-color="#67c23a"
@@ -137,7 +137,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted, onUnmounted } from 'vue'
+  import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
   import type { Recipe } from '@/types/recipe'
   import RecipeDetail from './RecipeDetail.vue'
   import { ElMessage } from 'element-plus'
@@ -166,8 +166,20 @@
   const sortBy = ref('recommended')
   const showDetailDialog = ref(false)
   const selectedRecipe = ref<Recipe | null>(null)
-  const loadingProgress = ref(0)
-  let loadingInterval: number | null = null
+  const loadingProgress = ref<number>(0)
+  const progress = computed(() => Number(loadingProgress.value))
+  let loadingInterval: any = null
+
+  const getNutritionScore = (nutrition: Recipe['nutrition']): number => {
+    if (!nutrition) return 0;
+    if (nutrition.healthScore) return nutrition.healthScore;
+    const calories = nutrition.calories || 0;
+    if (calories < 200) return 5;
+    if (calories < 400) return 4;
+    if (calories < 600) return 3;
+    if (calories < 800) return 2;
+    return 1;
+  }
 
   // 排序后的菜谱
   const sortedRecipes = computed(() => {
@@ -177,14 +189,14 @@
       case 'time':
         return sorted.sort((a, b) => (a.time || 0) - (b.time || 0))
       case 'difficulty':
-        return sorted.sort((a, b) => a.difficulty - b.difficulty)
+        return sorted.sort((a, b) => Number(a.difficulty) - Number(b.difficulty))
       case 'nutrition':
-        return sorted.sort((a, b) => (b.nutrition?.calories || 0) - (a.nutrition?.calories || 0))
+        return sorted.sort((a, b) => (getNutritionScore(b.nutrition) || 0) - (getNutritionScore(a.nutrition) || 0))
       default:
         // 推荐度排序（综合评分）
         return sorted.sort((a, b) => {
-          const scoreA = ((a.nutrition?.calories || 0) / 100 + (6 - a.difficulty)) / 2
-          const scoreB = ((b.nutrition?.calories || 0) / 100 + (6 - b.difficulty)) / 2
+          const scoreA = ((getNutritionScore(a.nutrition) || 0) + (6 - Number(a.difficulty))) / 2
+          const scoreB = ((getNutritionScore(b.nutrition) || 0) + (6 - Number(b.difficulty))) / 2
           return scoreB - scoreA
         })
     }
@@ -239,7 +251,6 @@
     }
   })
 
-  // 监听生成状态
   const stopLoading = () => {
     if (props.isGenerating) {
       startLoadingProgress()
@@ -248,8 +259,6 @@
     }
   }
 
-  // 使用 watch 监听 isGenerating 变化
-  import { watch } from 'vue'
   watch(() => props.isGenerating, stopLoading)
 </script>
 

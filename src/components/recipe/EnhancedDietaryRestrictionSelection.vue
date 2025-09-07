@@ -38,72 +38,72 @@
       <!-- 饮食限制选项 -->
       <div v-if="activeTab === 'restrictions'" class="tab-content">
         <div class="option-grid">
-          <el-checkbox 
-            v-for="restriction in dietaryRestrictions" 
-            :key="restriction.value"
-            v-model="selectedRestrictions"
-            :label="restriction.value"
-            @change="updateDietaryRestrictions"
-          >
-            <div class="option-item">
-              <span class="option-label">{{ restriction.label }}</span>
-              <el-tooltip 
-                v-if="restriction.description" 
-                :content="restriction.description" 
-                placement="top"
-              >
-                <el-icon class="info-icon"><InfoFilled /></el-icon>
-              </el-tooltip>
-            </div>
-          </el-checkbox>
+          <el-checkbox-group v-model="selectedRestrictions" @change="updateDietaryRestrictions">
+            <el-checkbox 
+              v-for="restriction in dietaryRestrictions" 
+              :key="restriction.value"
+              :label="restriction.value"
+            >
+              <div class="option-item">
+                <span class="option-label">{{ restriction.label }}</span>
+                <el-tooltip 
+                  v-if="restriction.description" 
+                  :content="restriction.description" 
+                  placement="top"
+                >
+                  <el-icon class="info-icon"><InfoFilled /></el-icon>
+                </el-tooltip>
+              </div>
+            </el-checkbox>
+          </el-checkbox-group>
         </div>
       </div>
       
       <!-- 健康目标选项 -->
       <div v-if="activeTab === 'health'" class="tab-content">
         <div class="option-grid">
-          <el-checkbox 
-            v-for="goal in healthGoals" 
-            :key="goal.value"
-            v-model="selectedHealthGoals"
-            :label="goal.value"
-            @change="updateHealthGoals"
-          >
-            <div class="option-item">
-              <span class="option-label">{{ goal.label }}</span>
-              <el-tooltip 
-                v-if="goal.description" 
-                :content="goal.description" 
-                placement="top"
-              >
-                <el-icon class="info-icon"><InfoFilled /></el-icon>
-              </el-tooltip>
-            </div>
-          </el-checkbox>
+          <el-checkbox-group v-model="selectedHealthGoals" @change="updateHealthGoals">
+            <el-checkbox 
+              v-for="goal in healthGoals" 
+              :key="goal.value"
+              :label="goal.value"
+            >
+              <div class="option-item">
+                <span class="option-label">{{ goal.label }}</span>
+                <el-tooltip 
+                  v-if="goal.description" 
+                  :content="goal.description" 
+                  placement="top"
+                >
+                  <el-icon class="info-icon"><InfoFilled /></el-icon>
+                </el-tooltip>
+              </div>
+            </el-checkbox>
+          </el-checkbox-group>
         </div>
       </div>
       
       <!-- 过敏原选项 -->
       <div v-if="activeTab === 'allergies'" class="tab-content">
         <div class="option-grid">
-          <el-checkbox 
-            v-for="allergy in allergies" 
-            :key="allergy.value"
-            v-model="selectedAllergies"
-            :label="allergy.value"
-            @change="updateAllergies"
-          >
-            <div class="option-item">
-              <span class="option-label">{{ allergy.label }}</span>
-              <el-tooltip 
-                v-if="allergy.description" 
-                :content="allergy.description" 
-                placement="top"
-              >
-                <el-icon class="info-icon"><InfoFilled /></el-icon>
-              </el-tooltip>
-            </div>
-          </el-checkbox>
+          <el-checkbox-group v-model="selectedAllergies" @change="updateAllergies">
+            <el-checkbox 
+              v-for="allergy in allergies" 
+              :key="allergy.value"
+              :label="allergy.value"
+            >
+              <div class="option-item">
+                <span class="option-label">{{ allergy.label }}</span>
+                <el-tooltip 
+                  v-if="allergy.description" 
+                  :content="allergy.description" 
+                  placement="top"
+                >
+                  <el-icon class="info-icon"><InfoFilled /></el-icon>
+                </el-tooltip>
+              </div>
+            </el-checkbox>
+          </el-checkbox-group>
         </div>
         
         <!-- 自定义过敏原输入 -->
@@ -124,17 +124,17 @@
       <!-- 口味偏好选项 -->
       <div v-if="activeTab === 'flavors'" class="tab-content">
         <div class="option-grid">
-          <el-checkbox 
-            v-for="flavor in flavors" 
-            :key="flavor.value"
-            v-model="selectedFlavors"
-            :label="flavor.value"
-            @change="updateFlavors"
-          >
-            <div class="option-item">
-              <span class="option-label">{{ flavor.label }}</span>
-            </div>
-          </el-checkbox>
+          <el-checkbox-group v-model="selectedFlavors" @change="updateFlavors">
+            <el-checkbox 
+              v-for="flavor in flavors" 
+              :key="flavor.value"
+              :label="flavor.value"
+            >
+              <div class="option-item">
+                <span class="option-label">{{ flavor.label }}</span>
+              </div>
+            </el-checkbox>
+          </el-checkbox-group>
         </div>
         
         <!-- 辣度选择 -->
@@ -189,25 +189,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, PropType } from 'vue'
 import { Warning, InfoFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const props = defineProps({
   initialDietaryRestrictions: {
-    type: Array,
+    type: Array as PropType<string[]>,
     default: () => []
   },
   initialHealthGoals: {
-    type: Array,
+    type: Array as PropType<string[]>,
     default: () => []
   },
   initialAllergies: {
-    type: Array,
+    type: Array as PropType<string[]>,
     default: () => []
   },
   initialFlavors: {
-    type: Array,
+    type: Array as PropType<string[]>,
     default: () => []
   },
   initialSpiceLevel: {

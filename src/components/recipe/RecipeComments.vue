@@ -262,7 +262,7 @@ const loadComments = () => {
 
 // 更新食谱评分
 const updateRecipeRating = () => {
-  emit('update-rating', averageRating.value)
+  emit('rating-change', averageRating.value)
 }
 
 // 加载用户名

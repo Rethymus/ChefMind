@@ -130,6 +130,8 @@ import type { CookingMethod } from '@/types/recipe'
 const cookingMethods: CookingMethod[] = [
   {
     id: 'stir-fry',
+    label: '炒',
+    value: 'stir-fry',
     name: '炒',
     description: '大火快炒，保持食材脆嫩',
     icon: 'Lightning',
@@ -140,6 +142,8 @@ const cookingMethods: CookingMethod[] = [
   },
   {
     id: 'boil',
+    label: '煮',
+    value: 'boil',
     name: '煮',
     description: '水煮烹饪，营养健康',
     icon: 'Cloudy',
@@ -150,6 +154,8 @@ const cookingMethods: CookingMethod[] = [
   },
   {
     id: 'steam',
+    label: '蒸',
+    value: 'steam',
     name: '蒸',
     description: '蒸汽烹饪，保持原味',
     icon: 'Cloudy',
@@ -160,6 +166,8 @@ const cookingMethods: CookingMethod[] = [
   },
   {
     id: 'stew',
+    label: '炖',
+    value: 'stew',
     name: '炖',
     description: '小火慢炖，汤汁浓郁',
     icon: 'Timer',
@@ -170,6 +178,8 @@ const cookingMethods: CookingMethod[] = [
   },
   {
     id: 'roast',
+    label: '烤',
+    value: 'roast',
     name: '烤',
     description: '烤箱烘烤，外酥内嫩',
     icon: 'Sunny',
@@ -180,6 +190,8 @@ const cookingMethods: CookingMethod[] = [
   },
   {
     id: 'deep-fry',
+    label: '炸',
+    value: 'deep-fry',
     name: '炸',
     description: '油炸烹饪，香脆可口',
     icon: 'Lightning',
@@ -190,6 +202,8 @@ const cookingMethods: CookingMethod[] = [
   },
   {
     id: 'pan-fry',
+    label: '煎',
+    value: 'pan-fry',
     name: '煎',
     description: '平底锅煎制，两面金黄',
     icon: 'Sunny',
@@ -200,6 +214,8 @@ const cookingMethods: CookingMethod[] = [
   },
   {
     id: 'braise',
+    label: '焖',
+    value: 'braise',
     name: '焖',
     description: '密封焖煮，入味透彻',
     icon: 'Timer',
@@ -210,6 +226,8 @@ const cookingMethods: CookingMethod[] = [
   },
   {
     id: 'simmer',
+    label: '烧',
+    value: 'simmer',
     name: '烧',
     description: '调味烧制，色香味俱全',
     icon: 'Lightning',
@@ -220,6 +238,8 @@ const cookingMethods: CookingMethod[] = [
   },
   {
     id: 'mix',
+    label: '拌',
+    value: 'mix',
     name: '拌',
     description: '凉拌调味，清爽开胃',
     icon: 'Bowl',
@@ -230,6 +250,8 @@ const cookingMethods: CookingMethod[] = [
   },
   {
     id: 'marinate',
+    label: '腌',
+    value: 'marinate',
     name: '腌',
     description: '调料腌制，提前入味',
     icon: 'Refrigerator',
@@ -240,6 +262,8 @@ const cookingMethods: CookingMethod[] = [
   },
   {
     id: 'smoke',
+    label: '熏',
+    value: 'smoke',
     name: '熏',
     description: '烟熏烹饪，独特风味',
     icon: 'Cloudy',
@@ -250,6 +274,8 @@ const cookingMethods: CookingMethod[] = [
   },
   {
     id: 'braise-soy',
+    label: '卤',
+    value: 'braise-soy',
     name: '卤',
     description: '卤水烹饪，香味浓郁',
     icon: 'Timer',
@@ -260,6 +286,8 @@ const cookingMethods: CookingMethod[] = [
   },
   {
     id: 'hot-pot',
+    label: '涮',
+    value: 'hot-pot',
     name: '涮',
     description: '热水涮煮，鲜嫩爽滑',
     icon: 'Cloudy',

@@ -374,7 +374,7 @@
     score += favoriteMatches.length * 10
 
     // 技能等级匹配
-    const difficulty = recipe.difficulty?.toLowerCase()
+    const difficulty = String(recipe.difficulty)?.toLowerCase()
     if (preferences.cookingSkillLevel === 'beginner' && difficulty === 'easy') score += 15
     if (
       preferences.cookingSkillLevel === 'intermediate' &&
@@ -411,7 +411,7 @@
       }
 
       // 检查技能匹配
-      const difficulty = recipe.difficulty?.toLowerCase()
+      const difficulty = String(recipe.difficulty)?.toLowerCase()
       if (preferences.cookingSkillLevel === 'beginner' && difficulty === 'easy') {
         reasons.push('适合新手制作')
       }

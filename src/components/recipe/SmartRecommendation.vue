@@ -276,7 +276,7 @@ const generateIngredientAlternatives = async () => {
   try {
     const prompt = `请为以下菜谱的食材提供替换建议：
 菜谱：${props.currentRecipe.name}
-食材：${props.currentRecipe.ingredients.map(ing => ing.name).join('、')}
+食材：${props.currentRecipe.ingredients.map(ing => (typeof ing === 'string' ? ing : ing.name)).join('、')}
 
 请为每个主要食材提供2-3个替换选项，包括：
 1. 替换食材名称
@@ -290,7 +290,7 @@ const generateIngredientAlternatives = async () => {
     ])
 
     // 解析响应并生成替换建议
-    ingredientAlternatives.value = parseIngredientAlternatives(response.choices[0]?.message?.content || '')
+    ingredientAlternatives.value = parseIngredientAlternatives(response || '')
     
   } catch (error) {
     console.error('生成食材替换建议失败:', error)
@@ -309,7 +309,7 @@ const checkAllergens = async () => {
   try {
     const prompt = `请检测以下菜谱中的常见过敏原：
 菜谱：${props.currentRecipe.name}
-食材：${props.currentRecipe.ingredients.map(ing => ing.name).join('、')}
+食材：${props.currentRecipe.ingredients.map(ing => (typeof ing === 'string' ? ing : ing.name)).join('、')}
 
 请检测以下过敏原：乳制品、鸡蛋、坚果、海鲜、大豆、小麦、芝麻等
 并提供安全的替换建议。`
@@ -319,7 +319,7 @@ const checkAllergens = async () => {
       { role: 'user', content: prompt }
     ])
 
-    allergenInfo.value = parseAllergenInfo(response.choices[0]?.message?.content || '')
+    allergenInfo.value = parseAllergenInfo(response || '')
     
   } catch (error) {
     console.error('过敏原检测失败:', error)
@@ -337,7 +337,7 @@ const generateNutritionOptimization = async () => {
   try {
     const prompt = `请分析以下菜谱的营养成分并提供优化建议：
 菜谱：${props.currentRecipe.name}
-食材：${props.currentRecipe.ingredients.map(ing => ing.name).join('、')}
+食材：${props.currentRecipe.ingredients.map(ing => (typeof ing === 'string' ? ing : ing.name)).join('、')}
 
 请提供：
 1. 营养评分(1-100)
@@ -349,7 +349,7 @@ const generateNutritionOptimization = async () => {
       { role: 'user', content: prompt }
     ])
 
-    nutritionOptimization.value = parseNutritionOptimization(response.choices[0]?.message?.content || '')
+    nutritionOptimization.value = parseNutritionOptimization(response || '')
     
   } catch (error) {
     console.error('营养优化分析失败:', error)
@@ -496,16 +496,16 @@ const generateFallbackAlternatives = (): IngredientAlternative[] => {
   if (!props.currentRecipe) return []
   
   return props.currentRecipe.ingredients.slice(0, 3).map(ing => ({
-    original: ing.name,
+    original: (typeof ing === 'string' ? ing : ing.name),
     suggestions: [
       {
-        name: `有机${ing.name}`,
+        name: `有机${(typeof ing === 'string' ? ing : ing.name)}`,
         reason: '更高的营养价值和更好的口感',
         nutritionScore: 9,
         flavorScore: 8
       },
       {
-        name: `低脂${ing.name}`,
+        name: `低脂${(typeof ing === 'string' ? ing : ing.name)}`,
         reason: '减少热量摄入，适合减肥人群',
         nutritionScore: 7,
         flavorScore: 7

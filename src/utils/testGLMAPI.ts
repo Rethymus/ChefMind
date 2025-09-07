@@ -1,16 +1,38 @@
 // GLM API测试工具
+import { AI_CONFIG } from '@/config/aiConfig';
+
 export const checkGLMConfig = () => {
-  const savedConfigs = localStorage.getItem('ai-api-configs')
+  const savedConfigs = localStorage.getItem('ai-api-configs');
+  let apiKey = '';
+  let configured = false;
+
   if (savedConfigs) {
     try {
-      const configs = JSON.parse(savedConfigs)
-      return !!configs.glm?.apiKey
+      const configs = JSON.parse(savedConfigs);
+      if (configs.glm?.apiKey) {
+        apiKey = configs.glm.apiKey;
+        configured = true;
+      }
     } catch {
-      return false
+      // ignore parsing errors
     }
   }
-  return false
-}
+
+  if (!configured) {
+    apiKey = AI_CONFIG.glm.apiKey;
+    if (apiKey) {
+      configured = true;
+    }
+  }
+
+  return {
+    configured,
+    apiKey: configured ? `****${apiKey.slice(-4)}` : '未配置',
+    apiUrl: AI_CONFIG.glm.baseURL,
+    model: AI_CONFIG.glm.model,
+  };
+};
+
 
 export const testGLMAPI = async (apiKey?: string, model?: string) => {
   try {

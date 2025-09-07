@@ -422,25 +422,37 @@ const generateFromRecipes = () => {
   recipeStore.generatedRecipes.forEach(recipe => {
     if (recipe.ingredients) {
       recipe.ingredients.forEach(ingredient => {
+        let ingredientName: string;
+        let ingredientAmount: number = 1;
+        let ingredientUnit: string = '个';
+
+        if (typeof ingredient === 'string') {
+          ingredientName = ingredient;
+        } else {
+          ingredientName = ingredient.name;
+          ingredientAmount = ingredient.amount || 1;
+          ingredientUnit = ingredient.unit || '个';
+        }
+
         // 检查是否已存在相同食材
         const existingItem = shoppingItems.value.find(item => 
-          item.name === ingredient.name && item.category === getCategoryByIngredient(ingredient.name)
+          item.name === ingredientName && item.category === getCategoryByIngredient(ingredientName)
         )
 
         if (existingItem) {
           // 累加数量
-          existingItem.quantity += parseFloat(ingredient.amount || '0') || 1
+          existingItem.quantity += ingredientAmount
         } else {
           // 添加新食材
           const newItem: ShoppingItem = {
             id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-            name: ingredient.name,
-            quantity: parseFloat(ingredient.amount || '0') || 1,
-            unit: ingredient.unit || '个',
-            category: getCategoryByIngredient(ingredient.name),
+            name: ingredientName,
+            quantity: ingredientAmount,
+            unit: ingredientUnit,
+            category: getCategoryByIngredient(ingredientName),
             completed: false,
             urgent: false,
-            estimatedPrice: getEstimatedPrice(ingredient.name),
+            estimatedPrice: getEstimatedPrice(ingredientName),
             fromRecipe: recipe.name
           }
           shoppingItems.value.push(newItem)
