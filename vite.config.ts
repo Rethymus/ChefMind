@@ -21,10 +21,6 @@ export default defineConfig({
       eslintrc: {
         enabled: true
       }
-    }),
-    Components({
-      resolvers: [ElementPlusResolver()],
-      dts: true
     })
   ],
   resolve: {
