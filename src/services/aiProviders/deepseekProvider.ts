@@ -218,7 +218,7 @@ ${constraints}
     }
   }
 
-  async analyzeIngredient(imageFile: File): Promise<IngredientAnalysisResult> {
+  async analyzeIngredient(_imageFile: File): Promise<IngredientAnalysisResult> {
     try {
       // DeepSeek目前不支持图片分析，返回文本分析
       const prompt = `

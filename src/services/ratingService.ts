@@ -1,6 +1,6 @@
 // ChefMind 智食谱 - 评分和评论服务
 
-import type { RecipeRating, RecipeComment, RecipeRatingSummary } from '@/types/recipe'
+import type { RecipeComment, RecipeRatingSummary } from '@/types/recipe'
 import { callGLM } from './glmService'
 import { getCachedData, setCachedData } from '@/utils/apiCache'
 
@@ -96,6 +96,14 @@ function getDefaultRating(recipeId: string): RecipeRatingSummary {
   };
 }
 
+interface AIComment {
+  username: string;
+  rating: number;
+  content: string;
+  createdAt: string;
+  likes: number;
+}
+
 /**
  * 获取菜谱评论
  * @param recipeId 菜谱ID
@@ -141,7 +149,7 @@ export async function getRecipeComments(recipeId: string, limit: number = 5): Pr
       const jsonData = JSON.parse(jsonMatch[0]);
       
       // 构建评论对象数组
-      const comments: RecipeComment[] = jsonData.map((item: any) => ({
+      const comments: RecipeComment[] = jsonData.map((item: AIComment) => ({
         id: generateId(),
         recipeId,
         username: item.username,

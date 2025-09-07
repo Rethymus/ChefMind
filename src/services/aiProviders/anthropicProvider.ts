@@ -219,7 +219,7 @@ ${constraints}
     }
   }
 
-  async analyzeIngredient(imageFile: File): Promise<IngredientAnalysisResult> {
+  async analyzeIngredient(_imageFile: File): Promise<IngredientAnalysisResult> {
     // 注意：Claude目前不支持图片分析，返回文本分析
     try {
       const prompt = `

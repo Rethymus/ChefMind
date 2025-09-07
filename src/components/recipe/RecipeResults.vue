@@ -13,12 +13,12 @@
         </el-icon>
         <h3>AI正在为你生成菜谱...</h3>
         <p>请稍候，这可能需要几秒钟时间</p>
-        <!-- <el-progress
-          :percentage="50"
+        <el-progress
+          :percentage="progress"
           :show-text="false"
-          stroke-width="6"
+          :stroke-width="6"
           color="#ff6b6b"
-        /> -->
+        />
       </div>
     </div>
 
@@ -61,7 +61,7 @@
               <div class="rating-item">
                 <span class="rating-label">难度</span>
                 <el-rate
-                  v-model="Number(recipe.difficulty)"
+                  :model-value="Number(recipe.difficulty)"
                   disabled
                   show-score
                   text-color="#ff9900"
@@ -71,7 +71,7 @@
               <div class="rating-item">
                 <span class="rating-label">营养</span>
                 <el-rate
-                  v-model="getNutritionScore(recipe.nutrition)"
+                  :model-value="getNutritionScore(recipe.nutrition)"
                   disabled
                   show-score
                   text-color="#67c23a"

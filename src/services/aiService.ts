@@ -1,6 +1,7 @@
 // AI服务 - 智能烹饪助手核心服务
 import { ElMessage } from 'element-plus'
 import { AIProviderFactory } from './aiProviders'
+import type { BaseAIProvider } from './aiProviders/baseProvider'
 import type {
   Recipe,
   IngredientValidationResult,
@@ -86,7 +87,7 @@ class AIService {
   private readonly cache = new Map<string, CacheItem>()
   private readonly cacheExpiry = 5 * 60 * 1000 // 5分钟缓存
   private providerFactory: AIProviderFactory
-  private currentProvider: any // 当前AI提供者实例
+  private currentProvider: BaseAIProvider
 
   // 单独初始化方法，在实例化后手动调用
   public async init(): Promise<void> {

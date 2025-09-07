@@ -24,7 +24,7 @@ export interface UserAction {
   timestamp: number;
   recipeId?: string;
   recipeTitle?: string;
-  value?: any;
+  value?: string | number | boolean;
 }
 
 // 用户统计数据接口
@@ -115,7 +115,7 @@ class AnalyticsService {
     type: UserActionType,
     recipeId?: string,
     recipeTitle?: string,
-    value?: any
+    value?: string | number | boolean
   ): void {
     const action: UserAction = {
       type,
@@ -354,7 +354,7 @@ class AnalyticsService {
    * @param limit 推荐数量
    * @returns 推荐的食谱列表
    */
-  public getPersonalizedRecommendations(userId: string, limit: number = 5): Array<{id: string, title: string, image: string, reason: string}> {
+  public getPersonalizedRecommendations(userId: string, _limit: number = 5): Array<{id: string, title: string, image: string, reason: string}> {
     // 模拟个性化推荐
     return [
       {

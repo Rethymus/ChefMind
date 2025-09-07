@@ -3,7 +3,7 @@
  */
 
 // 内存缓存对象
-const memoryCache: Record<string, { data: any; expiry: number }> = {};
+const memoryCache: Record<string, { data: unknown; expiry: number }> = {};
 
 /**
  * 将数据存储到缓存中

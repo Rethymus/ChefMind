@@ -212,7 +212,7 @@ ${constraints}
     }
   }
 
-  async analyzeIngredient(imageFile: File): Promise<IngredientAnalysisResult> {
+  async analyzeIngredient(_imageFile: File): Promise<IngredientAnalysisResult> {
     try {
       const prompt = `
 我无法直接分析图片，请提供一个通用的食材分析模板。

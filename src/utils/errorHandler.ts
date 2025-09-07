@@ -1,4 +1,4 @@
-import { App } from 'vue'
+import { App, ComponentPublicInstance } from 'vue'
 import { ElMessage, ElNotification } from 'element-plus'
 
 // 错误类型定义
@@ -82,7 +82,7 @@ export const errorReporting = new ErrorReportingService()
 // 全局错误处理器
 export function setupErrorHandling(app: App) {
   // Vue 应用错误处理
-  app.config.errorHandler = (err: unknown, _instance: any, info: string) => {
+  app.config.errorHandler = (err: unknown, _instance: ComponentPublicInstance | null, info: string) => {
     const error = err as Error
     const errorInfo: ErrorInfo = {
       message: error.message || '未知错误',
@@ -128,9 +128,15 @@ export function setupErrorHandling(app: App) {
   // 资源加载错误
   window.addEventListener('error', (event) => {
     if (event.target !== window) {
-      const target = event.target as HTMLElement
+      const target = event.target as (HTMLImageElement | HTMLLinkElement | HTMLScriptElement)
+      let resourceUrl = '';
+      if ('src' in target) {
+        resourceUrl = target.src;
+      } else if ('href' in target) {
+        resourceUrl = target.href;
+      }
       const errorInfo: ErrorInfo = {
-        message: `资源加载失败: ${target.tagName} - ${(target as any).src || (target as any).href}`,
+        message: `资源加载失败: ${target.tagName} - ${resourceUrl}`,
         timestamp: new Date(),
         url: window.location.href,
         userAgent: navigator.userAgent
@@ -142,17 +148,17 @@ export function setupErrorHandling(app: App) {
 }
 
 // 组件级错误处理助手
-export function withErrorHandling<T extends (...args: any[]) => any>(
+export function withErrorHandling<T extends (...args: unknown[]) => unknown>(
   fn: T,
-  fallback?: any,
+  fallback?: unknown,
   errorMessage?: string
 ): T {
-  return ((...args: any[]) => {
+  return ((...args: unknown[]) => {
     try {
       const result = fn(...args)
       
       // 如果返回 Promise，处理 Promise 错误
-      if (result && typeof result.catch === 'function') {
+      if (result && result instanceof Promise) {
         return result.catch((error: Error) => {
           const errorInfo: ErrorInfo = {
             message: errorMessage || error.message || '操作失败',
@@ -189,10 +195,10 @@ export function withErrorHandling<T extends (...args: any[]) => any>(
 
 // 异步操作错误处理装饰器
 export function handleAsyncError(errorMessage?: string) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (_target: unknown, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value
     
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       try {
         return await originalMethod.apply(this, args)
       } catch (error) {
@@ -216,7 +222,7 @@ export function handleAsyncError(errorMessage?: string) {
 }
 
 // 网络请求错误处理
-export function handleNetworkError(error: any): string {
+export function handleNetworkError(error: Error & { response?: { status: number }, request?: unknown }): string {
   let message = '网络请求失败'
   
   if (error.response) {

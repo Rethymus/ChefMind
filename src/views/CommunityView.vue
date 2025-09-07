@@ -217,13 +217,12 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import communityService from '@/services/communityService'
-import { useUserService } from '@/services/userService'
 
 // 路由
 const router = useRouter()
 
 // 服务
-const userService = useUserService()
+
 
 // 状态
 const isLoading = ref(false)

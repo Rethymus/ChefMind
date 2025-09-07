@@ -1,13 +1,11 @@
-import type { BaseAIProvider } from './baseProvider'
 import type { 
-  Recipe, 
-  RecipeGenerationParams, 
-  IngredientValidationResult,
   RecipeGenerationResult,
   IngredientAnalysisResult,
   NutritionAnalysisResult,
-  PersonalizedRecommendation
+  PersonalizedRecommendation,
+  Recipe,
 } from '@/types/recipe'
+import type { UserHistoryItem, UserPreferences } from '@/services/aiService'
 
 export class OpenAIProvider {
   private apiKey: string
@@ -18,7 +16,7 @@ export class OpenAIProvider {
     this.baseURL = baseURL
   }
 
-  async analyzeIngredient(imageFile: File): Promise<IngredientAnalysisResult> {
+  async analyzeIngredient(_imageFile: File): Promise<IngredientAnalysisResult> {
     // 模拟食材识别
     return {
       name: '番茄',
@@ -37,7 +35,7 @@ export class OpenAIProvider {
     }
   }
 
-  async analyzeNutrition(recipe: any): Promise<NutritionAnalysisResult> {
+  async analyzeNutrition(_recipe: Recipe): Promise<NutritionAnalysisResult> {
     // 模拟营养分析
     return {
       calories: 350,
@@ -60,7 +58,7 @@ export class OpenAIProvider {
 
   async generateRecipe(
     ingredients: string[],
-    preferences?: any
+    preferences?: UserPreferences
   ): Promise<RecipeGenerationResult>
   async generateRecipe(params: {
     ingredients: string[]
@@ -68,7 +66,7 @@ export class OpenAIProvider {
     difficulty?: string
     servings?: number
     dietaryRestrictions?: string[]
-    preferences?: any
+    preferences?: UserPreferences
   }): Promise<RecipeGenerationResult>
   async generateRecipe(
     ingredientsOrParams: string[] | {
@@ -77,9 +75,9 @@ export class OpenAIProvider {
       difficulty?: string
       servings?: number
       dietaryRestrictions?: string[]
-      preferences?: any
+      preferences?: UserPreferences
     },
-    preferences?: any
+    _preferences?: UserPreferences
   ): Promise<RecipeGenerationResult> {
     try {
       // 处理参数
@@ -87,7 +85,6 @@ export class OpenAIProvider {
       let cookingMethod: string | undefined
       let difficulty: string | undefined
       let servings: number | undefined
-      let dietaryRestrictions: string[] | undefined
 
       if (Array.isArray(ingredientsOrParams)) {
         ingredients = ingredientsOrParams
@@ -96,8 +93,6 @@ export class OpenAIProvider {
         cookingMethod = ingredientsOrParams.cookingMethod
         difficulty = ingredientsOrParams.difficulty
         servings = ingredientsOrParams.servings
-        dietaryRestrictions = ingredientsOrParams.dietaryRestrictions
-        preferences = ingredientsOrParams.preferences
       }
 
       // 模拟生成食谱
@@ -143,17 +138,17 @@ export class OpenAIProvider {
   }
 
   async getPersonalizedRecommendations(
-    userHistory: any[],
-    preferences: any,
-    limit: number
+    _userHistory: UserHistoryItem[],
+    _preferences: UserPreferences,
+    _limit: number
   ): Promise<PersonalizedRecommendation[]> {
     // 模拟个性化推荐
     return []
   }
 
   async getCookingGuidance(
-    recipe: any,
-    currentStep: number
+    _recipe: Recipe,
+    _currentStep: number
   ): Promise<{
     guidance: string
     tips: string[]
@@ -307,6 +302,7 @@ export class OpenAIProvider {
     }
     
     // 检查特殊字符
+    // eslint-disable-next-line no-useless-escape
     if (/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(ingredient)) {
       return { 
         isValid: false, 

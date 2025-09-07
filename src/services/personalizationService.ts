@@ -3,6 +3,46 @@
 import type { Recipe, UserPreference, HealthConstraint } from '@/types/recipe'
 import { callGLM } from './glmService'
 import { getCachedData, setCachedData } from '@/utils/apiCache'
+
+interface AIPersonalizedRecipe {
+  name: string;
+  description: string;
+  cookingMethod: string;
+  ingredients: { name: string; amount: string; unit: string }[];
+  steps: { title: string; description: string; tips: string }[];
+  cookingTime: number;
+  difficulty: number;
+  servings: number;
+  nutrition: { calories: number; protein: number; carbs: number; fat: number; fiber: number };
+  tags: string[];
+  healthBenefits: string[];
+}
+
+interface AISeasonalRecipe {
+  name: string;
+  description: string;
+  cookingMethod: string;
+  ingredients: { name: string; amount: string; unit: string }[];
+  steps: { title: string; description: string; tips: string }[];
+  cookingTime: number;
+  difficulty: number;
+  servings: number;
+  nutrition: { calories: number; protein: number; carbs: number; fat: number; fiber: number };
+  tags: string[];
+  seasonalIngredients: string[];
+}
+
+interface HealthData {
+  age?: number;
+  gender?: string;
+  height?: number;
+  weight?: number;
+  bmi?: number;
+  activityLevel?: string;
+  healthGoals?: string[];
+  chronicConditions?: string[];
+  allergies?: string[];
+}
 // 本地烹饪方法数据定义
 const cookingMethods = [
   { id: 1, name: '炒', time: 15, difficulty: 2, description: '快速翻炒，保持食材鲜嫩' },
@@ -99,7 +139,7 @@ ${constraints.map(c => `- ${c.type}: ${c.description}`).join('\n')}
       const jsonData = JSON.parse(jsonMatch[0]);
       
       // 构建Recipe对象数组
-      const recipes: Recipe[] = jsonData.map((item: any) => {
+      const recipes: Recipe[] = jsonData.map((item: AIPersonalizedRecipe) => {
         // 查找匹配的烹饪方法
         const method = cookingMethods.find(m => m.name === item.cookingMethod) || cookingMethods[0];
         
@@ -107,7 +147,7 @@ ${constraints.map(c => `- ${c.type}: ${c.description}`).join('\n')}
           id: generateId(),
           name: item.name,
           description: item.description,
-          ingredients: item.ingredients.map((ing: any, index: number) => ({
+          ingredients: item.ingredients.map((ing: { name: string; amount: string; unit: string }, index: number) => ({
             id: index + 4000, // 使用大数字避免与现有ID冲突
             name: ing.name,
             category: 'ai_generated',
@@ -115,7 +155,7 @@ ${constraints.map(c => `- ${c.type}: ${c.description}`).join('\n')}
             unit: ing.unit
           })),
           method,
-          steps: item.steps.map((step: any, index: number) => ({
+          steps: item.steps.map((step: { title: string; description: string; tips: string }, index: number) => ({
             id: index + 1,
             title: step.title,
             description: step.description,
@@ -162,7 +202,7 @@ ${constraints.map(c => `- ${c.type}: ${c.description}`).join('\n')}
  * @param healthData 用户健康数据
  * @returns 健康饮食建议
  */
-export async function generateHealthyEatingAdvice(healthData: any): Promise<string> {
+export async function generateHealthyEatingAdvice(healthData: HealthData): Promise<string> {
   const cacheKey = `health_advice_${JSON.stringify(healthData)}`;
   
   // 检查缓存
@@ -214,7 +254,7 @@ export async function generateHealthyEatingAdvice(healthData: any): Promise<stri
  * @param healthData 用户健康数据
  * @returns 健康饮食建议文本
  */
-function generateSimpleHealthAdvice(_healthData: any): string {
+function generateSimpleHealthAdvice(_healthData: HealthData): string {
   return `
 ## 个性化健康饮食建议
 
@@ -315,7 +355,7 @@ export async function getSeasonalRecipes(season: string, region: string): Promis
       const jsonData = JSON.parse(jsonMatch[0]);
       
       // 构建Recipe对象数组
-      const recipes: Recipe[] = jsonData.map((item: any) => {
+      const recipes: Recipe[] = jsonData.map((item: AISeasonalRecipe) => {
         // 查找匹配的烹饪方法
         const method = cookingMethods.find(m => m.name === item.cookingMethod) || cookingMethods[0];
         
@@ -323,7 +363,7 @@ export async function getSeasonalRecipes(season: string, region: string): Promis
           id: generateId(),
           name: item.name,
           description: item.description,
-          ingredients: item.ingredients.map((ing: any, index: number) => ({
+          ingredients: item.ingredients.map((ing: { name: string; amount: string; unit: string }, index: number) => ({
             id: index + 5000, // 使用大数字避免与现有ID冲突
             name: ing.name,
             category: 'ai_generated',
@@ -331,7 +371,7 @@ export async function getSeasonalRecipes(season: string, region: string): Promis
             unit: ing.unit
           })),
           method,
-          steps: item.steps.map((step: any, index: number) => ({
+          steps: item.steps.map((step: { title: string; description: string; tips: string }, index: number) => ({
             id: index + 1,
             title: step.title,
             description: step.description,

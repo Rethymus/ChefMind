@@ -232,9 +232,7 @@ import {
   ChatDotRound,
   Lightning,
   Key,
-  Check,
-  Close,
-  Warning,
+  
   Avatar,
   Search,
   Moon,
@@ -247,9 +245,9 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'config-saved'): void
-  (e: 'config-cleared'): void
+  (_e: 'update:modelValue', _value: boolean): void
+  (_e: 'config-saved'): void
+  (_e: 'config-cleared'): void
 }
 
 const props = defineProps<Props>()

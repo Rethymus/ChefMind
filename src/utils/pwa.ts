@@ -1,9 +1,19 @@
+interface ServiceWorkerMessage {
+  type: 'CACHE_UPDATED' | 'OFFLINE_READY';
+  payload?: unknown;
+}
+
 // PWA 功能管理器
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: string }>;
+}
+
 export class PWAManager {
   private sw: ServiceWorkerRegistration | null = null;
-  private deferredPrompt: any = null;
+  private deferredPrompt: BeforeInstallPromptEvent | null = null;
   private isOnline = navigator.onLine;
-  private callbacks: { [key: string]: Function[] } = {};
+  private callbacks: { [key: string]: ((...args: unknown[]) => void)[] } = {};
 
   constructor() {
     this.init();
@@ -55,7 +65,7 @@ export class PWAManager {
   }
 
   // 处理Service Worker消息
-  private handleServiceWorkerMessage(data: any) {
+  private handleServiceWorkerMessage(data: ServiceWorkerMessage) {
     switch (data.type) {
       case 'CACHE_UPDATED':
         this.emit('cache-updated', data.payload);
@@ -85,7 +95,7 @@ export class PWAManager {
   private setupInstallPrompt() {
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
-      this.deferredPrompt = e;
+      this.deferredPrompt = e as BeforeInstallPromptEvent;
       this.emit('install-available');
     });
 
@@ -131,7 +141,7 @@ export class PWAManager {
   // 检查是否已安装
   public isInstalled(): boolean {
     return window.matchMedia('(display-mode: standalone)').matches ||
-           (window.navigator as any).standalone === true;
+           (window.navigator as { standalone?: boolean }).standalone === true;
   }
 
   // 更新应用
@@ -147,7 +157,7 @@ export class PWAManager {
   }
 
   // 缓存重要数据
-  public async cacheImportantData(data: any) {
+  public async cacheImportantData(data: unknown) {
     try {
       // 存储到localStorage作为备份
       localStorage.setItem('chefmind-offline-data', JSON.stringify({
@@ -168,7 +178,7 @@ export class PWAManager {
   }
 
   // 获取离线数据
-  public getOfflineData(): any {
+  public getOfflineData(): unknown {
     try {
       const cached = localStorage.getItem('chefmind-offline-data');
       if (cached) {
@@ -185,7 +195,7 @@ export class PWAManager {
   }
 
   // 添加待同步数据
-  public addPendingSync(data: any) {
+  public addPendingSync(data: unknown) {
     try {
       const pending = this.getPendingSync();
       pending.push({
@@ -199,7 +209,7 @@ export class PWAManager {
       if (this.sw && 'sync' in window.ServiceWorkerRegistration.prototype) {
         // 注册后台同步（如果支持）
         if ('sync' in this.sw) {
-          (this.sw as any).sync.register('background-sync');
+          (this.sw as ServiceWorkerRegistration & { sync: { register(tag: string): Promise<void> } }).sync.register('background-sync');
         }
       }
     } catch (error) {
@@ -208,7 +218,7 @@ export class PWAManager {
   }
 
   // 获取待同步数据
-  public getPendingSync(): any[] {
+  public getPendingSync(): unknown[] {
     try {
       const pending = localStorage.getItem('chefmind-pending-sync');
       return pending ? JSON.parse(pending) : [];
@@ -224,20 +234,20 @@ export class PWAManager {
   }
 
   // 事件监听器管理
-  public on(event: string, callback: Function) {
+  public on(event: string, callback: (...args: unknown[]) => void) {
     if (!this.callbacks[event]) {
       this.callbacks[event] = [];
     }
     this.callbacks[event].push(callback);
   }
 
-  public off(event: string, callback: Function) {
+  public off(event: string, callback: (...args: unknown[]) => void) {
     if (this.callbacks[event]) {
       this.callbacks[event] = this.callbacks[event].filter(cb => cb !== callback);
     }
   }
 
-  private emit(event: string, data?: any) {
+  private emit(event: string, data?: unknown) {
     if (this.callbacks[event]) {
       this.callbacks[event].forEach(callback => callback(data));
     }

@@ -341,7 +341,7 @@
       const provider = selectedProvider.value
       
       switch (provider) {
-        case AIProvider.GLM:
+        case AIProvider.GLM: {
           if (!glmConfig.apiKey) {
             throw new Error('请先配置智谱 GLM API密钥')
           }
@@ -357,8 +357,9 @@
             throw new Error(result.message)
           }
           break
+        }
           
-        case AIProvider.OPENAI:
+        case AIProvider.OPENAI: {
           if (!openaiConfig.apiKey) {
             throw new Error('请先配置OpenAI API密钥')
           }
@@ -369,8 +370,9 @@
             message: 'OpenAI连接测试成功',
           }
           break
+        }
           
-        case AIProvider.ANTHROPIC:
+        case AIProvider.ANTHROPIC: {
           if (!import.meta.env.VITE_ANTHROPIC_API_KEY) {
             throw new Error('请先配置Anthropic Claude API密钥')
           }
@@ -381,8 +383,9 @@
             message: 'Anthropic Claude连接测试成功',
           }
           break
+        }
           
-        case AIProvider.GEMINI:
+        case AIProvider.GEMINI: {
           if (!import.meta.env.VITE_GOOGLE_API_KEY) {
             throw new Error('请先配置Google Gemini API密钥')
           }
@@ -393,8 +396,9 @@
             message: 'Google Gemini连接测试成功',
           }
           break
+        }
           
-        case AIProvider.DEEPSEEK:
+        case AIProvider.DEEPSEEK: {
           if (!import.meta.env.VITE_DEEPSEEK_API_KEY) {
             throw new Error('请先配置DeepSeek API密钥')
           }
@@ -405,8 +409,9 @@
             message: 'DeepSeek连接测试成功',
           }
           break
+        }
           
-        case AIProvider.MOONSHOT:
+        case AIProvider.MOONSHOT: {
           if (!import.meta.env.VITE_MOONSHOT_API_KEY) {
             throw new Error('请先配置Moonshot API密钥')
           }
@@ -417,8 +422,9 @@
             message: 'Moonshot连接测试成功',
           }
           break
+        }
           
-        case AIProvider.QWEN:
+        case AIProvider.QWEN: {
           if (!import.meta.env.VITE_QWEN_API_KEY) {
             throw new Error('请先配置通义千问 API密钥')
           }
@@ -429,8 +435,9 @@
             message: '通义千问连接测试成功',
           }
           break
+        }
           
-        case AIProvider.HUNYUAN:
+        case AIProvider.HUNYUAN: {
           if (!import.meta.env.VITE_HUNYUAN_API_KEY) {
             throw new Error('请先配置腾讯混元 API密钥')
           }
@@ -441,13 +448,15 @@
             message: '腾讯混元连接测试成功',
           }
           break
+        }
           
-        case AIProvider.MOCK:
+        case AIProvider.MOCK: {
           testResult.value = {
             success: true,
             message: '模拟模式测试成功',
           }
           break
+        }
           
         default:
           throw new Error('当前提供商不支持测试')

@@ -1,11 +1,13 @@
 // ChefMind 智食谱 - 性能优化工具
 
+import { DirectiveBinding } from 'vue'
+
 /**
  * 图片懒加载指令
  * 使用方法：v-lazy="图片URL"
  */
 export const lazyLoadDirective = {
-  mounted(el: HTMLImageElement, binding: any) {
+  mounted(el: HTMLImageElement, binding: DirectiveBinding<string>) {
     function loadImage() {
       const imageElement = Array.from(el.children).find(
         (el) => el.nodeName === "IMG"
@@ -84,10 +86,10 @@ export function optimizeImage(url: string, quality: number = 80, width?: number,
  * @param delay 延迟时间（毫秒）
  * @returns 防抖后的函数
  */
-export function debounce<T extends (...args: any[]) => any>(fn: T, delay: number): (...args: Parameters<T>) => void {
+export function debounce<T extends (...args: unknown[]) => unknown>(fn: T, delay: number): (...args: Parameters<T>) => void {
   let timer: number | null = null;
   
-  return function(this: any, ...args: Parameters<T>) {
+  return function(this: unknown, ...args: Parameters<T>) {
     if (timer) {
       clearTimeout(timer);
     }
@@ -105,10 +107,10 @@ export function debounce<T extends (...args: any[]) => any>(fn: T, delay: number
  * @param limit 时间限制（毫秒）
  * @returns 节流后的函数
  */
-export function throttle<T extends (...args: any[]) => any>(fn: T, limit: number): (...args: Parameters<T>) => void {
+export function throttle<T extends (...args: unknown[]) => unknown>(fn: T, limit: number): (...args: Parameters<T>) => void {
   let inThrottle: boolean = false;
   
-  return function(this: any, ...args: Parameters<T>) {
+  return function(this: unknown, ...args: Parameters<T>) {
     if (!inThrottle) {
       fn.apply(this, args);
       inThrottle = true;
@@ -125,10 +127,10 @@ export function throttle<T extends (...args: any[]) => any>(fn: T, limit: number
  * @param fn 要缓存的函数
  * @returns 缓存后的函数
  */
-export function memoize<T extends (...args: any[]) => any>(fn: T): (...args: Parameters<T>) => ReturnType<T> {
+export function memoize<T extends (...args: unknown[]) => unknown>(fn: T): (...args: Parameters<T>) => ReturnType<T> {
   const cache = new Map();
   
-  return function(this: any, ...args: Parameters<T>): ReturnType<T> {
+  return function(this: unknown, ...args: Parameters<T>): ReturnType<T> {
     const key = JSON.stringify(args);
     
     if (cache.has(key)) {
@@ -158,7 +160,7 @@ export class CacheStorage {
    * @param value 缓存值
    * @param expiry 过期时间（毫秒），默认为1天
    */
-  set(key: string, value: any, expiry: number = 24 * 60 * 60 * 1000): void {
+  set(key: string, value: unknown, expiry: number = 24 * 60 * 60 * 1000): void {
     const item = {
       value,
       expiry: Date.now() + expiry
@@ -172,7 +174,7 @@ export class CacheStorage {
    * @param key 缓存键
    * @returns 缓存值，如果不存在或已过期则返回null
    */
-  get(key: string): any {
+  get(key: string): unknown {
     const itemStr = localStorage.getItem(this.prefix + key);
     
     if (!itemStr) {

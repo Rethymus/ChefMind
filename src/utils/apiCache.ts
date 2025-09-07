@@ -11,7 +11,7 @@ interface CacheItem<T> {
 /**
  * 缓存存储
  */
-const cache: Record<string, CacheItem<any>> = {};
+const cache: Record<string, CacheItem<unknown>> = {};
 
 /**
  * 设置缓存数据

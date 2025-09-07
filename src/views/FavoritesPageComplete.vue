@@ -327,12 +327,7 @@ const truncateText = (text: string, maxLength: number) => {
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
 }
 
-// 图片加载错误处理
-const handleImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement
-  img.style.display = 'none'
-  console.log('🖼️ 图片加载失败:', img.src)
-}
+
 
 // 生成菜谱SVG封面
 const generateRecipeSvg = (recipeName: string): string => {
