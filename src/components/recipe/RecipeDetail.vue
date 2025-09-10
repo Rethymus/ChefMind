@@ -185,6 +185,7 @@
   import { formatCookingTime, formatServings, formatDifficulty } from '@/utils/formatUtils'
   import { getIngredientIcon } from '@/utils/ingredientIconMapper'
   import RecipeMultimediaPlatforms from '@/components/recipe/RecipeMultimediaPlatforms.vue'
+  import { Favorite } from '@/models/Favorite'
 
   const props = defineProps<{
     recipe?: Recipe
@@ -197,47 +198,71 @@
   const isFavorite = ref(false)
 
   // 检查食谱是否已收藏
-  const checkIfFavorite = () => {
+  const checkIfFavorite = async () => {
     if (!props.recipe) return false
 
-    const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]')
-    return savedRecipes.some((r: any) => r.id === props.recipe.id)
+    try {
+      const sessionId = localStorage.getItem('sessionId') || 'default-session'
+      const recipeId = parseInt(props.recipe.id || '0')
+      if (recipeId > 0) {
+        return await Favorite.isFavorited(sessionId, recipeId)
+      }
+    } catch (error) {
+      console.error('检查收藏状态失败:', error)
+    }
+    return false
   }
 
   // 切换收藏状态
-  const toggleFavorite = () => {
+  const toggleFavorite = async () => {
     if (!props.recipe) return
 
-    const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]')
-    const existingIndex = savedRecipes.findIndex((r: any) => r.id === props.recipe.id)
-
-    if (existingIndex === -1) {
-      // 添加到收藏
-      savedRecipes.push(props.recipe)
-      localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes))
-      isFavorite.value = true
+    try {
+      const sessionId = localStorage.getItem('sessionId') || 'default-session'
+      const recipeId = parseInt(props.recipe.id || '0')
+      
+      if (recipeId > 0) {
+        const isCurrentlyFavorited = await Favorite.isFavorited(sessionId, recipeId)
+        
+        if (isCurrentlyFavorited) {
+          // 从收藏中移除
+          await Favorite.removeFavorite(sessionId, recipeId)
+          isFavorite.value = false
+          emit('notification', {
+            type: 'info',
+            title: '取消收藏',
+            message: '食谱已从收藏夹中移除',
+          })
+        } else {
+          // 添加到收藏
+          await Favorite.addFavorite(
+            sessionId,
+            recipeId,
+            props.recipe.name || props.recipe.title || '未命名菜谱',
+            props.recipe.image
+          )
+          isFavorite.value = true
+          emit('notification', {
+            type: 'success',
+            title: '收藏成功',
+            message: '食谱已添加到收藏夹',
+          })
+        }
+      }
+    } catch (error) {
+      console.error('切换收藏状态失败:', error)
       emit('notification', {
-        type: 'success',
-        title: '收藏成功',
-        message: '食谱已添加到收藏夹',
-      })
-    } else {
-      // 从收藏中移除
-      savedRecipes.splice(existingIndex, 1)
-      localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes))
-      isFavorite.value = false
-      emit('notification', {
-        type: 'info',
-        title: '取消收藏',
-        message: '食谱已从收藏夹中移除',
+        type: 'error',
+        title: '操作失败',
+        message: '无法更新收藏状态，请稍后重试',
       })
     }
   }
 
   // 当食谱变化时更新收藏状态
-  const updateFavoriteStatus = () => {
+  const updateFavoriteStatus = async () => {
     if (props.recipe) {
-      isFavorite.value = checkIfFavorite()
+      isFavorite.value = await checkIfFavorite()
     }
   }
 

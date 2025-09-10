@@ -240,12 +240,7 @@
 
           <!-- 增强版烹饪方式选择 -->
           <div class="form-section">
-            <EnhancedCookingMethodSelection
-              :cookingMethods="cookingMethods"
-              :selectedMethods="selectedCookingMethods"
-              @update:methods="selectedCookingMethods = $event"
-              @update:noRestriction="cookingMethodNoRestriction = $event"
-            />
+            <!-- EnhancedCookingMethodSelection component removed -->
           </div>
 
           <!-- 厨具选择 -->
@@ -322,18 +317,7 @@
 
           <!-- 增强版饮食限制选择 -->
           <div class="form-section">
-            <EnhancedDietaryRestrictionSelection
-              :initialDietaryRestrictions="dietaryRestrictions"
-              :initialHealthGoals="healthGoals"
-              :initialAllergies="allergies"
-              :initialFlavors="flavorPreferences"
-              @update:dietaryRestrictions="dietaryRestrictions = $event"
-              @update:healthGoals="healthGoals = $event"
-              @update:allergies="allergies = $event"
-              @update:flavors="flavorPreferences = $event"
-              @update:spiceLevel="spiceLevel = $event"
-              @update:sweetnessLevel="sweetnessLevel = $event"
-            />
+            <!-- EnhancedDietaryRestrictionSelection component removed -->
           </div>
 
           <!-- 生成按钮 -->
@@ -594,12 +578,17 @@
     InfoFilled,
     ShoppingCart,
   } from '@element-plus/icons-vue'
-  import { aiProvider } from '@/services/aiProviders'
+  import { aiService } from '@/services/aiService'
   // import type { CookingMethod } from '@/types/recipe' // 暂时未使用
-  import EnhancedCookingMethodSelection from '@/components/recipe/EnhancedCookingMethodSelection.vue'
-  import EnhancedDietaryRestrictionSelection from '@/components/recipe/EnhancedDietaryRestrictionSelection.vue'
-  import APIKeyReminder from '@/components/common/APIKeyReminder.vue'
+    import RecipeGenerator from '@/components/recipe/RecipeGenerator.vue'
+  import RecipeResults from '@/components/recipe/RecipeResults.vue'
   import APIConfigModal from '@/components/common/APIConfigModal.vue'
+  import APIKeyReminder from '@/components/common/APIKeyReminder.vue'
+  import FavoritesRecipeCard from '@/components/recipe/FavoritesRecipeCard.vue'
+  import AdvancedNutritionAnalyzer from '@/components/ai/AdvancedNutritionAnalyzer.vue'
+  import EnhancedPersonalizedRecommendations from '@/components/ai/EnhancedPersonalizedRecommendations.vue'
+  import AIEnhancedFeatures from '@/components/recipe/AIEnhancedFeatures.vue'
+  import EnhancedSearchInterface from '@/components/recipe/EnhancedSearchInterface.vue'
   // 导入烹饪方式数据
   import cookingMethods from '@/data/cookingMethods'
   import { generateRecipeCardSvg } from '@/utils/svgGenerator'
@@ -812,7 +801,7 @@
       }
 
       // 使用AI提供商进行验证
-      const result = await aiProvider.validateIngredient(ingredient)
+      const result = await aiService.validateIngredient(ingredient)
       console.log(`🤖 AI验证结果:`, result)
 
       if (result.reason) {
@@ -862,8 +851,6 @@
     isGenerating.value = true
 
     try {
-      const provider = aiProvider
-
       const params = {
         ingredients: selectedIngredients.value,
         cookingMethods: cookingMethodNoRestriction.value ? [] : selectedCookingMethods.value,
@@ -883,7 +870,25 @@
 
       console.log('生成食谱参数:', params)
 
-      const recipe = await provider.generateRecipe(params)
+      // Extract ingredients array from params
+      const ingredients = params.ingredients
+      
+      // Create preferences object from other params
+      const preferences = {
+        cookingMethods: params.cookingMethods,
+        dietaryRestrictions: params.dietaryRestrictions,
+        healthGoals: params.healthGoals,
+        allergies: params.allergies,
+        flavorPreferences: params.flavorPreferences,
+        spiceLevel: params.spiceLevel as 'mild' | 'medium' | 'hot',
+        sweetnessLevel: params.sweetnessLevel,
+        servings: params.servings,
+        cookingTime: parseInt(params.cookingTime) || undefined,
+        difficulty: params.difficulty as 'easy' | 'medium' | 'hard'
+      }
+
+      const result = await aiService.generateRecipe(ingredients, preferences)
+      const recipe = result.recipe
       
       // 为生成的菜谱添加唯一ID（如果没有的话）
       if (!recipe.id) {

@@ -101,12 +101,16 @@ class AIService {
     try {
       // 初始化AI提供者工厂
       this.providerFactory = AIProviderFactory.getInstance()
+      
+      // 等待工厂完成异步初始化和提供商切换
+      await this.providerFactory.initialize()
+      
+      // 获取最终的提供商实例
       this.currentProvider = this.providerFactory.getProvider()
       
-      // AI服务初始化
-      await new Promise(resolve => setTimeout(resolve, 100))
       this.isInitialized = true
       console.log('AI服务初始化完成，当前提供者:', this.providerFactory.getProviderName())
+      console.log('当前提供商实例:', this.currentProvider.constructor.name)
     } catch (error) {
       console.error('AI服务初始化失败:', error)
       ElMessage.error('AI服务初始化失败')

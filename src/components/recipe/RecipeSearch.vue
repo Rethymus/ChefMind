@@ -368,7 +368,7 @@
       link.href = canvas.toDataURL('image/png')
       link.click()
 
-      console.log('图片分享成功:', recipe.name)
+      // console.log('图片分享成功:', recipe.name)
     } catch (error) {
       console.error('分享失败:', error)
       alert('图片生成失败，请稍后重试')

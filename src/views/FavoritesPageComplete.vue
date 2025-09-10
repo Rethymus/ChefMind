@@ -124,9 +124,11 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { generateRecipeCardSvg } from '@/utils/svgGenerator'
 import { formatDifficulty, formatCookingTime } from '@/utils/formatUtils'
+import { Recipe as RecipeModel } from '@/models/Recipe'
+import { Favorite as FavoriteModel } from '@/models/Favorite'
 
 // 类型定义
-interface Recipe {
+interface RecipeUI {
   id?: string
   name?: string
   title?: string
@@ -152,7 +154,7 @@ const router = useRouter()
 
 // 响应式数据
 const isLoading = ref(true)
-const favoriteRecipes = ref<Recipe[]>([])
+const favoriteRecipes = ref<RecipeUI[]>([])
 const showDebugInfo = ref(false)
 const lastUpdateTime = ref('')
 const notification = ref<NotificationState>({
@@ -163,12 +165,7 @@ const notification = ref<NotificationState>({
 
 // 计算属性
 const localStorageStatus = computed(() => {
-  try {
-    const data = localStorage.getItem('savedRecipes')
-    return data ? `有数据 (${JSON.parse(data).length}条)` : '无数据'
-  } catch {
-    return '数据格式错误'
-  }
+  return '已迁移到SQLite数据库'
 })
 
 // 显示通知
@@ -189,16 +186,44 @@ const loadFavorites = async () => {
   isLoading.value = true
   
   try {
-    await new Promise(resolve => setTimeout(resolve, 300)) // 模拟加载延迟
+    // 生成一个唯一的sessionId（在实际应用中应该从用户会话中获取）
+    const sessionId = localStorage.getItem('sessionId') || 'default-session'
     
-    const savedData = localStorage.getItem('savedRecipes')
-    if (savedData) {
-      const parsed = JSON.parse(savedData)
-      favoriteRecipes.value = Array.isArray(parsed) ? parsed : []
+    // 从SQLite数据库中获取收藏的菜谱
+    const favorites = await FavoriteModel.getUserFavorites(sessionId, 100, 0)
+    
+    if (favorites.length > 0) {
+      // 获取收藏的菜谱详情
+      const recipeIds = favorites.map(fav => fav.recipeId)
+      const recipes = []
+      
+      for (const recipeId of recipeIds) {
+        try {
+          const recipe = await RecipeModel.findById(recipeId)
+          if (recipe) {
+            recipes.push({
+              id: recipe.id.toString(),
+              name: recipe.title,
+              title: recipe.title,
+              description: recipe.description,
+              cookingTime: recipe.cookingTime,
+              difficulty: recipe.difficulty,
+              ingredients: recipe.ingredients,
+              steps: recipe.instructions,
+              nutritionInfo: recipe.nutritionInfo,
+              rating: recipe.averageRating
+            })
+          }
+        } catch (error) {
+          console.error('获取菜谱详情失败:', error)
+        }
+      }
+      
+      favoriteRecipes.value = recipes
       console.log('✅ 成功加载收藏数据:', favoriteRecipes.value.length, '条')
     } else {
       favoriteRecipes.value = []
-      console.log('ℹ️ localStorage中无收藏数据')
+      console.log('ℹ️ 数据库中无收藏数据')
     }
     
     lastUpdateTime.value = new Date().toLocaleTimeString()
@@ -211,20 +236,8 @@ const loadFavorites = async () => {
   }
 }
 
-// 保存收藏数据到localStorage
-const saveFavorites = () => {
-  try {
-    localStorage.setItem('savedRecipes', JSON.stringify(favoriteRecipes.value))
-    lastUpdateTime.value = new Date().toLocaleTimeString()
-    console.log('💾 收藏数据已保存')
-  } catch (error) {
-    console.error('❌ 保存收藏数据失败:', error)
-    showNotification('保存数据失败', 'error')
-  }
-}
-
 // 查看菜谱详情
-const viewRecipeDetail = (recipe: Recipe) => {
+const viewRecipeDetail = (recipe: RecipeUI) => {
   console.log('👁️ 查看菜谱详情:', recipe.name || recipe.title)
   
   try {
@@ -242,20 +255,27 @@ const viewRecipeDetail = (recipe: Recipe) => {
 }
 
 // 移除收藏
-const removeFavorite = (recipe: Recipe, index: number) => {
+const removeFavorite = async (recipe: RecipeUI, index: number) => {
   const recipeName = recipe.name || recipe.title || '未命名菜谱'
   console.log('💔 准备移除收藏:', recipeName, '索引:', index)
   
   if (window.confirm(`确定要移除收藏的"${recipeName}"吗？`)) {
     try {
-      // 从数组中移除
-      favoriteRecipes.value.splice(index, 1)
+      const sessionId = localStorage.getItem('sessionId') || 'default-session'
+      const recipeId = parseInt(recipe.id || '0')
       
-      // 保存到localStorage
-      saveFavorites()
-      
-      console.log('✅ 移除收藏成功，剩余:', favoriteRecipes.value.length, '条')
-      showNotification(`已移除"${recipeName}"`, 'success')
+      if (recipeId > 0) {
+        // 从数据库中移除收藏
+        await FavoriteModel.removeFavorite(sessionId, recipeId)
+        
+        // 从数组中移除
+        favoriteRecipes.value.splice(index, 1)
+        
+        console.log('✅ 移除收藏成功，剩余:', favoriteRecipes.value.length, '条')
+        showNotification(`已移除"${recipeName}"`, 'success')
+      } else {
+        throw new Error('无效的菜谱ID')
+      }
     } catch (error) {
       console.error('❌ 移除收藏失败:', error)
       showNotification('移除收藏失败', 'error')
@@ -273,11 +293,22 @@ const refreshFavorites = () => {
 }
 
 // 清空所有收藏
-const clearAllFavorites = () => {
+const clearAllFavorites = async () => {
   if (window.confirm(`确定要清空所有 ${favoriteRecipes.value.length} 个收藏吗？此操作不可恢复！`)) {
     try {
+      const sessionId = localStorage.getItem('sessionId') || 'default-session'
+      
+      // 从数据库中删除所有收藏
+      for (const recipe of favoriteRecipes.value) {
+        const recipeId = parseInt(recipe.id || '0')
+        if (recipeId > 0) {
+          await FavoriteModel.removeFavorite(sessionId, recipeId)
+        }
+      }
+      
+      // 清空数组
       favoriteRecipes.value = []
-      saveFavorites()
+      
       console.log('🗑️ 已清空所有收藏')
       showNotification('已清空所有收藏', 'success')
     } catch (error) {

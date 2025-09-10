@@ -5,8 +5,9 @@ import { generateUUID } from '../utils/idGenerator'
 import { cookingMethods } from '../data/cookingMethods'
 import { cacheData, getCachedData } from '../utils/cacheUtils'
 import { generateRecipeCoverSvg } from '../utils/svgGenerator'
+import { Recipe as RecipeModel } from '../models/Recipe'
 import type {
-  Recipe,
+  Recipe as IRecipe,
   RecipeGenerationRequest,
   UserPreference,
   HealthConstraint,
@@ -97,7 +98,7 @@ function convertNutrition(rawNutrition?: RawRecipeData['nutrition']): Nutrition 
  * @param request 菜谱生成请求
  * @returns 生成的菜谱
  */
-export async function generateRecipe(request: RecipeGenerationRequest): Promise<Recipe> {
+export async function generateRecipe(request: RecipeGenerationRequest): Promise<IRecipe> {
   try {
     const userPrompt = buildUserPrompt(request)
     console.log('生成菜谱的提示词:', userPrompt)
@@ -111,6 +112,41 @@ export async function generateRecipe(request: RecipeGenerationRequest): Promise<
 
     const recipeData = parseJsonResponse<RawRecipeData>(response)
     const recipe = convertToRecipe(recipeData, request)
+
+    // 保存到SQLite数据库
+    try {
+      const recipeData = {
+        title: recipe.title || recipe.name,
+        description: recipe.description,
+        ingredients: recipe.ingredients.map(ing => typeof ing === 'string' ? ing : ing.name),
+        instructions: recipe.instructions || [],
+        cookingTime: recipe.time || 30,
+        difficulty: recipe.difficulty,
+        servings: recipe.servings,
+        category: recipe.tags?.[0] || 'AI生成',
+        tags: recipe.tags || ['AI生成'],
+        nutritionInfo: recipe.nutrition || {
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0,
+          fiber: 0
+        },
+        imageUrl: recipe.image || '',
+        cookingMethods: recipe.cookingMethods || ['炒'],
+        viewCount: 0,
+        favoriteCount: 0,
+        ratingCount: 0,
+        averageRating: 0
+      }
+      
+      const savedRecipe = await RecipeModel.create(recipeData)
+      // 更新recipe的id为数据库中的id
+      recipe.id = savedRecipe.id.toString()
+    } catch (dbError) {
+      console.error('保存菜谱到数据库失败:', dbError)
+      // 数据库保存失败，仍然返回生成的菜谱
+    }
 
     // 缓存生成的菜谱
     cacheData(`recipe_${recipe.id}`, recipe, 3600 * 24) // 缓存24小时
@@ -220,7 +256,7 @@ function buildConstraintsPrompt(request: RecipeGenerationRequest): string {
 /**
  * 将原始数据转换为Recipe对象
  */
-function convertToRecipe(recipeData: RawRecipeData, request: RecipeGenerationRequest): Recipe {
+function convertToRecipe(recipeData: RawRecipeData, request: RecipeGenerationRequest): IRecipe {
   const recipeName = recipeData.name || '未命名菜谱'
 
   return {
@@ -254,11 +290,11 @@ function convertToRecipe(recipeData: RawRecipeData, request: RecipeGenerationReq
  * @param requests 菜谱生成请求数组
  * @returns 生成的菜谱数组
  */
-export async function batchGenerateRecipes(requests: RecipeGenerationRequest[]): Promise<Recipe[]> {
+export async function batchGenerateRecipes(requests: RecipeGenerationRequest[]): Promise<IRecipe[]> {
   try {
     // 限制并发请求数量
     const concurrency = 2
-    const results: Recipe[] = []
+    const results: IRecipe[] = []
 
     // 分批处理请求
     for (let i = 0; i < requests.length; i += concurrency) {
@@ -298,7 +334,7 @@ export async function generateRecipeByIngredients(
     preferences?: UserPreference
     constraints?: HealthConstraint[]
   } = {}
-): Promise<Recipe> {
+): Promise<IRecipe> {
   const request: RecipeGenerationRequest = {
     ingredients,
     cookingMethods: options.cookingMethod ? [options.cookingMethod] : undefined,
@@ -320,7 +356,7 @@ export async function generateRecipeByIngredients(
 export async function generateRecipeRecommendations(
   preferences: UserPreference,
   count: number = 3
-): Promise<Recipe[]> {
+): Promise<IRecipe[]> {
   try {
     const requests: RecipeGenerationRequest[] = []
 
@@ -362,7 +398,7 @@ export async function generateRecipeRecommendations(
  * @param constraints 健康约束条件
  * @returns 生成的菜谱
  */
-export async function generateHealthyRecipe(constraints: HealthConstraint[]): Promise<Recipe> {
+export async function generateHealthyRecipe(constraints: HealthConstraint[]): Promise<IRecipe> {
   const dietaryRestrictions: string[] = []
 
   // 从健康约束中提取饮食限制
@@ -387,8 +423,49 @@ export async function generateHealthyRecipe(constraints: HealthConstraint[]): Pr
  * @param id 菜谱ID
  * @returns 菜谱对象，如果不存在则返回null
  */
-export function getRecipeById(id: string): Recipe | null {
-  return getCachedData<Recipe>(`recipe_${id}`)
+export async function getRecipeById(id: string): Promise<IRecipe | null> {
+  // 首先尝试从缓存中获取
+  const cachedRecipe = getCachedData<IRecipe>(`recipe_${id}`)
+  if (cachedRecipe) {
+    return cachedRecipe
+  }
+  
+  // 从SQLite数据库中获取
+  try {
+    const numericId = parseInt(id)
+    if (!isNaN(numericId)) {
+      const recipe = await RecipeModel.findById(numericId)
+      if (recipe) {
+        const result = {
+          id: recipe.id.toString(),
+          title: recipe.title,
+          name: recipe.title,
+          description: recipe.description,
+          ingredients: recipe.ingredients,
+          instructions: recipe.instructions,
+          steps: recipe.instructions,
+          cookingTime: `${recipe.cookingTime}分钟`,
+          time: recipe.cookingTime,
+          difficulty: recipe.difficulty,
+          servings: recipe.servings,
+          cookingMethods: [recipe.category],
+          nutritionInfo: recipe.nutritionInfo,
+          nutrition: recipe.nutritionInfo,
+          tags: recipe.tags,
+          rating: recipe.averageRating,
+          createdAt: recipe.createdAt,
+          updatedAt: recipe.updatedAt
+        }
+        // 缓存结果
+        cacheData(`recipe_${id}`, result, 3600 * 24)
+        return result
+      }
+    }
+  } catch (error) {
+    console.error('从数据库获取菜谱失败:', error)
+  }
+  
+  return null
 }
 
 /**
@@ -412,11 +489,45 @@ export async function searchRecipes(
   filters?: RecipeFilters
 ): Promise<RecipeSearchResult> {
   try {
-    // 构建搜索提示词
+    // 首先从SQLite数据库中搜索
+    const dbResults = await RecipeModel.search(query, 20)
+    
+    if (dbResults.length > 0) {
+      // 如果数据库中有结果，直接返回
+      const recipes = dbResults.map(recipe => ({
+        id: recipe.id.toString(),
+        title: recipe.title,
+        name: recipe.title,
+        description: recipe.description,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+        steps: recipe.instructions,
+        cookingTime: `${recipe.cookingTime}分钟`,
+        time: recipe.cookingTime,
+        difficulty: recipe.difficulty,
+        servings: recipe.servings,
+        cookingMethods: [recipe.category],
+        nutritionInfo: recipe.nutritionInfo,
+        nutrition: recipe.nutritionInfo,
+        tags: recipe.tags,
+        rating: recipe.averageRating,
+        createdAt: recipe.createdAt,
+        updatedAt: recipe.updatedAt
+      }))
+      
+      return {
+        recipes,
+        total: recipes.length,
+        page: 1,
+        pageSize: recipes.length,
+        filters
+      }
+    }
+    
+    // 如果数据库中没有结果，使用AI生成
     const userPrompt = buildSearchPrompt(query, filters)
     console.log('搜索菜谱的提示词:', userPrompt)
 
-    // 调用API获取响应
     const response = await callGLM(userPrompt, {
       temperature: 0.7,
       maxTokens: 4096,
@@ -506,7 +617,7 @@ function buildTimeFilter(cookingTime?: { min?: number; max?: number }): string {
  */
 function processSearchResponse(response: string, filters?: RecipeFilters): RecipeSearchResult {
   // 解析JSON响应
-  const recipesData = parseJsonResponse<Recipe[]>(response)
+  const recipesData = parseJsonResponse<IRecipe[]>(response)
 
   // 转换为Recipe对象数组
   const recipes = convertSearchResults(recipesData)
@@ -523,7 +634,7 @@ function processSearchResponse(response: string, filters?: RecipeFilters): Recip
 /**
  * 转换搜索结果
  */
-function convertSearchResults(recipesData: Recipe[]): Recipe[] {
+function convertSearchResults(recipesData: IRecipe[]): IRecipe[] {
   return recipesData.map((recipeData, _index) => {
     const recipe = buildRecipeFromSearchData(recipeData)
 
@@ -537,7 +648,7 @@ function convertSearchResults(recipesData: Recipe[]): Recipe[] {
 /**
  * 从搜索数据构建菜谱
  */
-function buildRecipeFromSearchData(recipeData: Recipe): Recipe {
+function buildRecipeFromSearchData(recipeData: IRecipe): IRecipe {
   return {
     id: generateUUID(),
     title: recipeData.name || '未命名菜谱',
@@ -612,7 +723,7 @@ function buildStepsFromData(stepsData?: unknown[]): string[] | RecipeStep[] {
  * @param recipe 原始菜谱
  * @returns 增强后的菜谱
  */
-export async function enhanceRecipeDescription(recipe: Recipe): Promise<Recipe> {
+export async function enhanceRecipeDescription(recipe: IRecipe): Promise<IRecipe> {
   try {
     // 构建用户提示词
     const userPrompt = `你是一位美食作家和专业厨师，请为这道名为"${recipe.name || recipe.title}"的菜品创作一段更加生动、详细的描述。
@@ -634,7 +745,7 @@ export async function enhanceRecipeDescription(recipe: Recipe): Promise<Recipe> 
     })
 
     // 创建增强后的菜谱副本
-    const enhancedRecipe: Recipe = {
+    const enhancedRecipe: IRecipe = {
       ...recipe,
       description: response.trim(),
     }
@@ -655,7 +766,7 @@ export async function enhanceRecipeDescription(recipe: Recipe): Promise<Recipe> 
  * @param recipe 菜谱
  * @returns 带有烹饪技巧的菜谱
  */
-export async function generateCookingTips(recipe: Recipe): Promise<Recipe> {
+export async function generateCookingTips(recipe: IRecipe): Promise<IRecipe> {
   try {
     // 构建用户提示词
     const userPrompt = `你是一位经验丰富的厨师，请为这道名为"${recipe.name || recipe.title}"的菜品提供5-8条专业、实用的烹饪技巧。
@@ -683,7 +794,7 @@ export async function generateCookingTips(recipe: Recipe): Promise<Recipe> {
       .filter(line => line && !line.startsWith('技巧') && !line.startsWith('提示'))
 
     // 创建带有烹饪技巧的菜谱副本
-    const enhancedRecipe: Recipe = {
+    const enhancedRecipe: IRecipe = {
       ...recipe,
       cookingTips: tips,
     }
@@ -704,7 +815,7 @@ export async function generateCookingTips(recipe: Recipe): Promise<Recipe> {
  * @param recipe 菜谱
  * @returns 带有健康益处的菜谱
  */
-export async function generateHealthBenefits(recipe: Recipe): Promise<Recipe> {
+export async function generateHealthBenefits(recipe: IRecipe): Promise<IRecipe> {
   try {
     // 构建用户提示词
     const userPrompt = `你是一位营养学专家，请分析这道名为"${recipe.name}"的菜品的健康益处。
@@ -731,7 +842,7 @@ export async function generateHealthBenefits(recipe: Recipe): Promise<Recipe> {
       .filter(line => line && !line.startsWith('健康益处') && !line.startsWith('益处'))
 
     // 创建带有健康益处的菜谱副本
-    const enhancedRecipe: Recipe = {
+    const enhancedRecipe: IRecipe = {
       ...recipe,
       healthBenefits: benefits,
     }
@@ -752,7 +863,7 @@ export async function generateHealthBenefits(recipe: Recipe): Promise<Recipe> {
  * @param recipe 原始菜谱
  * @returns 完全增强后的菜谱
  */
-export async function fullyEnhanceRecipe(recipe: Recipe): Promise<Recipe> {
+export async function fullyEnhanceRecipe(recipe: IRecipe): Promise<IRecipe> {
   try {
     // 依次应用各种增强
     let enhancedRecipe = await enhanceRecipeDescription(recipe)

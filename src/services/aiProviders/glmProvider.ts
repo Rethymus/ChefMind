@@ -11,15 +11,42 @@ import type { UserHistoryItem, UserPreferences } from '@/services/aiService'
 import { callGLM, parseJsonResponse } from '@/services/glmService'
 
 export class GLMProvider implements BaseAIProvider {
-  private readonly apiKey: string
-  private readonly baseURL: string
-  private readonly model: string
+  private apiKey: string
+  private baseURL: string
+  private model: string
 
   constructor(apiKey?: string, baseURL: string = 'https://open.bigmodel.cn/api/paas/v4/') {
-    this.apiKey = apiKey || import.meta.env.VITE_GLM_API_KEY || ''
-    this.baseURL =
-      baseURL || import.meta.env.VITE_GLM_API_URL || 'https://open.bigmodel.cn/api/paas/v4/'
-    this.model = import.meta.env.VITE_GLM_MODEL || 'glm-4'
+    this.apiKey = apiKey || ''
+    this.baseURL = baseURL || 'https://open.bigmodel.cn/api/paas/v4/'
+    this.model = 'glm-4'
+    this.loadConfig()
+  }
+
+  private async loadConfig(): Promise<void> {
+    try {
+      // 尝试从AI配置服务获取配置
+      const { aiConfigService } = await import('@/services/aiConfig')
+      const config = await aiConfigService.getProviderConfig('GLM')
+      
+      if (config) {
+        this.apiKey = config.apiKey || this.apiKey
+        this.baseURL = config.baseUrl || this.baseURL
+        this.model = config.model || this.model
+        console.log('GLMProvider: 从AI配置服务加载配置成功')
+      } else {
+        // 回退到环境变量
+        this.apiKey = import.meta.env.VITE_GLM_API_KEY || ''
+        this.baseURL = import.meta.env.VITE_GLM_API_URL || 'https://open.bigmodel.cn/api/paas/v4/'
+        this.model = import.meta.env.VITE_GLM_MODEL || 'glm-4'
+        console.log('GLMProvider: 回退到环境变量配置')
+      }
+    } catch (error) {
+      console.warn('GLMProvider: 无法加载配置，使用默认值:', error)
+      // 回退到环境变量
+      this.apiKey = import.meta.env.VITE_GLM_API_KEY || ''
+      this.baseURL = import.meta.env.VITE_GLM_API_URL || 'https://open.bigmodel.cn/api/paas/v4/'
+      this.model = import.meta.env.VITE_GLM_MODEL || 'glm-4'
+    }
   }
 
   async analyzeIngredient(imageFile: File): Promise<IngredientAnalysisResult> {
@@ -151,7 +178,8 @@ export class GLMProvider implements BaseAIProvider {
 
   async generateRecipe(params: RecipeGenerationParams): Promise<Recipe> {
     try {
-      console.log('GLM生成食谱，参数:', params)
+      console.log('🚀 GLM生成食谱开始，参数:', params)
+      console.log('🔑 当前API密钥:', this.apiKey ? '已配置' : '未配置')
 
       const prompt = this.buildRecipePrompt(params)
       const response = await callGLM(prompt, {

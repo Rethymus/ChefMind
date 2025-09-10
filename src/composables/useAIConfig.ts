@@ -1,128 +1,146 @@
-import { computed } from 'vue'
+import { ref, watch } from 'vue'
+import { userDatabaseService } from '@/services/database'
 
 export interface AIProvider {
   name: string
   key: string
   hasKey: boolean
   isConfigured: boolean
-  source: 'env' | 'localStorage' | 'none'
+  source: 'env' | 'database' | 'none'
 }
 
 export function useAIConfig() {
-  // 获取 localStorage 配置
-  const getLocalStorageConfigs = () => {
+  let currentSessionId: string | null = null
+
+  // 获取当前会话ID
+  const getCurrentSessionId = async (): Promise<string> => {
+    if (!currentSessionId) {
+      const session = await userDatabaseService.getCurrentSession()
+      currentSessionId = session.sessionId
+    }
+    return currentSessionId
+  }
+
+  // 获取数据库配置
+  const getDatabaseConfigs = async () => {
     try {
-      const saved = localStorage.getItem('ai-api-configs')
-      return saved ? JSON.parse(saved) : {}
+      const sessionId = await getCurrentSessionId()
+      const preferences = await userDatabaseService.getPreferences(sessionId)
+      return (preferences as any).aiConfigs || {}
     } catch {
       return {}
     }
   }
 
-  // AI 提供商配置
-  const providers = computed((): AIProvider[] => {
-    const localConfigs = getLocalStorageConfigs()
+  // 获取 AI 提供商配置
+  const getProviders = async (): Promise<AIProvider[]> => {
+    const dbConfigs = await getDatabaseConfigs()
     
     return [
       {
         name: 'OpenAI',
         key: 'VITE_OPENAI_API_KEY',
-        hasKey: !!import.meta.env.VITE_OPENAI_API_KEY || !!localConfigs.openai?.apiKey,
-        isConfigured: !!import.meta.env.VITE_OPENAI_API_KEY || !!localConfigs.openai?.apiKey,
+        hasKey: !!import.meta.env.VITE_OPENAI_API_KEY || !!dbConfigs.openai?.apiKey,
+        isConfigured: !!import.meta.env.VITE_OPENAI_API_KEY || !!dbConfigs.openai?.apiKey,
         source: import.meta.env.VITE_OPENAI_API_KEY ? 'env' : 
-                localConfigs.openai?.apiKey ? 'localStorage' : 'none'
+                dbConfigs.openai?.apiKey ? 'database' : 'none'
       },
       {
         name: 'GLM',
         key: 'VITE_GLM_API_KEY',
-        hasKey: !!import.meta.env.VITE_GLM_API_KEY || !!localConfigs.glm?.apiKey,
-        isConfigured: !!import.meta.env.VITE_GLM_API_KEY || !!localConfigs.glm?.apiKey,
+        hasKey: !!import.meta.env.VITE_GLM_API_KEY || !!dbConfigs.glm?.apiKey,
+        isConfigured: !!import.meta.env.VITE_GLM_API_KEY || !!dbConfigs.glm?.apiKey,
         source: import.meta.env.VITE_GLM_API_KEY ? 'env' : 
-                localConfigs.glm?.apiKey ? 'localStorage' : 'none'
+                dbConfigs.glm?.apiKey ? 'database' : 'none'
       },
       {
         name: 'Claude',
         key: 'VITE_ANTHROPIC_API_KEY',
-        hasKey: !!import.meta.env.VITE_ANTHROPIC_API_KEY || !!localConfigs.anthropic?.apiKey,
-        isConfigured: !!import.meta.env.VITE_ANTHROPIC_API_KEY || !!localConfigs.anthropic?.apiKey,
+        hasKey: !!import.meta.env.VITE_ANTHROPIC_API_KEY || !!dbConfigs.anthropic?.apiKey,
+        isConfigured: !!import.meta.env.VITE_ANTHROPIC_API_KEY || !!dbConfigs.anthropic?.apiKey,
         source: import.meta.env.VITE_ANTHROPIC_API_KEY ? 'env' : 
-                localConfigs.anthropic?.apiKey ? 'localStorage' : 'none'
+                dbConfigs.anthropic?.apiKey ? 'database' : 'none'
       },
       {
         name: 'Gemini',
         key: 'VITE_GOOGLE_API_KEY',
-        hasKey: !!import.meta.env.VITE_GOOGLE_API_KEY || !!localConfigs.google?.apiKey,
-        isConfigured: !!import.meta.env.VITE_GOOGLE_API_KEY || !!localConfigs.google?.apiKey,
+        hasKey: !!import.meta.env.VITE_GOOGLE_API_KEY || !!dbConfigs.google?.apiKey,
+        isConfigured: !!import.meta.env.VITE_GOOGLE_API_KEY || !!dbConfigs.google?.apiKey,
         source: import.meta.env.VITE_GOOGLE_API_KEY ? 'env' : 
-                localConfigs.google?.apiKey ? 'localStorage' : 'none'
+                dbConfigs.google?.apiKey ? 'database' : 'none'
       },
       {
         name: 'DeepSeek',
         key: 'VITE_DEEPSEEK_API_KEY',
-        hasKey: !!import.meta.env.VITE_DEEPSEEK_API_KEY || !!localConfigs.deepseek?.apiKey,
-        isConfigured: !!import.meta.env.VITE_DEEPSEEK_API_KEY || !!localConfigs.deepseek?.apiKey,
+        hasKey: !!import.meta.env.VITE_DEEPSEEK_API_KEY || !!dbConfigs.deepseek?.apiKey,
+        isConfigured: !!import.meta.env.VITE_DEEPSEEK_API_KEY || !!dbConfigs.deepseek?.apiKey,
         source: import.meta.env.VITE_DEEPSEEK_API_KEY ? 'env' : 
-                localConfigs.deepseek?.apiKey ? 'localStorage' : 'none'
+                dbConfigs.deepseek?.apiKey ? 'database' : 'none'
       },
       {
         name: 'Moonshot',
         key: 'VITE_MOONSHOT_API_KEY',
-        hasKey: !!import.meta.env.VITE_MOONSHOT_API_KEY || !!localConfigs.moonshot?.apiKey,
-        isConfigured: !!import.meta.env.VITE_MOONSHOT_API_KEY || !!localConfigs.moonshot?.apiKey,
+        hasKey: !!import.meta.env.VITE_MOONSHOT_API_KEY || !!dbConfigs.moonshot?.apiKey,
+        isConfigured: !!import.meta.env.VITE_MOONSHOT_API_KEY || !!dbConfigs.moonshot?.apiKey,
         source: import.meta.env.VITE_MOONSHOT_API_KEY ? 'env' : 
-                localConfigs.moonshot?.apiKey ? 'localStorage' : 'none'
+                dbConfigs.moonshot?.apiKey ? 'database' : 'none'
       },
       {
         name: '通义千问',
         key: 'VITE_QWEN_API_KEY',
-        hasKey: !!import.meta.env.VITE_QWEN_API_KEY || !!localConfigs.qwen?.apiKey,
-        isConfigured: !!import.meta.env.VITE_QWEN_API_KEY || !!localConfigs.qwen?.apiKey,
+        hasKey: !!import.meta.env.VITE_QWEN_API_KEY || !!dbConfigs.qwen?.apiKey,
+        isConfigured: !!import.meta.env.VITE_QWEN_API_KEY || !!dbConfigs.qwen?.apiKey,
         source: import.meta.env.VITE_QWEN_API_KEY ? 'env' : 
-                localConfigs.qwen?.apiKey ? 'localStorage' : 'none'
+                dbConfigs.qwen?.apiKey ? 'database' : 'none'
       },
       {
         name: '混元',
         key: 'VITE_HUNYUAN_API_KEY',
-        hasKey: !!import.meta.env.VITE_HUNYUAN_API_KEY || !!localConfigs.hunyuan?.apiKey,
-        isConfigured: !!import.meta.env.VITE_HUNYUAN_API_KEY || !!localConfigs.hunyuan?.apiKey,
+        hasKey: !!import.meta.env.VITE_HUNYUAN_API_KEY || !!dbConfigs.hunyuan?.apiKey,
+        isConfigured: !!import.meta.env.VITE_HUNYUAN_API_KEY || !!dbConfigs.hunyuan?.apiKey,
         source: import.meta.env.VITE_HUNYUAN_API_KEY ? 'env' : 
-                localConfigs.hunyuan?.apiKey ? 'localStorage' : 'none'
+                dbConfigs.hunyuan?.apiKey ? 'database' : 'none'
       }
     ]
-  })
+  }
 
   // 检查是否有任何 AI 提供商已配置
-  const hasAnyProvider = computed(() => {
-    return providers.value.some(p => p.isConfigured)
-  })
+  const hasAnyProvider = async (): Promise<boolean> => {
+    const providers = await getProviders()
+    return providers.some(p => p.isConfigured)
+  }
 
   // 获取已配置的提供商
-  const configuredProviders = computed(() => {
-    return providers.value.filter(p => p.isConfigured)
-  })
+  const getConfiguredProviders = async (): Promise<AIProvider[]> => {
+    const providers = await getProviders()
+    return providers.filter(p => p.isConfigured)
+  }
 
   // 检查是否使用模拟数据
-  const isUsingMockData = computed(() => {
-    return !hasAnyProvider.value
-  })
+  const isUsingMockData = async (): Promise<boolean> => {
+    return !(await hasAnyProvider())
+  }
 
   // 检查特定提供商是否配置
-  const isProviderConfigured = (providerName: string) => {
-    const provider = providers.value.find(p => p.name.toLowerCase() === providerName.toLowerCase())
+  const isProviderConfigured = async (providerName: string): Promise<boolean> => {
+    const providers = await getProviders()
+    const provider = providers.find(p => p.name.toLowerCase() === providerName.toLowerCase())
     return provider?.isConfigured || false
   }
 
   // 获取配置状态信息
-  const getConfigStatus = () => {
-    const configured = configuredProviders.value
-    const total = providers.value.length
+  const getConfigStatus = async () => {
+    const providers = await getProviders()
+    const configured = await getConfiguredProviders()
+    const hasAny = await hasAnyProvider()
+    const isMock = await isUsingMockData()
 
     return {
       configured: configured.length,
-      total,
-      hasAny: hasAnyProvider.value,
-      isMock: isUsingMockData.value,
-      providers: providers.value,
+      total: providers.length,
+      hasAny,
+      isMock,
+      providers,
       configuredProviders: configured
     }
   }
@@ -163,8 +181,8 @@ VITE_HUNYUAN_API_KEY=your_hunyuan_api_key_here
   }
 
   // 获取指定提供商的 API 密钥
-  const getProviderKey = (providerName: string) => {
-    const localConfigs = getLocalStorageConfigs()
+  const getProviderKey = async (providerName: string): Promise<string | null> => {
+    const dbConfigs = await getDatabaseConfigs()
     const providerKeyMap: Record<string, string> = {
       'openai': 'VITE_OPENAI_API_KEY',
       'glm': 'VITE_GLM_API_KEY',
@@ -179,17 +197,57 @@ VITE_HUNYUAN_API_KEY=your_hunyuan_api_key_here
     const envKey = providerKeyMap[providerName.toLowerCase()]
     if (!envKey) return null
     
-    return import.meta.env[envKey] || localConfigs[providerName.toLowerCase()]?.apiKey
+    return import.meta.env[envKey] || dbConfigs[providerName.toLowerCase()]?.apiKey
+  }
+
+  // 保存 API 配置到数据库
+  const saveApiConfig = async (providerName: string, apiKey: string): Promise<void> => {
+    try {
+      const sessionId = await getCurrentSessionId()
+      const preferences = await userDatabaseService.getPreferences(sessionId)
+      const aiConfigs = (preferences as any).aiConfigs || {}
+      
+      aiConfigs[providerName.toLowerCase()] = { apiKey }
+      
+      await userDatabaseService.updatePreferences(sessionId, {
+        ...preferences,
+        aiConfigs
+      })
+    } catch (error) {
+      console.error('保存 API 配置失败:', error)
+      throw error
+    }
+  }
+
+  // 删除 API 配置
+  const deleteApiConfig = async (providerName: string): Promise<void> => {
+    try {
+      const sessionId = await getCurrentSessionId()
+      const preferences = await userDatabaseService.getPreferences(sessionId)
+      const aiConfigs = (preferences as any).aiConfigs || {}
+      
+      delete aiConfigs[providerName.toLowerCase()]
+      
+      await userDatabaseService.updatePreferences(sessionId, {
+        ...preferences,
+        aiConfigs
+      })
+    } catch (error) {
+      console.error('删除 API 配置失败:', error)
+      throw error
+    }
   }
 
   return {
-    providers,
+    getProviders,
     hasAnyProvider,
-    configuredProviders,
+    getConfiguredProviders,
     isUsingMockData,
     isProviderConfigured,
     getConfigStatus,
     generateEnvExample,
-    getProviderKey
+    getProviderKey,
+    saveApiConfig,
+    deleteApiConfig
   }
 }

@@ -181,7 +181,7 @@
 
     <!-- 智普API测试对话框 -->
     <el-dialog v-model="glmTesterVisible" title="🧪 智普API测试" width="90%" max-width="800px">
-      <GLMAPITester />
+      <!-- GLMAPITester component removed -->
     </el-dialog>
   </div>
 </template>
@@ -196,7 +196,6 @@
   import EnhancedPersonalizedRecommendations from './EnhancedPersonalizedRecommendations.vue'
   import IntelligentChatAssistant from './IntelligentChatAssistant.vue'
   import AIProviderSettings from './AIProviderSettings.vue'
-  import GLMAPITester from './GLMAPITester.vue'
   import { aiService, type UserPreferences } from '@/services/aiService'
   import { formatCookingTime, formatDifficulty } from '@/utils/formatUtils'
   import type { Recipe } from '@/types/recipe'

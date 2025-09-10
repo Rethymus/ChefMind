@@ -216,7 +216,7 @@
   const loadUserStats = async () => {
     try {
       const recipes = await recipeService.getAllRecipes()
-      const favorites = userService.getFavorites()
+      const favorites = await userService.getFavorites()
 
       userStats.value = {
         recipesCount: recipes.filter(r => r.authorId === user.value.id).length,
@@ -250,9 +250,9 @@
 
   const loadUserFavorites = async () => {
     try {
-      const favorites = userService.getFavorites()
+      const favorites = await userService.getFavorites()
       const allRecipes = await recipeService.getAllRecipes()
-      userFavorites.value = allRecipes.filter(recipe => favorites.includes(recipe.id))
+      userFavorites.value = allRecipes.filter(recipe => favorites.includes(recipe.id.toString()))
     } catch (error) {
       console.error('加载用户收藏失败:', error)
     }

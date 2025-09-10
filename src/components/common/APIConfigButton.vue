@@ -97,24 +97,55 @@ const tooltipContent = computed(() => {
 })
 
 // 方法
-const checkAPIConfig = () => {
-  // 检查 localStorage 中的配置
-  const savedConfigs = localStorage.getItem('ai-api-configs')
-  if (savedConfigs) {
-    try {
-      const configs = JSON.parse(savedConfigs)
-      hasApiKey.value = {
-        openai: !!configs.openai?.apiKey,
-        glm: !!configs.glm?.apiKey,
-        anthropic: !!configs.anthropic?.apiKey,
-        google: !!configs.google?.apiKey,
-        deepseek: !!configs.deepseek?.apiKey,
-        moonshot: !!configs.moonshot?.apiKey,
-        qwen: !!configs.qwen?.apiKey,
-        hunyuan: !!configs.hunyuan?.apiKey
+const checkAPIConfig = async () => {
+  try {
+    // 首先检查数据库中的配置
+    const { aiConfigService } = await import('@/services/aiConfig')
+    const configuredProviders = await aiConfigService.getConfiguredProviders()
+    
+    // 初始化所有提供商为未配置
+    const configStatus = {
+      openai: false,
+      glm: false,
+      anthropic: false,
+      google: false,
+      deepseek: false,
+      moonshot: false,
+      qwen: false,
+      hunyuan: false
+    }
+    
+    // 根据数据库中的配置更新状态
+    configuredProviders.forEach(provider => {
+      const key = provider.toLowerCase()
+      if (key in configStatus) {
+        configStatus[key] = true
       }
-    } catch (error) {
-      console.error('检查 API 配置失败:', error)
+    })
+    
+    hasApiKey.value = configStatus
+    console.log('从数据库加载的API配置状态:', configStatus)
+  } catch (error) {
+    console.warn('无法从数据库加载API配置，回退到localStorage:', error)
+    
+    // 回退到 localStorage 中的配置
+    const savedConfigs = localStorage.getItem('ai-api-configs')
+    if (savedConfigs) {
+      try {
+        const configs = JSON.parse(savedConfigs)
+        hasApiKey.value = {
+          openai: !!configs.openai?.apiKey,
+          glm: !!configs.glm?.apiKey,
+          anthropic: !!configs.anthropic?.apiKey,
+          google: !!configs.google?.apiKey,
+          deepseek: !!configs.deepseek?.apiKey,
+          moonshot: !!configs.moonshot?.apiKey,
+          qwen: !!configs.qwen?.apiKey,
+          hunyuan: !!configs.hunyuan?.apiKey
+        }
+      } catch (parseError) {
+        console.error('检查 API 配置失败:', parseError)
+      }
     }
   }
 }
@@ -123,8 +154,8 @@ const openConfig = () => {
   showModal.value = true
 }
 
-const handleConfigSaved = () => {
-  checkAPIConfig()
+const handleConfigSaved = async () => {
+  await checkAPIConfig()
   const count = configuredCount.value
   if (count === 1) {
     ElMessage.success(`已配置 ${configuredProviders.value[0]}`)
@@ -136,8 +167,8 @@ const handleConfigSaved = () => {
 }
 
 // 生命周期
-onMounted(() => {
-  checkAPIConfig()
+onMounted(async () => {
+  await checkAPIConfig()
   
   // 监听 storage 变化，以便在其他标签页中同步状态
   window.addEventListener('storage', handleStorageChange)

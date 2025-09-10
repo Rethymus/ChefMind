@@ -61,30 +61,6 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: '/test-favorites',
-    name: 'TestFavorites',
-    component: loadView('SimpleFavoritesTest'),
-    meta: {
-      title: 'ChefMind 智食谱 - 收藏测试页面',
-    },
-  },
-  {
-    path: '/new-favorites',
-    name: 'NewFavorites',
-    component: loadView('NewFavoritesView'),
-    meta: {
-      title: 'ChefMind 智食谱 - 新版收藏页面',
-    },
-  },
-  {
-    path: '/button-test',
-    name: 'ButtonTest',
-    component: loadView('ButtonTestView'),
-    meta: {
-      title: 'ChefMind 智食谱 - 按钮测试页面',
-    },
-  },
-  {
     path: '/shopping-list',
     name: 'ShoppingList',
     component: loadView('ShoppingListView'),
@@ -106,14 +82,6 @@ const routes: RouteRecordRaw[] = [
     component: loadView('AnalyticsView'),
     meta: {
       title: 'ChefMind 智食谱 - 数据分析',
-    },
-  },
-  {
-    path: '/svg-generator',
-    name: 'SvgGenerator',
-    component: loadView('SvgGeneratorView'),
-    meta: {
-      title: 'ChefMind 智食谱 - SVG封面生成器',
     },
   },
   {

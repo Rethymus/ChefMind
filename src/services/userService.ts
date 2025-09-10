@@ -1,5 +1,7 @@
 
 
+import { userDatabaseService } from '@/services/database'
+
 // 用户偏好类型定义
 export interface UserPreferences {
   dietaryRestrictions?: string[]
@@ -18,71 +20,110 @@ const defaultPreferences: UserPreferences = {
 
 // 用户偏好服务
 export function useUserService() {
-  // 获取用户偏好
-  const getPreferences = (): UserPreferences => {
-    try {
-      const stored = localStorage.getItem('userPreferences')
-      if (stored) {
-        const preferences = JSON.parse(stored)
-        return { ...defaultPreferences, ...preferences }
-      }
-    } catch (error) {
-      console.error('解析用户偏好失败:', error)
-      localStorage.removeItem('userPreferences')
+  let currentSessionId: string | null = null
+
+  // 获取当前会话ID
+  const getCurrentSessionId = async (): Promise<string> => {
+    if (!currentSessionId) {
+      const session = await userDatabaseService.getCurrentSession()
+      currentSessionId = session.sessionId
     }
-    return defaultPreferences
+    return currentSessionId
+  }
+
+  // 获取用户偏好
+  const getPreferences = async (): Promise<UserPreferences> => {
+    try {
+      const sessionId = await getCurrentSessionId()
+      const preferences = await userDatabaseService.getPreferences(sessionId)
+      return { ...defaultPreferences, ...preferences }
+    } catch (error) {
+      console.error('获取用户偏好失败:', error)
+      return defaultPreferences
+    }
   }
 
   // 更新用户偏好
-  const updatePreferences = (preferences: Partial<UserPreferences>): UserPreferences => {
-    const currentPreferences = getPreferences()
-    const updatedPreferences = {
-      ...currentPreferences,
-      ...preferences,
-    }
+  const updatePreferences = async (preferences: Partial<UserPreferences>): Promise<UserPreferences> => {
+    try {
+      const sessionId = await getCurrentSessionId()
+      const currentPreferences = await getPreferences()
+      const updatedPreferences = {
+        ...currentPreferences,
+        ...preferences,
+      }
 
-    // 保存到本地存储
-    localStorage.setItem('userPreferences', JSON.stringify(updatedPreferences))
-    return updatedPreferences
+      // 保存到数据库
+      await userDatabaseService.updatePreferences(sessionId, updatedPreferences)
+      return updatedPreferences
+    } catch (error) {
+      console.error('更新用户偏好失败:', error)
+      throw error
+    }
   }
 
   // 重置用户偏好
-  const resetPreferences = (): UserPreferences => {
-    localStorage.removeItem('userPreferences')
-    return defaultPreferences
+  const resetPreferences = async (): Promise<UserPreferences> => {
+    try {
+      const sessionId = await getCurrentSessionId()
+      await userDatabaseService.updatePreferences(sessionId, defaultPreferences as Record<string, unknown>)
+      return defaultPreferences
+    } catch (error) {
+      console.error('重置用户偏好失败:', error)
+      throw error
+    }
   }
 
   // 获取用户收藏
-  const getFavorites = (): string[] => {
-    // 从本地存储获取收藏列表
-    const stored = localStorage.getItem('userFavorites')
-    if (stored) {
-      try {
-        return JSON.parse(stored)
-      } catch (error) {
-        console.error('解析收藏数据失败:', error)
-        return []
-      }
+  const getFavorites = async (): Promise<string[]> => {
+    try {
+      const sessionId = await getCurrentSessionId()
+      const favorites = await userDatabaseService.getPreferences(sessionId)
+      return (favorites as any).favoriteRecipes || []
+    } catch (error) {
+      console.error('获取收藏数据失败:', error)
+      return []
     }
-    return []
   }
 
   // 添加收藏
-  const addToFavorites = (recipeId: string): void => {
-    const favorites = getFavorites()
-    if (!favorites.includes(recipeId)) {
-      favorites.push(recipeId)
-      localStorage.setItem('userFavorites', JSON.stringify(favorites))
+  const addToFavorites = async (recipeId: string): Promise<void> => {
+    try {
+      const sessionId = await getCurrentSessionId()
+      const preferences = await userDatabaseService.getPreferences(sessionId)
+      const favoriteRecipes = ((preferences as any).favoriteRecipes || []) as string[]
+      
+      if (!favoriteRecipes.includes(recipeId)) {
+        favoriteRecipes.push(recipeId)
+        await userDatabaseService.updatePreferences(sessionId, {
+          ...preferences,
+          favoriteRecipes
+        })
+      }
+    } catch (error) {
+      console.error('添加收藏失败:', error)
+      throw error
     }
   }
 
   // 移除收藏
-  const removeFromFavorites = (recipeId: string): void => {
-    const favorites = getFavorites()
-    const index = favorites.indexOf(recipeId)
-    if (index > -1) {
-      favorites.splice(index, 1)
-      localStorage.setItem('userFavorites', JSON.stringify(favorites))
+  const removeFromFavorites = async (recipeId: string): Promise<void> => {
+    try {
+      const sessionId = await getCurrentSessionId()
+      const preferences = await userDatabaseService.getPreferences(sessionId)
+      const favoriteRecipes = ((preferences as any).favoriteRecipes || []) as string[]
+      
+      const index = favoriteRecipes.indexOf(recipeId)
+      if (index > -1) {
+        favoriteRecipes.splice(index, 1)
+        await userDatabaseService.updatePreferences(sessionId, {
+          ...preferences,
+          favoriteRecipes
+        })
+      }
+    } catch (error) {
+      console.error('移除收藏失败:', error)
+      throw error
     }
   }
 

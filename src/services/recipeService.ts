@@ -1,5 +1,7 @@
 import { ref } from 'vue'
 import type { Recipe } from '@/types/recipe'
+import { Recipe as RecipeModel } from '@/models/Recipe'
+import type { Recipe as IRecipe } from '@/types/recipe'
 
 export type { Recipe } // 重新导出Recipe类型
 
@@ -33,21 +35,37 @@ export const useRecipeService = () => {
   const error = ref<string | null>(null)
 
   // 获取所有食谱
-  const getAllRecipes = async (): Promise<Recipe[]> => {
+  const getAllRecipes = async (): Promise<IRecipe[]> => {
     isLoading.value = true
     error.value = null
 
     try {
-      // 从本地存储获取已保存的食谱
-      const savedRecipes = localStorage.getItem('chefmind_recipes')
-      if (savedRecipes) {
-        const parsedRecipes = JSON.parse(savedRecipes)
-        recipes.splice(0, recipes.length, ...parsedRecipes)
-        return recipes
-      }
-
-      // 如果没有保存的食谱，返回空数组
-      return []
+      // 从SQLite数据库获取食谱
+      const dbRecipes = await RecipeModel.findAll(100, 0)
+      const result = dbRecipes.map(recipe => ({
+        id: recipe.id.toString(),
+        title: recipe.title,
+        name: recipe.title,
+        description: recipe.description,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+        steps: recipe.instructions,
+        cookingTime: `${recipe.cookingTime}分钟`,
+        time: typeof recipe.cookingTime === 'number' ? recipe.cookingTime : parseInt(recipe.cookingTime) || 30,
+        difficulty: recipe.difficulty,
+        servings: recipe.servings,
+        cookingMethods: [recipe.category],
+        nutritionInfo: recipe.nutritionInfo,
+        nutrition: recipe.nutritionInfo,
+        tags: recipe.tags,
+        rating: recipe.averageRating,
+        createdAt: recipe.createdAt,
+        updatedAt: recipe.updatedAt
+      }))
+      
+      // 更新内存中的食谱
+      recipes.splice(0, recipes.length, ...result)
+      return result
     } catch (err) {
       error.value = '获取食谱列表失败'
       console.error(err)
@@ -58,24 +76,39 @@ export const useRecipeService = () => {
   }
 
   // 获取单个食谱
-  const getRecipeById = async (id: number): Promise<Recipe | null> => {
+  const getRecipeById = async (id: number): Promise<IRecipe | null> => {
     isLoading.value = true
     error.value = null
 
     try {
-      // 先从内存中查找
-      let recipe = recipes.find(r => r.id === id.toString())
-
-      // 如果内存中没有，从本地存储中查找
+      // 从SQLite数据库中查找
+      const recipe = await RecipeModel.findById(id)
       if (!recipe) {
-        const savedRecipes = localStorage.getItem('chefmind_recipes')
-        if (savedRecipes) {
-          const parsedRecipes = JSON.parse(savedRecipes)
-          recipe = parsedRecipes.find((r: Recipe) => r.id === id.toString())
-        }
+        return null
       }
-
-      return recipe || null
+      
+      const result = {
+        id: recipe.id.toString(),
+        title: recipe.title,
+        name: recipe.title,
+        description: recipe.description,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+        steps: recipe.instructions,
+        cookingTime: `${recipe.cookingTime}分钟`,
+        time: typeof recipe.cookingTime === 'number' ? recipe.cookingTime : parseInt(recipe.cookingTime) || 30,
+        difficulty: recipe.difficulty,
+        servings: recipe.servings,
+        cookingMethods: [recipe.category],
+        nutritionInfo: recipe.nutritionInfo,
+        nutrition: recipe.nutritionInfo,
+        tags: recipe.tags,
+        rating: recipe.averageRating,
+        createdAt: recipe.createdAt,
+        updatedAt: recipe.updatedAt
+      }
+      
+      return result
     } catch (err) {
       error.value = '获取食谱详情失败'
       console.error(err)
@@ -140,7 +173,7 @@ export const useRecipeService = () => {
   /**
    * 调用AI服务生成食谱
    */
-  const callAIService = async (prompt: string, params: RecipeGenerateParams): Promise<Recipe[]> => {
+  const callAIService = async (prompt: string, params: RecipeGenerateParams): Promise<IRecipe[]> => {
     try {
       // 导入AI服务
       const { aiService } = await import('./aiService')
@@ -431,7 +464,7 @@ export const useRecipeService = () => {
   }
 
   // 生成食谱
-  const generateRecipes = async (params: RecipeGenerateParams): Promise<Recipe[]> => {
+  const generateRecipes = async (params: RecipeGenerateParams): Promise<IRecipe[]> => {
     isLoading.value = true
     error.value = null
 
@@ -463,7 +496,7 @@ export const useRecipeService = () => {
   }
 
   // 搜索食谱
-  const searchRecipes = async (query: string): Promise<Recipe[]> => {
+  const searchRecipes = async (query: string): Promise<IRecipe[]> => {
     isLoading.value = true
     error.value = null
 
@@ -472,52 +505,30 @@ export const useRecipeService = () => {
         return await getAllRecipes()
       }
 
-      // 首先从本地存储的食谱中搜索
-      const savedRecipes = localStorage.getItem('chefmind_recipes')
-      let localResults: Recipe[] = []
+      // 从SQLite数据库中搜索
+      const dbResults = await RecipeModel.search(query, 20)
+      const results = dbResults.map(recipe => ({
+        id: recipe.id.toString(),
+        title: recipe.title,
+        name: recipe.title,
+        description: recipe.description,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+        steps: recipe.instructions,
+        cookingTime: `${recipe.cookingTime}分钟`,
+        time: typeof recipe.cookingTime === 'number' ? recipe.cookingTime : parseInt(recipe.cookingTime) || 30,
+        difficulty: recipe.difficulty,
+        servings: recipe.servings,
+        cookingMethods: [recipe.category],
+        nutritionInfo: recipe.nutritionInfo,
+        nutrition: recipe.nutritionInfo,
+        tags: recipe.tags,
+        rating: recipe.averageRating,
+        createdAt: recipe.createdAt,
+        updatedAt: recipe.updatedAt
+      }))
 
-      if (savedRecipes) {
-        const parsedRecipes = JSON.parse(savedRecipes)
-        const lowerQuery = query.toLowerCase()
-        localResults = parsedRecipes.filter(
-          (recipe: Recipe) =>
-            recipe.name?.toLowerCase().includes(lowerQuery) ||
-            recipe.description.toLowerCase().includes(lowerQuery) ||
-            recipe.ingredients.some(ing => 
-              typeof ing === 'string' 
-                ? ing.toLowerCase().includes(lowerQuery)
-                : ing.name.toLowerCase().includes(lowerQuery)
-            )
-        )
-      }
-
-      // 如果本地搜索结果不足，使用AI生成相关食谱
-      if (localResults.length < 3) {
-        try {
-          const { aiService } = await import('./aiService')
-          const prompt = `根据搜索关键词"${query}"，生成3个相关的中文食谱。请返回JSON格式的食谱数组，每个食谱包含name、description、cookingTime、difficulty、servings、ingredients、steps、tips、nutritionInfo等字段。`
-
-          const response = await (
-            aiService as unknown as { generateRecipe: (prompt: string) => Promise<string> }
-          ).generateRecipe(prompt)
-          const aiResults = JSON.parse(response)
-
-          if (Array.isArray(aiResults)) {
-            const enhancedResults = aiResults.map((recipe, index) => ({
-              ...recipe,
-              id: Date.now() + index,
-              rating: 4 + Math.random(),
-            }))
-
-            // 合并本地结果和AI结果
-            return [...localResults, ...enhancedResults]
-          }
-        } catch (aiError) {
-          console.warn('AI搜索失败，仅返回本地结果:', aiError)
-        }
-      }
-
-      return localResults
+      return results
     } catch (err) {
       error.value = '搜索食谱失败'
       console.error(err)

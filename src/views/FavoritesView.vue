@@ -299,17 +299,10 @@
 
   // 过滤后的食谱
   const filteredRecipes = computed(() => {
-    console.log('🔍 调试: filteredRecipes computed 被调用')
-    console.log('🔍 调试: activeCategory.value:', activeCategory.value)
-    console.log('🔍 调试: savedRecipes.value:', savedRecipes.value)
-    
     if (activeCategory.value === 'all') {
-      console.log('🔍 调试: 返回全部食谱，数量:', savedRecipes.value.length)
       return savedRecipes.value
     }
-    const filtered = savedRecipes.value.filter(recipe => recipe.category === activeCategory.value)
-    console.log('🔍 调试: 按分类过滤后的食谱数量:', filtered.length)
-    return filtered
+    return savedRecipes.value.filter(recipe => recipe.category === activeCategory.value)
   })
 
   // 生成列表视图的SVG封面
@@ -324,30 +317,23 @@
   }
 
   const loadSavedRecipes = () => {
-    console.log('🔍 调试: 开始加载收藏数据')
     isLoading.value = true
     
     try {
       const saved = localStorage.getItem('savedRecipes')
-      console.log('🔍 调试: localStorage中的savedRecipes:', saved)
       
       if (saved) {
         const parsed = JSON.parse(saved)
-        console.log('🔍 调试: 解析后的收藏数据:', parsed)
-        console.log('🔍 调试: 数据类型:', typeof parsed, '是否为数组:', Array.isArray(parsed))
         
         // 确保解析的数据是数组
         if (Array.isArray(parsed)) {
           savedRecipes.value = parsed
-          console.log('🔍 调试: savedRecipes.value设置为:', savedRecipes.value)
-          console.log('🔍 调试: savedRecipes.value.length:', savedRecipes.value.length)
         } else {
           console.warn('⚠️  localStorage中的数据不是数组，重置为空数组')
           savedRecipes.value = []
           localStorage.setItem('savedRecipes', '[]')
         }
       } else {
-        console.log('🔍 调试: localStorage中没有savedRecipes数据，设置为空数组')
         savedRecipes.value = []
       }
     } catch (error) {
@@ -355,12 +341,10 @@
       savedRecipes.value = []
     } finally {
       isLoading.value = false
-      console.log('🔍 调试: 加载完成，isLoading设置为false')
-      console.log('🔍 调试: 最终savedRecipes.value.length:', savedRecipes.value.length)
       
       // 强制触发响应式更新
       setTimeout(() => {
-        console.log('🔍 调试: 1秒后检查 - savedRecipes.value.length:', savedRecipes.value.length)
+        // Empty timeout for reactivity
       }, 1000)
     }
   }
@@ -472,7 +456,6 @@
       const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]')
       savedRecipes.push(testRecipe)
       localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes))
-      console.log('🔍 添加测试收藏成功，重新加载数据')
       loadSavedRecipes()
       showNotification({ type: 'success', title: '成功', message: '添加测试收藏成功' })
     } catch (error) {
@@ -482,8 +465,6 @@
 
   // 生命周期钩子
   onMounted(() => {
-    console.log('🔍 FavoritesView onMounted 开始')
-    
     // 加载保存的分类
     const savedCategories = localStorage.getItem('recipeCategories')
     if (savedCategories) {
@@ -496,7 +477,6 @@
     // 监听storage事件，当其他页面修改localStorage时自动刷新
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'savedRecipes') {
-        console.log('🔍 检测到localStorage中savedRecipes变化，重新加载数据')
         loadSavedRecipes()
       }
     }
@@ -504,7 +484,6 @@
 
     // 添加全局调试函数
     ;(window as any).refreshFavorites = loadSavedRecipes
-    console.log('🔍 已添加全局调试函数 window.refreshFavorites()')
 
     // 组件卸载时移除监听器
     return () => {

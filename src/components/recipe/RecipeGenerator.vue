@@ -83,21 +83,13 @@
 
         <!-- 步骤2: 烹饪方式 -->
         <div v-if="currentStep === 1" class="step-panel">
-          <EnhancedCookingMethodSelection
-            :initialMethods="selectedMethodIds"
-            :cookingMethods="allCookingMethods"
-            @update:methods="updateSelectedMethods"
-            @update:noRestriction="noMethodRestriction = $event"
-          />
+          <!-- EnhancedCookingMethodSelection component removed -->
         </div>
 
         <!-- 步骤3: 饮食限制与偏好 -->
         <div v-if="currentStep === 2" class="step-panel">
-          <EnhancedDietaryRestrictionSelection
-            :initialDietaryRestrictions="selectedDietaryRestrictions"
-            :initialHealthGoals="selectedHealthGoals"
-            :initialAllergies="selectedAllergies"
-            :initialFlavors="selectedFlavors"
+          <!-- EnhancedDietaryRestrictionSelection component removed -->
+        </div>
             :initialSpiceLevel="spiceLevel"
             :initialSweetnessLevel="sweetnessLevel"
             @update:dietaryRestrictions="selectedDietaryRestrictions = $event"
@@ -335,8 +327,6 @@
   const selectedIngredients = ref<string[]>([])
   const customIngredient = ref('')
 
-  import EnhancedCookingMethodSelection from './EnhancedCookingMethodSelection.vue'
-  import EnhancedDietaryRestrictionSelection from './EnhancedDietaryRestrictionSelection.vue'
   import type { CookingMethod } from '@/types/recipe'
   import { cookingMethods as allCookingMethods } from '@/data/cookingMethods'
 

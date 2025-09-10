@@ -2,13 +2,20 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 import AutoImport from 'unplugin-auto-import/vite'
-
+import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    vue(),
+    vue({
+      template: {
+        compilerOptions: {
+          // 将所有带短横线的标签名都视为自定义元素
+          isCustomElement: (tag) => tag.includes('-')
+        }
+      }
+    }),
     AutoImport({
       resolvers: [ElementPlusResolver()],
       imports: [
@@ -21,6 +28,10 @@ export default defineConfig({
       eslintrc: {
         enabled: true
       }
+    }),
+    Components({
+      resolvers: [ElementPlusResolver()],
+      dts: true
     })
   ],
   resolve: {

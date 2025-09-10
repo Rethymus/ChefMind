@@ -20,16 +20,52 @@ interface GLMCallOptions {
 export async function callGLM(prompt: string, options: GLMCallOptions = {}): Promise<string> {
   console.log('调用 GLM API:', prompt, options)
 
-  // 获取 API 密钥和 URL
-  const apiKey = import.meta.env.VITE_GLM_API_KEY || ''
-  const baseURL = import.meta.env.VITE_GLM_API_URL || 'https://open.bigmodel.cn/api/paas/v4/'
-  const model = options.model || import.meta.env.VITE_GLM_MODEL || 'glm-4'
+  // 首先尝试从AI配置服务获取API密钥
+  let apiKey = ''
+  let baseURL = 'https://open.bigmodel.cn/api/paas/v4/'
+  let model = options.model || 'glm-4'
+
+  try {
+    // 使用统一的AI配置服务
+    const { aiConfigService } = await import('./aiConfig')
+    apiKey = await aiConfigService.getApiKey('GLM') || ''
+    
+    // 获取完整配置以获取baseURL和model
+    const config = await aiConfigService.getProviderConfig('GLM')
+    if (config) {
+      baseURL = config.baseUrl || baseURL
+      model = config.model || model
+    }
+    
+    console.log('从AI配置服务获取到GLM配置:', { 
+      hasApiKey: !!apiKey, 
+      baseURL, 
+      model 
+    })
+  } catch (error) {
+    console.warn('无法从AI配置服务获取GLM配置，回退到环境变量:', error)
+    
+    // 回退到环境变量
+    apiKey = import.meta.env.VITE_GLM_API_KEY || ''
+    baseURL = import.meta.env.VITE_GLM_API_URL || 'https://open.bigmodel.cn/api/paas/v4/'
+    model = options.model || import.meta.env.VITE_GLM_MODEL || 'glm-4'
+  }
 
   // 如果没有 API 密钥，返回模拟响应
+  console.log('🔍 检查API密钥:', { 
+    apiKey: apiKey ? '已设置' : '未设置', 
+    apiKeyLength: apiKey?.length,
+    apiKeyValue: apiKey?.substring(0, 10) + '...',
+    check1: !apiKey,
+    check2: apiKey === 'your_glm_api_key_here'
+  })
+  
   if (!apiKey || apiKey === 'your_glm_api_key_here') {
-    console.log('未配置 GLM API 密钥，返回模拟响应')
+    console.log('❌ 未配置 GLM API 密钥，返回模拟响应')
     return mockGLMResponse(prompt)
   }
+  
+  console.log('✅ API密钥检查通过，准备调用GLM API')
 
   try {
     // 构建符合GLM API标准的请求体

@@ -478,7 +478,7 @@ const shareViaOption = (option: string) => {
     });
   } else {
     // 在实际应用中，这里会调用相应的分享API
-    console.log(`分享到 ${option}:`, { url, title });
+    // console.log(`分享到 ${option}:`, { url, title });
     
     showNotification({
       type: 'success',

@@ -16,10 +16,56 @@ class AIProviderFactory {
   private static instance: AIProviderFactory
   private currentProvider: BaseAIProvider
   private currentProviderName: string
+  private isInitialized = false
 
   private constructor() {
     this.currentProviderName = import.meta.env.VITE_AI_PROVIDER || 'mock'
     this.currentProvider = this.selectProvider(this.currentProviderName)
+    // Don't call async method in constructor
+  }
+
+  /**
+   * 初始化提供商（需要在实例创建后调用）
+   */
+  public async initialize(): Promise<void> {
+    if (this.isInitialized) {
+      return
+    }
+    await this.initializeProvider()
+    this.isInitialized = true
+  }
+
+  private async initializeProvider(): Promise<void> {
+    try {
+      // 尝试从AI配置服务获取已配置的提供商
+      const { aiConfigService } = await import('@/services/aiConfig')
+      const configuredProviders = await aiConfigService.getConfiguredProviders()
+      
+      if (configuredProviders.length > 0) {
+        // 优先使用已配置的提供商
+        const preferredProvider = this.findPreferredProvider(configuredProviders)
+        if (preferredProvider && preferredProvider !== this.currentProviderName) {
+          // Switched to configured AI provider: ${preferredProvider}
+          this.currentProviderName = preferredProvider
+          this.currentProvider = this.selectProvider(preferredProvider)
+        }
+      }
+    } catch (error) {
+      console.warn('无法从AI配置服务获取提供商信息:', error)
+    }
+  }
+
+  private findPreferredProvider(configuredProviders: string[]): string | null {
+    // 按优先级排序的提供商列表
+    const providerPriority = ['GLM', 'OpenAI', 'Anthropic', 'Gemini', 'DeepSeek', 'Moonshot', 'Qwen', 'Hunyuan']
+    
+    for (const provider of providerPriority) {
+      if (configuredProviders.includes(provider)) {
+        return provider.toLowerCase()
+      }
+    }
+    
+    return configuredProviders[0]?.toLowerCase() || null
   }
 
   /**
@@ -57,7 +103,7 @@ class AIProviderFactory {
   public switchProvider(providerName: string): BaseAIProvider {
     this.currentProviderName = providerName
     this.currentProvider = this.selectProvider(providerName)
-    console.log(`已切换到AI提供者: ${providerName}`)
+    // Switched to AI provider: ${providerName}
     return this.currentProvider
   }
 
@@ -69,33 +115,34 @@ class AIProviderFactory {
   private selectProvider(providerName: string): BaseAIProvider {
     switch (providerName.toLowerCase()) {
       case 'openai':
-        console.log('使用OpenAI提供者')
-        // TODO: 实现OpenAI提供者
-        return mockProvider // 暂时使用模拟提供者
+        // Using OpenAI provider
+        // Note: OpenAI provider implementation requires additional setup
+        // Currently using mock provider for development
+        return mockProvider
       case 'glm':
-        console.log('使用GLM提供者')
+        // Using GLM provider
         return new GLMProvider()
       case 'anthropic':
-        console.log('使用Anthropic Claude提供者')
+        // Using Anthropic Claude provider
         return new AnthropicProvider()
       case 'gemini':
-        console.log('使用Google Gemini提供者')
+        // Using Google Gemini provider
         return new GeminiProvider()
       case 'deepseek':
-        console.log('使用DeepSeek提供者')
+        // Using DeepSeek provider
         return new DeepSeekProvider()
       case 'moonshot':
-        console.log('使用Moonshot提供者')
+        // Using Moonshot provider
         return new MoonshotProvider()
       case 'qwen':
-        console.log('使用Qwen提供者')
+        // Using Qwen provider
         return new QwenProvider()
       case 'hunyuan':
-        console.log('使用Hunyuan提供者')
+        // Using Hunyuan provider
         return new HunyuanProvider()
       case 'mock':
       default:
-        console.log('使用模拟提供者')
+        // Using mock provider
         return mockProvider
     }
   }

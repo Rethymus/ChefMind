@@ -38,21 +38,7 @@
                 :key="provider.value"
                 :label="provider.label"
                 :value="provider.value"
-              >
-                <div class="provider-option">
-                  <el-icon>
-                    <ChatDotRound v-if="provider.icon === 'ChatDotRound'" />
-                    <Lightning v-else-if="provider.icon === 'Lightning'" />
-                    <Avatar v-else-if="provider.icon === 'Avatar'" />
-                    <Search v-else-if="provider.icon === 'Search'" />
-                    <Moon v-else-if="provider.icon === 'Moon'" />
-                    <Cloudy v-else-if="provider.icon === 'Cloudy'" />
-                    <Connection v-else />
-                  </el-icon>
-                  <span>{{ provider.label }}</span>
-                  <el-tag v-if="isProviderConfigured(provider.value)" size="small" type="success">已配置</el-tag>
-                </div>
-              </el-option>
+              />
             </el-select>
           </div>
 
@@ -68,12 +54,7 @@
                 :key="model.value"
                 :label="model.label"
                 :value="model.value"
-              >
-                <div class="model-option">
-                  <span>{{ model.label }}</span>
-                  <el-tag v-if="model.recommended" size="small" type="primary">推荐</el-tag>
-                </div>
-              </el-option>
+              />
             </el-select>
           </div>
         </div>
@@ -177,7 +158,7 @@
             class="status-item"
             :class="{ configured: isProviderConfigured(provider.value) }"
           >
-            <el-icon><component :is="provider.icon" /></el-icon>
+            <el-icon><component :is="iconMap[provider.icon] || ChatDotRound" /></el-icon>
             <span class="provider-name">{{ provider.label }}</span>
             <el-tag 
               :type="isProviderConfigured(provider.value) ? 'success' : 'info'"
@@ -232,7 +213,6 @@ import {
   ChatDotRound,
   Lightning,
   Key,
-  
   Avatar,
   Search,
   Moon,
@@ -325,6 +305,17 @@ const providers = [
   { value: 'hunyuan', label: '腾讯混元', icon: 'Connection' }
 ]
 
+// 图标映射
+const iconMap = {
+  ChatDotRound: ChatDotRound,
+  Lightning: Lightning,
+  Avatar: Avatar,
+  Search: Search,
+  Moon: Moon,
+  Cloudy: Cloudy,
+  Connection: Connection
+}
+
 // 模型数据 (2025年最新)
 const providerModels = {
   openai: [
@@ -383,7 +374,8 @@ const getCurrentProviderModels = () => {
 
 const getProviderIcon = (provider: string) => {
   const p = providers.find(p => p.value === provider)
-  return p?.icon || 'ChatDotRound'
+  const iconName = p?.icon || 'ChatDotRound'
+  return iconMap[iconName as keyof typeof iconMap] || ChatDotRound
 }
 
 const getProviderName = (provider: string) => {
@@ -394,7 +386,7 @@ const getProviderName = (provider: string) => {
 const getApiKeyPlaceholder = (provider: string) => {
   const placeholders = {
     openai: 'sk-...',
-    glm: '请输入GLM API密钥',
+    glm: 'sk-...',
     anthropic: 'sk-ant-...',
     google: 'AIza...',
     deepseek: 'sk-...',
@@ -466,7 +458,7 @@ const testConnection = async (provider: string) => {
 
     const providerFormats = {
       openai: /^sk-[a-zA-Z0-9]{48,}$/,
-      glm: /^[a-f0-9]{32}$/,
+      glm: /^sk-[a-zA-Z0-9]{48,}$/,
       anthropic: /^sk-ant-[a-zA-Z0-9_-]{95,}$/,
       google: /^AIza[0-9A-Za-z_-]{35}$/,
       deepseek: /^sk-[a-zA-Z0-9]{48,}$/,
@@ -595,9 +587,42 @@ const handleSave = async () => {
       validateConfig(provider)
     }
 
+    // 保存到 localStorage (保持向后兼容)
     saveConfigs()
     
-    ElMessage.success(`配置保存成功！已配置 ${configuredProviders.length} 个 AI 提供商`)
+    // 保存到数据库
+    try {
+      // 使用统一的 AI 配置服务
+      const { aiConfigService } = await import('@/services/aiConfig')
+      
+      // 保存每个已配置的提供商到数据库
+      for (const provider of configuredProviders) {
+        const config = configs[provider]
+        const providerName = provider.toUpperCase()
+        
+        await aiConfigService.saveApiKey(providerName, config.apiKey, {
+          baseUrl: config.baseUrl,
+          model: config.model
+        })
+        
+        console.log(`已保存 ${providerName} 配置到数据库`)
+      }
+      
+      // 验证保存是否成功
+      setTimeout(async () => {
+        try {
+          const testConfig = await aiConfigService.getProviderConfig('GLM')
+          console.log('🧪 验证GLM配置保存结果:', testConfig)
+        } catch (error) {
+          console.warn('验证配置保存失败:', error)
+        }
+      }, 100)
+      
+      ElMessage.success(`配置保存成功！已配置 ${configuredProviders.length} 个 AI 提供商 (存储到数据库和本地)`)
+    } catch (dbError) {
+      console.warn('保存到数据库失败，仅保存到本地存储:', dbError)
+      ElMessage.success(`配置保存成功！已配置 ${configuredProviders.length} 个 AI 提供商 (存储到本地)`)
+    }
     
     emit('config-saved')
     

@@ -278,7 +278,7 @@
 <script setup lang="ts">
   import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
   import { useRouter } from 'vue-router'
-  import { useRecipeService, type Recipe } from '@/services/recipeService'
+  import { useRecipeService, type Recipe as RecipeType } from '@/services/recipeService'
   import { shoppingListService } from '@/services/shoppingListService'
   import type { RecipeStep } from '@/types/recipe'
   import RecipeShare from '@/components/recipe/RecipeShare.vue'
@@ -290,9 +290,10 @@
 
   const router = useRouter()
   const recipeService = useRecipeService()
-  const recipe = ref<Recipe | null>(null)
+  const recipe = ref<RecipeType | null>(null)
   const isFavorite = ref(false)
-  const allRecipes = ref<Recipe[]>([])
+  const allRecipes = ref<RecipeType[]>([])
+  const sessionId = ref('test-session-id'); // Placeholder for session ID
 
   // 计时器相关
   const showTimerModal = ref(false)
@@ -347,7 +348,7 @@
   }
 
   // 查看相关食谱
-  const viewRelatedRecipe = (selectedRecipe: Recipe) => {
+  const viewRelatedRecipe = (selectedRecipe: RecipeType) => {
     // 保存到会话存储
     sessionStorage.setItem('viewRecipe', JSON.stringify(selectedRecipe))
 
@@ -360,44 +361,62 @@
   }
 
   // 检查是否已收藏
-  const checkIfFavorite = () => {
+  const checkIfFavorite = async () => {
     if (!recipe.value) return
 
     try {
-      const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]')
-      isFavorite.value = savedRecipes.some((r: Recipe) => r.id === recipe.value?.id)
+      // 使用统一的收藏服务
+      const { favoritesService } = await import('@/services/favoritesService')
+      isFavorite.value = await favoritesService.isFavorited(sessionId.value, recipe.value.id)
     } catch (error) {
       console.error('检查收藏状态失败:', error)
     }
   }
 
   // 切换收藏状态
-  const toggleFavorite = () => {
+  const toggleFavorite = async () => {
     if (!recipe.value) return
 
     try {
-      const savedRecipes = JSON.parse(localStorage.getItem('savedRecipes') || '[]')
-      console.log('🔍 收藏调试: 当前savedRecipes:', savedRecipes)
-      console.log('🔍 收藏调试: 当前recipe.value:', recipe.value)
-
+      const { favoritesService } = await import('@/services/favoritesService')
+      
       if (isFavorite.value) {
         // 取消收藏
-        const index = savedRecipes.findIndex((r: Recipe) => r.id === recipe.value?.id)
-        console.log('🔍 收藏调试: 取消收藏, index:', index)
-        if (index !== -1) {
-          savedRecipes.splice(index, 1)
+        const success = await favoritesService.removeFavorite(sessionId.value, recipe.value.id)
+        if (success) {
+          isFavorite.value = false
           showNotification({ type: 'success', title: '成功', message: '已取消收藏' })
+        } else {
+          showNotification({ type: 'error', title: '失败', message: '取消收藏失败' })
         }
       } else {
         // 添加收藏
-        console.log('🔍 收藏调试: 添加收藏, 当前recipe.value:', recipe.value)
-        savedRecipes.push(recipe.value)
-        showNotification({ type: 'success', title: '成功', message: '已添加到收藏' })
+        const favoriteRecipe = {
+          id: recipe.value.id,
+          title: recipe.value.title,
+          description: recipe.value.description,
+          image: recipe.value.image,
+          cookingTime: recipe.value.cookingTime,
+          difficulty: String(recipe.value.difficulty),
+          servings: recipe.value.servings,
+          ingredients: recipe.value.ingredients.map(ingredient => 
+            typeof ingredient === 'string' ? ingredient : `${ingredient.name}${ingredient.amount ? ` ${ingredient.amount}` : ''}${ingredient.unit ? ` ${ingredient.unit}` : ''}`
+          ),
+          steps: recipe.value.steps.map(step => 
+            typeof step === 'string' ? step : step.description
+          ),
+          nutrition: recipe.value.nutrition,
+          createdAt: new Date()
+        }
+        
+        const success = await favoritesService.addFavorite(sessionId.value, favoriteRecipe)
+        if (success) {
+          isFavorite.value = true
+          showNotification({ type: 'success', title: '成功', message: '已添加收藏' })
+        } else {
+          showNotification({ type: 'error', title: '失败', message: '添加收藏失败' })
+        }
       }
-
-      localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes))
-      console.log('🔍 收藏调试: 保存后的localStorage:', localStorage.getItem('savedRecipes'))
-      isFavorite.value = !isFavorite.value
     } catch (error) {
       console.error('❌ 切换收藏状态失败:', error)
       showNotification({ type: 'error', title: '错误', message: '操作失败，请重试' })
@@ -435,7 +454,6 @@
 
   // 多媒体平台跳转事件处理
   const handlePlatformClick = (platform: string, recipeName: string) => {
-    console.log(`用户点击了${platform}平台，搜索菜谱: ${recipeName}`)
     // 这里可以添加数据统计逻辑
     showNotification({
       type: 'info',
@@ -699,7 +717,15 @@
   }
 
   // 生命周期钩子
-  onMounted(() => {
+  onMounted(async () => {
+    // 迁移旧的 localStorage 数据到统一存储
+    try {
+      const { favoritesService } = await import('@/services/favoritesService')
+      await favoritesService.migrateFromLocalStorage(sessionId.value)
+    } catch (error) {
+      console.warn('收藏数据迁移失败:', error)
+    }
+    
     loadRecipe()
   })
 

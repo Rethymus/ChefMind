@@ -335,12 +335,12 @@ const recommendations = ref<Recommendation[]>([])
 const iconMap = {
   Fire: Lightning, // 使用 Lightning 替代 Fire
   Mug: Coffee,
-  Cloudy,
-  Sunny,
-  Lightning,
-  Timer,
-  Refrigerator,
-  Bowl
+  Cloudy: Cloudy,
+  Sunny: Sunny,
+  Lightning: Lightning,
+  Timer: Timer,
+  Refrigerator: Refrigerator,
+  Bowl: Bowl
 }
 
 // 获取方法图标

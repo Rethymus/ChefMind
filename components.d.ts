@@ -43,6 +43,7 @@ declare module 'vue' {
     LoadingSpinner: typeof import('./src/components/common/LoadingSpinner.vue')['default']
     MealPlanAnalysis: typeof import('./src/components/ai/components/MealPlanAnalysis.vue')['default']
     MobileNavBar: typeof import('./src/components/common/MobileNavBar.vue')['default']
+    MonitoringDashboard: typeof import('./src/components/monitoring/MonitoringDashboard.vue')['default']
     NotificationContainer: typeof import('./src/components/common/NotificationContainer.vue')['default']
     NutritionAnalysis: typeof import('./src/components/recipe/NutritionAnalysis.vue')['default']
     NutritionAnalyzer: typeof import('./src/components/ai/NutritionAnalyzer.vue')['default']

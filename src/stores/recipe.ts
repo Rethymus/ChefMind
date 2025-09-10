@@ -4,6 +4,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { Ingredient, CookingMethod, Recipe, RecipeGenerationRequest } from '@/types/recipe'
 import aiRecipeService from '@/services/aiRecipeService'
+import { Recipe as RecipeModel } from '@/models/Recipe'
 
 export const useRecipeStore = defineStore('recipe', () => {
   // 状态
@@ -133,14 +134,43 @@ export const useRecipeStore = defineStore('recipe', () => {
 
   const saveRecipe = async (recipe: Recipe) => {
     try {
-      // 将菜谱添加到本地收藏列表
+      // 将菜谱保存到SQLite数据库
+      const recipeData = {
+        title: recipe.title || recipe.name,
+        description: recipe.description,
+        ingredients: recipe.ingredients.map(ing => typeof ing === 'string' ? ing : ing.name),
+        instructions: Array.isArray(recipe.steps) ? recipe.steps.map(step => typeof step === 'string' ? step : step.description || '') : recipe.instructions || [],
+        cookingTime: typeof recipe.time === 'number' ? recipe.time : parseInt(recipe.cookingTime) || 30,
+        difficulty: recipe.difficulty,
+        servings: recipe.servings,
+        category: recipe.tags?.[0] || 'AI生成',
+        tags: recipe.tags || ['AI生成'],
+        nutritionInfo: recipe.nutritionInfo || recipe.nutrition || {
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0,
+          fiber: 0
+        },
+        imageUrl: recipe.image || '',
+        cookingMethods: recipe.cookingMethods || ['炒'],
+        viewCount: 0,
+        favoriteCount: 0,
+        ratingCount: 0,
+        averageRating: recipe.rating || 0
+      }
+      
+      const savedRecipe = await RecipeModel.create(recipeData)
+      
+      // 更新本地状态
       const existingIndex = savedRecipes.value.findIndex(r => r.id === recipe.id)
       if (existingIndex === -1) {
-        savedRecipes.value.push(recipe)
+        savedRecipes.value.push({
+          ...recipe,
+          id: savedRecipe.id.toString()
+        })
       }
 
-      // 保存到本地存储
-      localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes.value))
       return true
     } catch (error) {
       console.error('保存菜谱失败:', error)
@@ -150,12 +180,16 @@ export const useRecipeStore = defineStore('recipe', () => {
 
   const removeRecipe = async (recipeId: string) => {
     try {
+      // 从SQLite数据库中删除菜谱
+      const numericId = parseInt(recipeId)
+      if (!isNaN(numericId)) {
+        await RecipeModel.delete(numericId)
+      }
+      
       // 从收藏列表中移除菜谱
       const index = savedRecipes.value.findIndex(r => r.id === recipeId)
       if (index > -1) {
         savedRecipes.value.splice(index, 1)
-        // 更新本地存储
-        localStorage.setItem('savedRecipes', JSON.stringify(savedRecipes.value))
         return true
       }
       return false
@@ -190,19 +224,28 @@ export const useRecipeStore = defineStore('recipe', () => {
 
   const loadSavedRecipes = async () => {
     try {
-      // 从本地存储加载收藏的菜谱
-      const savedData = localStorage.getItem('savedRecipes')
-      if (savedData) {
-        const recipes = JSON.parse(savedData)
-        savedRecipes.value = recipes.map((recipe: unknown) => {
-          const r = recipe as Partial<Recipe>
-          return {
-            ...r,
-            createdAt: r.createdAt ? new Date(r.createdAt) : new Date(),
-            updatedAt: r.updatedAt ? new Date(r.updatedAt) : undefined,
-          } as Recipe
-        })
-      }
+      // 从SQLite数据库加载收藏的菜谱
+      const recipes = await RecipeModel.findAll(100, 0)
+      savedRecipes.value = recipes.map(recipe => ({
+        id: recipe.id.toString(),
+        title: recipe.title,
+        name: recipe.title,
+        description: recipe.description,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+        steps: recipe.instructions,
+        cookingTime: `${recipe.cookingTime}分钟`,
+        time: recipe.cookingTime,
+        difficulty: recipe.difficulty,
+        servings: recipe.servings,
+        cookingMethods: [recipe.category],
+        nutritionInfo: recipe.nutritionInfo,
+        nutrition: recipe.nutritionInfo,
+        tags: recipe.tags,
+        rating: recipe.averageRating,
+        createdAt: recipe.createdAt,
+        updatedAt: recipe.updatedAt
+      }))
     } catch (error) {
       console.error('加载收藏菜谱失败:', error)
       savedRecipes.value = []
