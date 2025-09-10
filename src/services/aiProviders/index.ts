@@ -70,8 +70,7 @@ class AIProviderFactory {
     switch (providerName.toLowerCase()) {
       case 'openai':
         console.log('使用OpenAI提供者')
-        // TODO: 实现OpenAI提供者
-        return mockProvider // 暂时使用模拟提供者
+        return mockProvider // Fallback to mock provider until OpenAI provider is implemented
       case 'glm':
         console.log('使用GLM提供者')
         return new GLMProvider()
