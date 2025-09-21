@@ -23,9 +23,9 @@ $gray-700: #616161;
 $gray-800: #424242;
 $gray-900: #212121;
 
-// 字体
-$font-family-base: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
-$font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+// 字体 - 使用跨平台兼容字体
+$font-family-base: 'Noto Sans', 'DejaVu Sans', 'WenQuanYi Micro Hei', 'Droid Sans Fallback', 'Arial', 'Helvetica Neue', sans-serif;
+$font-family-mono: 'DejaVu Sans Mono', 'Noto Sans Mono', 'Liberation Mono', 'Courier New', monospace;
 
 // 字体大小
 $font-size-xs: 0.75rem;   // 12px

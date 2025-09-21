@@ -1,6 +1,15 @@
 /**
  * SVG 菜谱封面生成工具
  * 基于封面生成器页面的功能，为搜索和AI页面提供统一的SVG生成
+ *
+ * 字体说明：
+ * - 使用跨平台兼容字体，确保在Linux和Windows上都能正常显示
+ * - Arial: 通用的英文字体，支持中文基本字符
+ * - Noto Sans: Google开发的开源字体，支持多种语言
+ * - DejaVu Sans: 开源字体，广泛支持Unicode字符
+ * - WenQuanYi Micro Hei: Linux系统下的中文字体
+ * - Droid Sans Fallback: Android系统的后备字体，也广泛用于Linux
+ * - sans-serif: 最终的后备字体
  */
 
 // 字体颜色调色板（排除黑色和白色）
@@ -200,8 +209,8 @@ export const generateRecipeCoverSvg = (config: SvgConfig): string => {
   <!-- 毛玻璃背景层 -->
   <rect x="0" y="0" width="${width}" height="${height}" fill="url(#glassGradient-${safeId})" filter="url(#glass-${safeId})" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
   <!-- 文字内容 - 使用基于菜名的一致性颜色 -->
-  <text x="${width / 2}" y="${height / 2 - 10}" text-anchor="middle" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="${fontSize}" font-weight="bold" fill="${textColor}" style="text-shadow: 0 2px 4px rgba(0,0,0,0.3);">${name}</text>
-  <text x="${width / 2}" y="${height / 2 + 25}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${subtitleSize}" fill="${textColor}" opacity="0.8" style="text-shadow: 0 1px 3px rgba(0,0,0,0.2);">${englishSubtitle}</text>
+  <text x="${width / 2}" y="${height / 2 - 10}" text-anchor="middle" font-family="Arial, 'Noto Sans', 'DejaVu Sans', 'WenQuanYi Micro Hei', 'Droid Sans Fallback', sans-serif" font-size="${fontSize}" font-weight="bold" fill="${textColor}" style="text-shadow: 0 2px 4px rgba(0,0,0,0.3);">${name}</text>
+  <text x="${width / 2}" y="${height / 2 + 25}" text-anchor="middle" font-family="Arial, 'Noto Sans', 'DejaVu Sans', sans-serif" font-size="${subtitleSize}" fill="${textColor}" opacity="0.8" style="text-shadow: 0 1px 3px rgba(0,0,0,0.2);">${englishSubtitle}</text>
 </svg>`
 }
 
@@ -246,8 +255,8 @@ export const generateRandomRecipeCoverSvg = (config: SvgConfig): string => {
   <!-- 毛玻璃背景层 -->
   <rect x="0" y="0" width="${width}" height="${height}" fill="url(#glassGradient-${safeId})" filter="url(#glass-${safeId})" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
   <!-- 文字内容 - 使用随机颜色 -->
-  <text x="${width / 2}" y="${height / 2 - 10}" text-anchor="middle" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="${fontSize}" font-weight="bold" fill="${randomTextColor}" style="text-shadow: 0 2px 4px rgba(0,0,0,0.3);">${name}</text>
-  <text x="${width / 2}" y="${height / 2 + 25}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${subtitleSize}" fill="${randomTextColor}" opacity="0.8" style="text-shadow: 0 1px 3px rgba(0,0,0,0.2);">${englishSubtitle}</text>
+  <text x="${width / 2}" y="${height / 2 - 10}" text-anchor="middle" font-family="Arial, 'Noto Sans', 'DejaVu Sans', 'WenQuanYi Micro Hei', 'Droid Sans Fallback', sans-serif" font-size="${fontSize}" font-weight="bold" fill="${randomTextColor}" style="text-shadow: 0 2px 4px rgba(0,0,0,0.3);">${name}</text>
+  <text x="${width / 2}" y="${height / 2 + 25}" text-anchor="middle" font-family="Arial, 'Noto Sans', 'DejaVu Sans', sans-serif" font-size="${subtitleSize}" fill="${randomTextColor}" opacity="0.8" style="text-shadow: 0 1px 3px rgba(0,0,0,0.2);">${englishSubtitle}</text>
 </svg>`
 }
 

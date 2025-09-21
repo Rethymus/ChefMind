@@ -617,14 +617,14 @@ onUnmounted(() => {
         font-size: 2.5rem;
         font-weight: 700;
         color: #2c3e50;
-        font-family: 'Courier New', monospace;
+        font-family: 'DejaVu Sans Mono', 'Noto Sans Mono', 'Liberation Mono', 'Courier New', monospace;
       }
       
       .time-total {
         font-size: 1rem;
         color: #666;
         margin-left: 0.5rem;
-        font-family: 'Courier New', monospace;
+        font-family: 'DejaVu Sans Mono', 'Noto Sans Mono', 'Liberation Mono', 'Courier New', monospace;
       }
     }
     

@@ -311,7 +311,7 @@
       tempDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'
 
       tempDiv.innerHTML = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <div style="font-family: 'Noto Sans', 'DejaVu Sans', 'WenQuanYi Micro Hei', 'Droid Sans Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
         <h2 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 20px;">${recipe.name}</h2>
         <p style="margin: 0 0 15px 0; color: #666; font-size: 14px; line-height: 1.4;">${recipe.description}</p>
         

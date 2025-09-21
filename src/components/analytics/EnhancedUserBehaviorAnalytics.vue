@@ -856,7 +856,7 @@
         background: var(--el-fill-color-lighter);
         border-radius: 8px;
         padding: 16px;
-        font-family: 'Courier New', monospace;
+        font-family: 'DejaVu Sans Mono', 'Noto Sans Mono', 'Liberation Mono', 'Courier New', monospace;
         font-size: 12px;
         overflow-x: auto;
         margin: 0;

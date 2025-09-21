@@ -636,7 +636,7 @@ const downloadFile = () => {
 }
 
 .preview-code {
-  font-family: 'Courier New', monospace;
+  font-family: 'DejaVu Sans Mono', 'Noto Sans Mono', 'Liberation Mono', 'Courier New', monospace;
   font-size: 0.9rem;
   line-height: 1.5;
   margin: 0;

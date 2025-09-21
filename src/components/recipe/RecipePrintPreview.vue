@@ -269,7 +269,7 @@ const formatDate = (date: Date) => {
 
 /* 打印样式 */
 .print-recipe {
-  font-family: 'Arial', sans-serif;
+  font-family: 'Noto Sans', 'DejaVu Sans', 'WenQuanYi Micro Hei', 'Droid Sans Fallback', 'Arial', sans-serif;
   color: #333;
   line-height: 1.5;
 }
