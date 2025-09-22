@@ -324,7 +324,6 @@
 
   // 多媒体平台跳转事件处理
   const handlePlatformClick = (platform: string, recipeName: string) => {
-    console.log(`用户点击了${platform}平台，搜索菜谱: ${recipeName}`)
     emit('notification', {
       type: 'info',
       title: '跳转提示',

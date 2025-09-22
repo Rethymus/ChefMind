@@ -200,7 +200,6 @@
 
   function calculateNutrition() {
     // 实时计算营养成分
-    console.log('总营养成分:', totalNutrition.value)
   }
 
   async function startAnalysis() {

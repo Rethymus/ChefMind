@@ -398,7 +398,6 @@
 
   // 方法定义
   function handleModeChange(mode: string) {
-    console.log('切换分析模式:', mode)
     trackEvent('click', {
       category: 'nutrition-analysis',
       target: `mode-${mode}`,
@@ -430,7 +429,6 @@
   }
 
   function handleComparisonComplete(result: any) {
-    console.log('营养对比完成:', result)
     ElMessage.success('营养对比分析完成！')
   }
 
@@ -561,7 +559,6 @@
   }
 
   function handleReportGenerated(report: any) {
-    console.log('营养报告生成完成:', report)
     ElMessage.success('营养报告生成完成！')
   }
 </script>

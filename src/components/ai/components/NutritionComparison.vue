@@ -292,7 +292,6 @@
 
   // 方法定义
   function handleModeChange(mode: string) {
-    console.log('对比模式改变:', mode)
     clearAllItems()
   }
 

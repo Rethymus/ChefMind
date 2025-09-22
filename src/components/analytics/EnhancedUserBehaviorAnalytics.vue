@@ -485,7 +485,6 @@
   }
 
   function handleTimeRangeChange() {
-    console.log('时间范围变更:', timeRange.value)
     loadAnalyticsData()
   }
 

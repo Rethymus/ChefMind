@@ -182,7 +182,6 @@ const showNotification = (message: string, type: 'success' | 'error' | 'info' = 
 
 // 加载收藏数据
 const loadFavorites = async () => {
-  console.log('🔄 开始加载收藏数据...')
   isLoading.value = true
   
   try {
@@ -220,10 +219,8 @@ const loadFavorites = async () => {
       }
       
       favoriteRecipes.value = recipes
-      console.log('✅ 成功加载收藏数据:', favoriteRecipes.value.length, '条')
     } else {
       favoriteRecipes.value = []
-      console.log('ℹ️ 数据库中无收藏数据')
     }
     
     lastUpdateTime.value = new Date().toLocaleTimeString()
@@ -238,16 +235,13 @@ const loadFavorites = async () => {
 
 // 查看菜谱详情
 const viewRecipeDetail = (recipe: RecipeUI) => {
-  console.log('👁️ 查看菜谱详情:', recipe.name || recipe.title)
-  
+
   try {
     // 将菜谱数据存储到sessionStorage供详情页使用
     sessionStorage.setItem('viewRecipe', JSON.stringify(recipe))
-    console.log('📤 菜谱数据已存储到sessionStorage')
-    
+
     // 跳转到详情页
     router.push('/recipe-detail')
-    console.log('🔄 正在跳转到详情页...')
   } catch (error) {
     console.error('❌ 跳转详情页失败:', error)
     showNotification('无法打开菜谱详情', 'error')
@@ -257,7 +251,6 @@ const viewRecipeDetail = (recipe: RecipeUI) => {
 // 移除收藏
 const removeFavorite = async (recipe: RecipeUI, index: number) => {
   const recipeName = recipe.name || recipe.title || '未命名菜谱'
-  console.log('💔 准备移除收藏:', recipeName, '索引:', index)
   
   if (window.confirm(`确定要移除收藏的"${recipeName}"吗？`)) {
     try {
@@ -271,7 +264,6 @@ const removeFavorite = async (recipe: RecipeUI, index: number) => {
         // 从数组中移除
         favoriteRecipes.value.splice(index, 1)
         
-        console.log('✅ 移除收藏成功，剩余:', favoriteRecipes.value.length, '条')
         showNotification(`已移除"${recipeName}"`, 'success')
       } else {
         throw new Error('无效的菜谱ID')
@@ -281,13 +273,11 @@ const removeFavorite = async (recipe: RecipeUI, index: number) => {
       showNotification('移除收藏失败', 'error')
     }
   } else {
-    console.log('ℹ️ 用户取消移除操作')
   }
 }
 
 // 刷新收藏列表
 const refreshFavorites = () => {
-  console.log('🔄 用户手动刷新收藏列表')
   loadFavorites()
   showNotification('已刷新收藏列表', 'info')
 }
@@ -309,7 +299,6 @@ const clearAllFavorites = async () => {
       // 清空数组
       favoriteRecipes.value = []
       
-      console.log('🗑️ 已清空所有收藏')
       showNotification('已清空所有收藏', 'success')
     } catch (error) {
       console.error('❌ 清空收藏失败:', error)
@@ -320,14 +309,12 @@ const clearAllFavorites = async () => {
 
 // 跳转到搜索页面
 const goToSearch = () => {
-  console.log('🔍 跳转到搜索页面')
   router.push('/search')
 }
 
 // 切换调试信息显示
 const toggleDebugInfo = () => {
   showDebugInfo.value = !showDebugInfo.value
-  console.log('🔧 调试信息显示:', showDebugInfo.value ? '开启' : '关闭')
 }
 
 // 导出调试数据
@@ -367,7 +354,6 @@ const generateRecipeSvg = (recipeName: string): string => {
 
 // 组件挂载
 onMounted(() => {
-  console.log('🚀 FavoritesPageComplete 组件已挂载')
   loadFavorites()
 })
 </script>

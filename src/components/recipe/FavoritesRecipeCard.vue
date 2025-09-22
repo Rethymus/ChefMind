@@ -98,11 +98,7 @@ const emit = defineEmits<{
 
 // 生成菜谱SVG封面 - 与SearchView完全相同
 const generateRecipeSvg = (recipeName: string): string => {
-  console.log('🎨 FavoritesCard - Recipe Name:', recipeName)
-  console.log('🎨 FavoritesCard - Recipe Object:', props.recipe)
   const svg = generateRecipeCardSvg(recipeName, 'medium')
-  console.log('🎨 FavoritesCard - Generated SVG length:', svg.length)
-  console.log('🎨 FavoritesCard - SVG preview:', svg.substring(0, 200))
   return svg
 }
 

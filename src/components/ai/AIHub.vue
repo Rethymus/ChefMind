@@ -202,7 +202,7 @@
 
   // 测试图片缓存系统（开发环境）
   if (import.meta.env.DEV) {
-    console.log('🧪 AI Hub 已初始化')
+    // Development mode initialization
   }
 
   // 在此处定义所需的类型 - 使用与aiService.ts中相同的类型定义
@@ -252,7 +252,6 @@
 
   // 处理标签页切换
   const handleTabChange = (tabName: string) => {
-    console.log('切换到标签页:', tabName)
 
     // 更新统计数据
     switch (tabName) {
@@ -384,7 +383,6 @@
 
   // 聊天助手相关事件处理
   function handleRecipeRequest(request: string) {
-    console.log('收到食谱请求:', request)
     // 可以触发搜索或生成食谱
     if (request.includes('推荐') || request.includes('生成')) {
       generateRandomRecipe()
@@ -392,14 +390,12 @@
   }
 
   function handleCookingHelp(question: string) {
-    console.log('收到烹饪帮助请求:', question)
     // 可以提供烹饪指导
     ElMessage.info('正在为您查找相关烹饪技巧...')
   }
 
   // 处理个性化推荐相关事件
   function handleRecipeSelected(recipe: Recipe) {
-    console.log('选择了推荐的食谱:', recipe)
 
     // 由于类型不匹配，我们不直接传递，而是创建一个新的对象
     const recipeData = {
@@ -425,13 +421,11 @@
   }
 
   function handleStartCooking(recipe: Recipe) {
-    console.log('开始烹饪推荐的食谱:', recipe)
     handleRecipeSelected(recipe) // 重用相同的转换逻辑
     switchToTab('cooking-assistant')
   }
 
   function handleAddToFavorites(recipe: Recipe) {
-    console.log('收藏推荐的食谱:', recipe)
     ElMessage.success(`已收藏菜谱: ${recipe.name || recipe.title || '未命名菜谱'}`)
   }
 

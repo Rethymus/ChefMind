@@ -486,7 +486,6 @@
   }
 
   function handleCategoryChange(category: string) {
-    console.log('切换推荐类别:', category)
     trackEvent('click', {
       category: 'recommendations',
       target: `category-${category}`,
@@ -555,7 +554,6 @@
   }
 
   function viewDetails(recommendation: RecommendationItem) {
-    console.log('查看菜谱详情:', recommendation.recipe)
     trackEvent('click', {
       recipeId: recommendation.recipe.id,
       category: 'view-details',

@@ -259,7 +259,6 @@
 
   // 方法定义
   function handleInputModeChange(mode: string) {
-    console.log('切换输入模式:', mode)
     selectedRecipe.value = null
   }
 
@@ -281,7 +280,6 @@
 
   function selectRecipe(recipe: Recipe) {
     selectedRecipe.value = recipe
-    console.log('选择食谱:', recipe.name)
   }
 
   function addIngredient() {

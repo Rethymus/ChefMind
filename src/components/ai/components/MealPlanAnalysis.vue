@@ -349,11 +349,9 @@
 
   // 方法定义
   function handlePlanTypeChange(type: string) {
-    console.log('计划类型改变:', type)
   }
 
   function handleDateChange(date: Date) {
-    console.log('日期改变:', date)
   }
 
   function addRecipeToMeal(mealId: string) {

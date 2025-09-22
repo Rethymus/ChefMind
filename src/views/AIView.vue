@@ -902,18 +902,15 @@
 
   const validateIngredientWithAI = async (ingredient: string): Promise<boolean> => {
     try {
-      console.log(`🔍 开始AI验证食材: ${ingredient}`)
 
       // 简单的本地验证规则
       const invalidKeywords = ['毒', '有害', '不能吃', '危险', '化学', '药物']
       if (invalidKeywords.some(keyword => ingredient.includes(keyword))) {
-        console.log(`❌ 食材包含无效关键词: ${ingredient}`)
         return false
       }
 
       // 使用AI提供商进行验证
       const result = await aiService.validateIngredient(ingredient)
-      console.log(`🤖 AI验证结果:`, result)
 
       if (result.reason) {
         ElMessage.info(result.reason)
@@ -937,13 +934,11 @@
       )
 
       if (isCommon) {
-        console.log(`✅ 食材在白名单中: ${ingredient}`)
         return true
       }
 
       // 对于未知食材，默认允许但给出提示
       ElMessage.warning(`无法验证 "${ingredient}" 是否为有效食材，请确保输入正确`)
-      console.log(`⚠️ 未知食材，默认允许: ${ingredient}`)
       return true
     }
   }
@@ -980,20 +975,7 @@
         autoCompleteIngredients: autoCompleteIngredients.value, // 添加自动补充食材选项
       }
 
-      console.log('🔍 AIView - 生成食谱参数:', JSON.stringify(params, null, 2))
 
-      // 详细验证数据完整性
-      console.log('📊 数据验证:')
-      console.log('- 饮食限制:', dietaryRestrictions.value)
-      console.log('- 健康目标:', healthGoals.value)
-      console.log('- 过敏原:', allergies.value)
-      console.log('- 口味偏好:', flavorPreferences.value)
-      console.log('- 辣度:', spiceLevel.value)
-      console.log('- 甜度:', sweetnessLevel.value)
-      console.log('- 厨具:', selectedKitchenware.value)
-      console.log('- 份数:', servings.value)
-      console.log('- 制作时间:', cookingTime.value)
-      console.log('- 难度:', difficulty.value)
 
       // Extract ingredients array from params
       const ingredients = params.ingredients
@@ -1016,7 +998,6 @@
         autoCompleteIngredients: params.autoCompleteIngredients
       }
 
-      console.log('🎯 AIView - 传递给aiService的preferences:', JSON.stringify(preferences, null, 2))
 
       const result = await aiService.generateRecipe(ingredients, preferences)
       const recipe = result.recipe
@@ -1068,11 +1049,6 @@
   const isRecipeFavorited = computed(() => {
     if (!generatedRecipe.value || !generatedRecipe.value.id) return false
     const result = recipeStore.isRecipeSaved(generatedRecipe.value.id)
-    console.log('计算属性 isRecipeFavorited 更新:', {
-      recipeId: generatedRecipe.value.id,
-      isRecipeFavorited: result,
-      savedRecipesCount: recipeStore.savedRecipes.length
-    })
     return result
   })
 
@@ -1085,23 +1061,13 @@
 
     // 实时检查收藏状态（不依赖计算属性）
     const currentFavoriteStatus = recipeStore.isRecipeSaved(generatedRecipe.value.id)
-    
-    // 添加调试信息
-    console.log('toggleFavorite 调用:', {
-      recipeId: generatedRecipe.value.id,
-      computedIsRecipeFavorited: isRecipeFavorited.value,
-      realTimeIsRecipeFavorited: currentFavoriteStatus,
-      recipe: generatedRecipe.value
-    })
 
     favoriteLoading.value = true
     
     try {
       if (currentFavoriteStatus) {
         // 取消收藏
-        console.log('执行取消收藏操作...')
         const success = await recipeStore.removeRecipe(generatedRecipe.value.id)
-        console.log('取消收藏结果:', success)
         
         // 等待状态更新
         await new Promise(resolve => setTimeout(resolve, 100))
@@ -1118,9 +1084,7 @@
         }
       } else {
         // 添加收藏
-        console.log('执行添加收藏操作...')
         const success = await recipeStore.saveRecipe(generatedRecipe.value)
-        console.log('添加收藏结果:', success)
         
         // 等待状态更新
         await new Promise(resolve => setTimeout(resolve, 100))
@@ -1305,9 +1269,6 @@
   // 生命周期钩子
   onMounted(() => {
     // 加载历史记录和已收藏的菜谱
-    console.log('AI食谱生成页面已加载')
-    
-    // 加载已收藏的菜谱
     recipeStore.loadSavedRecipes()
 
     // 模拟加载一些历史记录

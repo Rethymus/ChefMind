@@ -605,14 +605,12 @@ const handleSave = async () => {
           model: config.model
         })
         
-        console.log(`已保存 ${providerName} 配置到数据库`)
       }
       
       // 验证保存是否成功
       setTimeout(async () => {
         try {
           const testConfig = await aiConfigService.getProviderConfig('GLM')
-          console.log('🧪 验证GLM配置保存结果:', testConfig)
         } catch (error) {
           console.warn('验证配置保存失败:', error)
         }

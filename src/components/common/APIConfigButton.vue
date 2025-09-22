@@ -124,7 +124,6 @@ const checkAPIConfig = async () => {
     })
     
     hasApiKey.value = configStatus
-    console.log('从数据库加载的API配置状态:', configStatus)
   } catch (error) {
     console.warn('无法从数据库加载API配置，回退到localStorage:', error)
     
