@@ -716,7 +716,7 @@
 </script>
 
 <style scoped lang="scss">
-  @import '@/styles/variables.scss';
+  @use '@/styles/variables.scss' as *;
 
   .analytics-view {
     min-height: 100vh;

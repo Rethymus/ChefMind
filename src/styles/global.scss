@@ -1,10 +1,8 @@
 /* ChefMind 智食谱 - 全局样式 */
 
-/* 导入图标修复样式 */
-@import './icon-fixes.scss';
-
-/* 导入跨平台字体兼容性样式 */
-@import './cross-platform-fonts.scss';
+/* 导入样式文件 */
+@use './icon-fixes.scss';
+@use './cross-platform-fonts.scss';
 
 /* 基础样式重置 */
 * {
