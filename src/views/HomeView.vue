@@ -18,7 +18,7 @@
       </div>
       <div class="hero-image">
         <img
-          src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=400&fit=crop"
+          src="/images/homepage-hero.jpg"
           alt="美食图片"
         />
       </div>
