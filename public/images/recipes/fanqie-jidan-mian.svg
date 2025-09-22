@@ -1,6 +1,6 @@
 <!-- SVG 番茄鸡蛋面图片占位符 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
   <rect width="400" height="300" fill="#e74c3c"/>
-  <text x="200" y="150" text-anchor="middle" font-family="Arial, 'Noto Sans', 'DejaVu Sans', 'WenQuanYi Micro Hei', 'Droid Sans Fallback', sans-serif" font-size="24" fill="white">番茄鸡蛋面</text>
-  <text x="200" y="180" text-anchor="middle" font-family="Arial, 'Noto Sans', 'DejaVu Sans', 'WenQuanYi Micro Hei', 'Droid Sans Fallback', sans-serif" font-size="16" fill="white">Tomato Egg Noodles</text>
+  <text x="200" y="150" text-anchor="middle" font-family="Arial, 'Noto Sans', 'DejaVu Sans', 'Liberation Sans', 'WenQuanYi Micro Hei', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'Droid Sans Fallback', sans-serif" font-size="24" fill="white">番茄鸡蛋面</text>
+  <text x="200" y="180" text-anchor="middle" font-family="Arial, 'Noto Sans', 'DejaVu Sans', 'Liberation Sans', 'WenQuanYi Micro Hei', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'Droid Sans Fallback', sans-serif" font-size="16" fill="white">Tomato Egg Noodles</text>
 </svg>
