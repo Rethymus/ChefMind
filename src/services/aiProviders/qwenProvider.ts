@@ -8,16 +8,18 @@ import type {
   PersonalizedRecommendation,
 } from '@/types/recipe'
 import type { UserHistoryItem, UserPreferences } from '@/services/aiService'
+import { PromptBuilder } from './promptBuilder'
+import { ParamAdapter } from './paramAdapter'
 
 export class QwenProvider implements BaseAIProvider {
   private readonly apiKey: string
   private readonly baseURL: string
   private readonly model: string
 
-  constructor(apiKey?: string, baseURL: string = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation') {
-    this.apiKey = apiKey || import.meta.env.VITE_QWEN_API_KEY || ''
-    this.baseURL = baseURL || 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation'
-    this.model = import.meta.env.VITE_QWEN_MODEL || 'qwen-turbo'
+  constructor(apiKey?: string, baseURL?: string) {
+    this.apiKey = apiKey || import.meta.env.VITE_API_KEY || import.meta.env.VITE_QWEN_API_KEY || ''
+    this.baseURL = baseURL || import.meta.env.VITE_API_BASE_URL || 'https://api-inference.modelscope.cn/v1/chat/completions'
+    this.model = import.meta.env.VITE_API_MODEL || import.meta.env.VITE_QWEN_MODEL || 'qwen-turbo'
   }
 
   private async callQwen(prompt: string, options?: { maxTokens?: number; temperature?: number }): Promise<string> {
@@ -26,6 +28,12 @@ export class QwenProvider implements BaseAIProvider {
     }
 
     try {
+      console.log('🌐 调用Qwen API:', {
+        url: this.baseURL,
+        model: this.model,
+        hasApiKey: !!this.apiKey
+      })
+
       const response = await fetch(this.baseURL, {
         method: 'POST',
         headers: {
@@ -34,28 +42,36 @@ export class QwenProvider implements BaseAIProvider {
         },
         body: JSON.stringify({
           model: this.model,
-          input: {
-            messages: [
-              {
-                role: 'user',
-                content: prompt
-              }
-            ]
-          },
-          parameters: {
-            max_tokens: options?.maxTokens || 1000,
-            temperature: options?.temperature || 0.7
-          }
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: options?.maxTokens || 2000,
+          temperature: options?.temperature || 0.7
         })
       })
 
       if (!response.ok) {
-        const error = await response.text()
-        throw new Error(`Qwen API错误: ${response.status} - ${error}`)
+        const errorText = await response.text()
+        console.error('❌ Qwen API响应错误:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        })
+        throw new Error(`Qwen API错误: ${response.status} - ${errorText}`)
       }
 
       const data = await response.json()
-      return data.output.choices[0].message.content
+      console.log('✅ Qwen API调用成功')
+
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        console.error('❌ Qwen API响应格式错误:', data)
+        throw new Error('Qwen API响应格式错误')
+      }
+
+      return data.choices[0].message.content
     } catch (error) {
       console.error('Qwen API调用失败:', error)
       throw error
@@ -75,59 +91,42 @@ export class QwenProvider implements BaseAIProvider {
     }
   }
 
-  async generateRecipe(params: RecipeGenerationParams): Promise<Recipe> {
+  async generateRecipe(ingredientsOrParams: string[] | RecipeGenerationParams, preferences?: UserPreferences): Promise<Recipe> {
     try {
-      const prompt = this.buildRecipePrompt(params)
+      console.log('🚀 Qwen生成食谱开始，参数:', JSON.stringify(ingredientsOrParams, null, 2))
+
+      // 转换为标准参数格式
+      const standardParams = ParamAdapter.toRecipeGenerationParams(ingredientsOrParams, preferences)
+
+      console.log('📋 转换后的标准参数:', JSON.stringify(standardParams, null, 2))
+      console.log('🔍 参数验证:')
+      console.log('- 饮食限制:', standardParams.dietaryRestrictions)
+      console.log('- 健康目标:', standardParams.healthGoals)
+      console.log('- 过敏原:', standardParams.allergies)
+      console.log('- 口味偏好:', standardParams.flavorPreferences)
+      console.log('- 辣度:', standardParams.spiceLevel)
+      console.log('- 甜度:', standardParams.sweetnessLevel)
+
+      // 构建通用提示词
+      const prompt = PromptBuilder.buildRecipePrompt(standardParams)
+      console.log('📝 生成的Prompt:', prompt)
+
       const response = await this.callQwen(prompt, {
         maxTokens: 2000,
         temperature: 0.7
       })
 
       const recipeResult = this.parseJsonResponse<Partial<Recipe>>(response)
-      return this.buildRecipeFromResult(recipeResult, params)
+      const recipe = this.buildRecipeFromResult(recipeResult, standardParams)
+
+      console.log('✅ Qwen食谱生成成功:', recipe.title)
+      return recipe
     } catch (error) {
       console.error('Qwen生成食谱失败:', error)
-      return this.createFallbackRecipe(params)
+      return this.createFallbackRecipe(standardParams || ingredientsOrParams as RecipeGenerationParams)
     }
   }
 
-  private buildRecipePrompt(params: RecipeGenerationParams): string {
-    const ingredients = params.ingredients.join(', ')
-    const constraints = [
-      params.cookingMethods?.length && `烹饪方式: ${params.cookingMethods.join(', ')}`,
-      params.dietaryRestrictions?.length && `饮食限制: ${params.dietaryRestrictions.join(', ')}`,
-      params.servings && `份量: ${params.servings}人份`,
-      params.cookingTime && `制作时间: ${params.cookingTime}`,
-      params.difficulty && `难度: ${params.difficulty}`
-    ].filter(Boolean).join('\n')
-
-    return `
-请根据以下食材和要求，生成一个详细的食谱，并以JSON格式返回：
-
-食材: ${ingredients}
-${constraints}
-
-请严格按照以下JSON格式返回食谱：
-{
-  "title": "食谱标题",
-  "description": "食谱简短描述",
-  "ingredients": ["配料1及用量", "配料2及用量"],
-  "instructions": ["步骤1", "步骤2", "步骤3"],
-  "cookingTime": "30分钟",
-  "servings": 2,
-  "difficulty": "简单",
-  "cookingMethods": ["炒", "煎"],
-  "nutrition": {
-    "calories": 280,
-    "protein": 15,
-    "carbs": 35,
-    "fat": 8
-  },
-  "cookingTips": ["小贴士1", "小贴士2"],
-  "tags": ["标签1", "标签2"]
-}
-`
-  }
 
   private buildRecipeFromResult(recipeResult: Partial<Recipe>, params: RecipeGenerationParams): Recipe {
     const title = recipeResult.title || `${params.ingredients[0]}食谱`

@@ -19,8 +19,19 @@ class AIProviderFactory {
   private isInitialized = false
 
   private constructor() {
-    this.currentProviderName = import.meta.env.VITE_AI_PROVIDER || 'mock'
+    const enableMockMode = import.meta.env.VITE_ENABLE_MOCK_MODE === 'true'
+    const envProvider = import.meta.env.VITE_AI_PROVIDER
+
+    if (enableMockMode) {
+      this.currentProviderName = 'mock'
+    } else if (envProvider && envProvider !== 'mock') {
+      this.currentProviderName = envProvider
+    } else {
+      this.currentProviderName = 'mock'
+    }
+
     this.currentProvider = this.selectProvider(this.currentProviderName)
+    console.log(`🏭 AI提供商工厂初始化，初始提供商: ${this.currentProviderName}`)
     // Don't call async method in constructor
   }
 
@@ -37,18 +48,45 @@ class AIProviderFactory {
 
   private async initializeProvider(): Promise<void> {
     try {
+      // 检查是否启用模拟模式
+      const enableMockMode = import.meta.env.VITE_ENABLE_MOCK_MODE === 'true'
+      console.log('🔧 Mock模式状态:', enableMockMode)
+
+      if (!enableMockMode) {
+        // 如果没有启用模拟模式，检查环境变量配置的提供商
+        const envProvider = import.meta.env.VITE_AI_PROVIDER
+        const envApiKey = import.meta.env.VITE_API_KEY
+
+        console.log('🔧 环境变量提供商:', envProvider)
+        console.log('🔧 环境变量API Key存在:', !!envApiKey)
+
+        if (envProvider && envApiKey && envProvider !== 'mock') {
+          // 使用环境变量配置的提供商
+          this.currentProviderName = envProvider
+          this.currentProvider = this.selectProvider(envProvider)
+          console.log(`✅ 使用环境变量配置的AI提供商: ${envProvider}`)
+          return
+        }
+      }
+
       // 尝试从AI配置服务获取已配置的提供商
       const { aiConfigService } = await import('@/services/aiConfig')
       const configuredProviders = await aiConfigService.getConfiguredProviders()
-      
+
       if (configuredProviders.length > 0) {
         // 优先使用已配置的提供商
         const preferredProvider = this.findPreferredProvider(configuredProviders)
         if (preferredProvider && preferredProvider !== this.currentProviderName) {
-          // Switched to configured AI provider: ${preferredProvider}
+          console.log(`✅ 切换到已配置的AI提供商: ${preferredProvider}`)
           this.currentProviderName = preferredProvider
           this.currentProvider = this.selectProvider(preferredProvider)
         }
+      } else if (!enableMockMode) {
+        // 如果没有配置的提供商且未启用模拟模式，尝试使用环境变量
+        const envProvider = import.meta.env.VITE_AI_PROVIDER || 'openai'
+        this.currentProviderName = envProvider
+        this.currentProvider = this.selectProvider(envProvider)
+        console.log(`⚠️ 没有已配置的提供商，使用环境变量: ${envProvider}`)
       }
     } catch (error) {
       console.warn('无法从AI配置服务获取提供商信息:', error)
@@ -115,10 +153,8 @@ class AIProviderFactory {
   private selectProvider(providerName: string): BaseAIProvider {
     switch (providerName.toLowerCase()) {
       case 'openai':
-        // Using OpenAI provider
-        // Note: OpenAI provider implementation requires additional setup
-        // Currently using mock provider for development
-        return mockProvider
+        // Using OpenAI-compatible provider (Qwen in this case)
+        return new QwenProvider()
       case 'glm':
         // Using GLM provider
         return new GLMProvider()

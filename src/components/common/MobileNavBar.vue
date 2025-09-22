@@ -25,18 +25,13 @@
         <span class="nav-text">收藏</span>
       </router-link>
 
-      <div class="nav-item config-item">
-        <APIConfigButton size="small" />
-        <span class="nav-text">配置</span>
       </div>
-    </div>
   </nav>
 </template>
 
 <script setup lang="ts">
   import { ref, onMounted, onUnmounted } from 'vue'
-  import APIConfigButton from '@/components/common/APIConfigButton.vue'
-
+  
   const isMobile = ref(false)
 
   const checkMobile = () => {
@@ -104,16 +99,5 @@
       font-weight: 500;
     }
 
-    &.config-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      
-      .api-config-button {
-        margin-bottom: 2px;
-      }
     }
-  }
 </style>

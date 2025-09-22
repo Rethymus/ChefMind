@@ -49,9 +49,17 @@ export interface UserPreferences {
   dietaryRestrictions?: string[]
   cuisineType?: string
   spiceLevel?: 'mild' | 'medium' | 'hot'
-  cookingTime?: number
-  difficulty?: 'easy' | 'medium' | 'hard'
+  cookingTime?: number | string
+  difficulty?: 'easy' | 'medium' | 'hard' | string
   servings?: number
+  healthGoals?: string[]
+  allergies?: string[]
+  flavorPreferences?: string[]
+  sweetnessLevel?: string
+  dislikedIngredients?: string[]
+  kitchenware?: string[]
+  noMethodRestriction?: boolean
+  autoCompleteIngredients?: boolean
 }
 
 export interface UserHistoryItem {
@@ -292,7 +300,20 @@ class AIService {
         ...params,
       }
 
-      console.log('调用AI提供商生成食谱，参数:', params)
+      console.log('🚀 aiService - 调用AI提供商生成食谱，完整参数:', JSON.stringify(params, null, 2))
+
+      // 验证关键参数是否正确传递
+      console.log('🔍 aiService - 参数验证:')
+      console.log('- 饮食限制:', params.dietaryRestrictions)
+      console.log('- 健康目标:', params.healthGoals)
+      console.log('- 过敏原:', params.allergies)
+      console.log('- 口味偏好:', params.flavorPreferences)
+      console.log('- 辣度:', params.spiceLevel)
+      console.log('- 甜度:', params.sweetnessLevel)
+      console.log('- 厨具:', params.kitchenware)
+      console.log('- 份数:', params.servings)
+      console.log('- 制作时间:', params.cookingTime)
+      console.log('- 难度:', params.difficulty)
       const result = await this.currentProvider.generateRecipe(params)
 
       // 确保返回结果符合RecipeGenerationResult格式

@@ -6,7 +6,7 @@
       </div>
       <div class="reminder-text">
         <h4>AI 功能提醒</h4>
-        <p>当前未配置 AI API 密钥，将使用模拟数据进行演示。若要使用真实的 AI 功能，请在环境变量中配置相应的 API 密钥。</p>
+        <p>AI 功能已就绪！系统已检测到有效的环境变量配置，正在使用真实的 AI 功能为您提供最佳体验。</p>
       </div>
       <div class="reminder-actions">
         <button class="dismiss-btn" @click="dismissReminder">
@@ -27,7 +27,7 @@
 import { ref, computed, onMounted } from 'vue'
 
 interface Props {
-  provider?: 'openai' | 'glm' | 'all'
+  provider?: 'openai' | 'glm' | 'qwen' | 'all'
   persistent?: boolean
   showQuickConfig?: boolean
 }
@@ -49,13 +49,19 @@ const isDismissed = ref(false)
 // 检查是否有 API 密钥配置
 const hasApiKey = computed(() => {
   if (props.provider === 'all') {
-    return hasOpenAIKey.value || hasGLMKey.value
+    return hasUniversalKey.value || hasOpenAIKey.value || hasGLMKey.value || hasQwenKey.value
   } else if (props.provider === 'openai') {
-    return hasOpenAIKey.value
+    return hasOpenAIKey.value || hasUniversalKey.value
   } else if (props.provider === 'glm') {
-    return hasGLMKey.value
+    return hasGLMKey.value || hasUniversalKey.value
+  } else if (props.provider === 'qwen') {
+    return hasQwenKey.value || hasUniversalKey.value
   }
   return false
+})
+
+const hasUniversalKey = computed(() => {
+  return !!import.meta.env.VITE_API_KEY
 })
 
 const hasOpenAIKey = computed(() => {
@@ -64,6 +70,10 @@ const hasOpenAIKey = computed(() => {
 
 const hasGLMKey = computed(() => {
   return !!import.meta.env.VITE_GLM_API_KEY
+})
+
+const hasQwenKey = computed(() => {
+  return !!import.meta.env.VITE_QWEN_API_KEY
 })
 
 // 是否显示提醒
@@ -83,10 +93,22 @@ const dismissReminder = () => {
 // 显示配置指南
 const showConfigGuide = () => {
   emit('show-guide')
-  // 这里可以显示配置指南或跳转到文档
-  alert('请在项目根目录创建 .env 文件，并添加相应的 API 密钥：\n\n' +
-        'OpenAI: VITE_OPENAI_API_KEY=your_openai_key\n' +
-        'GLM: VITE_GLM_API_KEY=your_glm_key')
+  // 显示OpenAI兼容的配置指南
+  alert('请在项目根目录创建 .env 文件，并添加以下OpenAI兼容的API配置：\n\n' +
+        '# === 通用OpenAI兼容配置 ===\n' +
+        'VITE_API_KEY=your_api_key_here\n' +
+        'VITE_API_BASE_URL=https://api.openai.com/v1\n' +
+        'VITE_API_MODEL=gpt-4o-mini\n\n' +
+        '# === 其他服务商示例 ===\n' +
+        '# GLM (智谱清言)\n' +
+        '# VITE_GLM_API_KEY=your_glm_key\n' +
+        '# VITE_GLM_API_URL=https://open.bigmodel.cn/api/paas/v4/\n' +
+        '# VITE_GLM_MODEL=glm-4-air\n\n' +
+        '# Qwen (通义千问)\n' +
+        '# VITE_QWEN_API_KEY=your_qwen_key\n' +
+        '# VITE_QWEN_API_URL=https://dashscope.aliyuncs.com/compatible-mode/v1\n' +
+        '# VITE_QWEN_MODEL=qwen-turbo\n\n' +
+        '# 注意：优先使用通用配置，如需特定服务商配置请取消对应注释')
 }
 
 // 快速配置

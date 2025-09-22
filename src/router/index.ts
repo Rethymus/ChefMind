@@ -2,29 +2,31 @@
 
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
 
-// 错误处理组件
+// 静态导入视图组件
+import HomeView from '@/views/HomeView.vue'
+import SearchView from '@/views/SearchView.vue'
+import AIView from '@/views/AIView.vue'
+import FavoritesPageComplete from '@/views/FavoritesPageComplete.vue'
+import ShoppingListView from '@/views/ShoppingListView.vue'
+import CookingGuideView from '@/views/CookingGuideView.vue'
+import AnalyticsView from '@/views/AnalyticsView.vue'
+import RecipeDetailView from '@/views/RecipeDetailView.vue'
+
+// 组件映射
+const viewComponents = {
+  HomeView,
+  SearchView,
+  AIView,
+  FavoritesPageComplete,
+  ShoppingListView,
+  CookingGuideView,
+  AnalyticsView,
+  RecipeDetailView
+}
+
+// 简单的组件加载函数
 const loadView = (view: string) => {
-  return () =>
-    import(`@/views/${view}.vue`).catch(error => {
-      console.error(`Failed to load view: ${view}`, error)
-      // 返回一个简单的错误组件对象而不是动态导入
-      return {
-        default: {
-          template: `
-          <div class="view-load-error">
-            <h2>页面加载失败</h2>
-            <p>抱歉，无法加载 ${view} 页面。</p>
-            <button @click="goHome">返回首页</button>
-          </div>
-        `,
-          methods: {
-            goHome() {
-              window.location.hash = '#/'
-            },
-          },
-        },
-      }
-    })
+  return viewComponents[view] || viewComponents.HomeView
 }
 
 const routes: RouteRecordRaw[] = [

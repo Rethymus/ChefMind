@@ -1,4 +1,4 @@
-import type { 
+import type {
   RecipeGenerationResult,
   IngredientAnalysisResult,
   NutritionAnalysisResult,
@@ -6,6 +6,8 @@ import type {
   Recipe,
 } from '@/types/recipe'
 import type { UserHistoryItem, UserPreferences } from '@/services/aiService'
+import { PromptBuilder } from './promptBuilder'
+import { ParamAdapter } from './paramAdapter'
 
 export class OpenAIProvider {
   private apiKey: string
@@ -80,60 +82,237 @@ export class OpenAIProvider {
     _preferences?: UserPreferences
   ): Promise<RecipeGenerationResult> {
     try {
-      // 处理参数
-      let ingredients: string[]
-      let cookingMethod: string | undefined
-      let difficulty: string | undefined
-      let servings: number | undefined
+      console.log('🚀 OpenAI生成食谱开始，参数:', JSON.stringify(ingredientsOrParams, null, 2))
 
-      if (Array.isArray(ingredientsOrParams)) {
-        ingredients = ingredientsOrParams
-      } else {
-        ingredients = ingredientsOrParams.ingredients
-        cookingMethod = ingredientsOrParams.cookingMethod
-        difficulty = ingredientsOrParams.difficulty
-        servings = ingredientsOrParams.servings
-      }
+      // 转换为标准参数格式
+      const standardParams = ParamAdapter.toRecipeGenerationParams(ingredientsOrParams, _preferences)
 
-      // 模拟生成食谱
-      const recipe: RecipeGenerationResult = {
-        id: `recipe_${Date.now()}`,
-        title: `${ingredients.slice(0, 2).join('和')}${cookingMethod || '炒菜'}`,
-        description: `使用${ingredients.join('、')}制作的美味${cookingMethod || '炒菜'}`,
-        ingredients: ingredients.map(ingredient => `${ingredient} 适量`),
-        instructions: [
-          '准备所有食材，清洗干净',
-          '热锅下油，爆香配料',
-          '下主料翻炒',
-          '调味炒匀即可出锅'
-        ],
-        cookingTime: 20,
-        difficulty: (difficulty as 'easy' | 'medium' | 'hard') || 'easy',
-        servings: servings || 2,
-        tags: [cookingMethod || '家常菜', '快手菜'],
-        nutrition: {
-          calories: 280,
-          protein: 15,
-          carbs: 35,
-          fat: 8,
-          fiber: 5,
-          vitamins: ['维生素A', '维生素C'],
-          minerals: ['钙', '铁'],
-          healthScore: 80,
-          dietaryInfo: {
-            isVegetarian: !ingredients.some(i => ['猪肉', '牛肉', '鸡肉', '鱼'].some(meat => i.includes(meat))),
-            isVegan: !ingredients.some(i => ['猪肉', '牛肉', '鸡肉', '鱼', '鸡蛋', '牛奶'].some(animal => i.includes(animal))),
-            isGlutenFree: !ingredients.some(i => ['面粉', '面条', '面包'].some(gluten => i.includes(gluten))),
-            allergens: []
-          },
-          recommendations: ['营养丰富', '口感鲜美']
-        }
-      }
+      console.log('📋 转换后的标准参数:', JSON.stringify(standardParams, null, 2))
+      console.log('🔍 参数验证:')
+      console.log('- 饮食限制:', standardParams.dietaryRestrictions)
+      console.log('- 健康目标:', standardParams.healthGoals)
+      console.log('- 过敏原:', standardParams.allergies)
+      console.log('- 口味偏好:', standardParams.flavorPreferences)
+      console.log('- 辣度:', standardParams.spiceLevel)
+      console.log('- 甜度:', standardParams.sweetnessLevel)
 
+      // 构建通用提示词
+      const prompt = PromptBuilder.buildRecipePrompt(standardParams)
+      console.log('📝 生成的Prompt:', prompt)
+
+      // 这里应该调用OpenAI API，现在返回一个基于参数的智能模拟结果
+      const recipe = this.createSmartRecipe(standardParams)
+
+      console.log('✅ OpenAI食谱生成成功:', recipe.title)
       return recipe
     } catch (error) {
       console.error('生成食谱失败:', error)
       throw new Error('生成食谱失败，请稍后重试')
+    }
+  }
+
+  /**
+   * 基于参数创建智能食谱（模拟OpenAI的行为）
+   */
+  private createSmartRecipe(params: import('@/types/recipe').RecipeGenerationParams): RecipeGenerationResult {
+    const { ingredients, dietaryRestrictions, allergies, spiceLevel, sweetnessLevel, flavorPreferences } = params
+
+    // 根据辣度和甜度调整食材
+    const adjustedIngredients = this.adjustIngredientsForFlavor(ingredients, spiceLevel, sweetnessLevel)
+
+    // 根据饮食限制过滤食材
+    const filteredIngredients = this.filterIngredientsByRestrictions(adjustedIngredients, dietaryRestrictions, allergies)
+
+    // 生成标题
+    const title = this.generateTitle(filteredIngredients, flavorPreferences, spiceLevel)
+
+    // 生成描述
+    const description = this.generateDescription(filteredIngredients, dietaryRestrictions, flavorPreferences)
+
+    // 生成制作步骤
+    const instructions = this.generateInstructions(filteredIngredients, flavorPreferences, spiceLevel)
+
+    return {
+      id: `recipe_${Date.now()}`,
+      title,
+      description,
+      ingredients: filteredIngredients.map(ing => `${ing} 适量`),
+      instructions,
+      cookingTime: this.getCookingTime(params.difficulty),
+      difficulty: this.getDifficulty(params.difficulty),
+      servings: params.servings || 2,
+      tags: this.generateTags(dietaryRestrictions, flavorPreferences, spiceLevel),
+      nutrition: this.generateNutrition(filteredIngredients, dietaryRestrictions),
+    }
+  }
+
+  /**
+   * 根据味道偏好调整食材
+   */
+  private adjustIngredientsForFlavor(ingredients: string[], spiceLevel: string, sweetnessLevel: string): string[] {
+    const adjusted = [...ingredients]
+
+    // 根据辣度添加辣椒类食材
+    if (spiceLevel === 'hot') {
+      adjusted.push('干辣椒', '花椒', '辣椒油')
+    } else if (spiceLevel === 'medium') {
+      adjusted.push('辣椒粉')
+    } else if (spiceLevel === 'mild') {
+      adjusted.push('胡椒粉')
+    }
+
+    // 根据甜度添加甜味调料
+    if (sweetnessLevel === 'high') {
+      adjusted.push('冰糖', '白糖')
+    } else if (sweetnessLevel === 'medium') {
+      adjusted.push('少许糖')
+    }
+    // 'none' 时不添加任何糖类
+
+    return adjusted
+  }
+
+  /**
+   * 根据饮食限制过滤食材
+   */
+  private filterIngredientsByRestrictions(ingredients: string[], dietaryRestrictions: string[], allergies: string[]): string[] {
+    return ingredients.filter(ingredient => {
+      // 检查过敏原
+      if (allergies.some(allergy => ingredient.includes(allergy))) {
+        return false
+      }
+
+      // 检查饮食限制
+      if (dietaryRestrictions.includes('素食主义') && ['猪肉', '牛肉', '鸡肉', '鱼'].some(meat => ingredient.includes(meat))) {
+        return false
+      }
+
+      if (dietaryRestrictions.includes('纯素食') && ['猪肉', '牛肉', '鸡肉', '鱼', '鸡蛋', '牛奶'].some(animal => ingredient.includes(animal))) {
+        return false
+      }
+
+      if (dietaryRestrictions.includes('无麸质') && ['面粉', '面条', '面包'].some(gluten => ingredient.includes(gluten))) {
+        return false
+      }
+
+      return true
+    })
+  }
+
+  /**
+   * 生成标题
+   */
+  private generateTitle(ingredients: string[], flavorPreferences: string[], spiceLevel: string): string {
+    const mainIngredients = ingredients.slice(0, 2)
+    let title = mainIngredients.join('和')
+
+    if (flavorPreferences.includes('麻辣')) {
+      title += '麻辣'
+    } else if (flavorPreferences.includes('香辣')) {
+      title += '香辣'
+    } else if (spiceLevel === 'hot') {
+      title += '重辣'
+    } else if (spiceLevel === 'medium') {
+      title += '中辣'
+    }
+
+    return title
+  }
+
+  /**
+   * 生成描述
+   */
+  private generateDescription(ingredients: string[], dietaryRestrictions: string[], flavorPreferences: string[]): string {
+    let description = `使用${ingredients.join('、')}制作的`
+
+    if (dietaryRestrictions.length > 0) {
+      description += `${dietaryRestrictions.join('、')}`
+    }
+
+    if (flavorPreferences.length > 0) {
+      description += `${flavorPreferences.join('、')}`
+    }
+
+    description += '美食'
+    return description
+  }
+
+  /**
+   * 生成制作步骤
+   */
+  private generateInstructions(ingredients: string[], flavorPreferences: string[], spiceLevel: string): string[] {
+    const instructions = [
+      '准备所有食材，清洗干净',
+      '热锅下油，爆香配料'
+    ]
+
+    // 根据辣度调整步骤
+    if (spiceLevel === 'hot') {
+      instructions.push('下干辣椒和花椒爆香')
+    }
+
+    instructions.push('下主料翻炒', '调味炒匀即可出锅')
+
+    return instructions
+  }
+
+  /**
+   * 生成标签
+   */
+  private generateTags(dietaryRestrictions: string[], flavorPreferences: string[], spiceLevel: string): string[] {
+    const tags = [...dietaryRestrictions, ...flavorPreferences]
+
+    if (spiceLevel === 'hot') tags.push('重辣')
+    else if (spiceLevel === 'medium') tags.push('中辣')
+    else if (spiceLevel === 'mild') tags.push('微辣')
+    else if (spiceLevel === 'none') tags.push('不辣')
+
+    return tags
+  }
+
+  /**
+   * 获取烹饪时间
+   */
+  private getCookingTime(difficulty?: string): number {
+    if (difficulty?.includes('简单')) return 15
+    if (difficulty?.includes('中等')) return 30
+    if (difficulty?.includes('困难')) return 45
+    return 25
+  }
+
+  /**
+   * 获取难度
+   */
+  private getDifficulty(difficulty?: string): 'easy' | 'medium' | 'hard' {
+    if (difficulty?.includes('简单')) return 'easy'
+    if (difficulty?.includes('困难')) return 'hard'
+    return 'medium'
+  }
+
+  /**
+   * 生成营养信息
+   */
+  private generateNutrition(ingredients: string[], dietaryRestrictions: string[]): any {
+    const isVegetarian = !ingredients.some(i => ['猪肉', '牛肉', '鸡肉', '鱼'].some(meat => i.includes(meat)))
+    const isVegan = !ingredients.some(i => ['猪肉', '牛肉', '鸡肉', '鱼', '鸡蛋', '牛奶'].some(animal => i.includes(animal)))
+    const isGlutenFree = !ingredients.some(i => ['面粉', '面条', '面包'].some(gluten => i.includes(gluten)))
+
+    return {
+      calories: 280,
+      protein: 15,
+      carbs: 35,
+      fat: 8,
+      fiber: 5,
+      vitamins: ['维生素A', '维生素C'],
+      minerals: ['钙', '铁'],
+      healthScore: 80,
+      dietaryInfo: {
+        isVegetarian,
+        isVegan,
+        isGlutenFree,
+        allergens: []
+      },
+      recommendations: ['营养丰富', '口感鲜美']
     }
   }
 

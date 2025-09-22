@@ -1,14 +1,9 @@
 <template>
   <div class="ai-provider-settings">
     <!-- API 密钥提醒 -->
-    <APIKeyReminder 
-      ref="apiKeyReminder" 
-      :showQuickConfig="true"
-      @open-config="openAPIConfig"
+    <APIKeyReminder
+      ref="apiKeyReminder"
     />
-    
-    <!-- API 配置弹窗 -->
-    <APIConfigModal v-model="showAPIConfig" @config-saved="handleAPIConfigSaved" />
     
     <el-card class="settings-card">
       <template #header>
@@ -238,11 +233,9 @@
   import { aiService, AIProviderType as AIProvider } from '@/services/aiService'
   import { AI_CONFIG } from '@/config/aiConfig'
   import APIKeyReminder from '@/components/common/APIKeyReminder.vue'
-  import APIConfigModal from '@/components/common/APIConfigModal.vue'
 
   // 响应式数据
   const apiKeyReminder = ref()
-  const showAPIConfig = ref(false)
   const selectedProvider = ref<AIProvider>(AI_CONFIG.defaultProvider as unknown as AIProvider)
   const currentProvider = ref<AIProvider>(AI_CONFIG.defaultProvider as unknown as AIProvider)
   const testing = ref(false)
@@ -476,17 +469,6 @@
   }
 
   // API 配置相关方法
-  const openAPIConfig = () => {
-    showAPIConfig.value = true
-  }
-
-  const handleAPIConfigSaved = () => {
-    ElMessage.success('API 配置已更新')
-    // 刷新提醒组件的状态
-    if (apiKeyReminder.value) {
-      apiKeyReminder.value.resetReminder()
-    }
-  }
 
   // 生命周期
   onMounted(() => {

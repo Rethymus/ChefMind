@@ -8,14 +8,7 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    vue({
-      template: {
-        compilerOptions: {
-          // 将所有带短横线的标签名都视为自定义元素
-          isCustomElement: (tag) => tag.includes('-')
-        }
-      }
-    }),
+    vue(),
     AutoImport({
       resolvers: [ElementPlusResolver()],
       imports: [
@@ -29,10 +22,6 @@ export default defineConfig({
         enabled: true
       }
     }),
-    Components({
-      resolvers: [ElementPlusResolver()],
-      dts: true
-    })
   ],
   resolve: {
     alias: {

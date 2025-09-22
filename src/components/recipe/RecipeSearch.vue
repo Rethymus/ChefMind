@@ -375,11 +375,35 @@
     }
   }
 
-  // 生成AI推荐食谱（使用真正的AI服务）
+  // 生成AI推荐食谱（基于搜索词，不使用用户偏好）
   const generateAIRecommendations = async (query: string) => {
     try {
-      // 使用真正的AI服务生成食谱
-      const aiResult = await aiService.generateRecipe([query])
+      // 首先验证搜索词是否为有效食材或菜品名称
+      const validationResult = await aiService.validateIngredient(query)
+      if (!validationResult.isValid) {
+        ElMessage.warning(`"${query}" 不是有效的食材或菜品名称，请重新输入`)
+        return
+      }
+
+      // 使用纯搜索模式，直接调用AI提供商避免默认偏好设置
+      const searchParams = {
+        ingredients: [query],
+        dietaryRestrictions: [],
+        healthGoals: [],
+        allergies: [],
+        flavorPreferences: [],
+        spiceLevel: 'none',
+        sweetnessLevel: 'none',
+        cookingTime: '30分钟',
+        difficulty: '中等',
+        servings: 2,
+        cookingMethods: [],
+        kitchenware: [],
+        noMethodRestriction: true,
+        autoCompleteIngredients: true,
+        requestType: 'search_only'
+      }
+      const aiResult = await aiService.generateRecipe(searchParams)
 
       // 转换AI返回的数据为我们需要的格式
       if (aiResult && aiResult.recipe) {
@@ -387,25 +411,25 @@
         aiRecommendedRecipes.value = [
           {
             id: recipe.id?.toString() || `ai-recipe-${Date.now()}`,
-            title: recipe.name || `AI推荐：${query}创意料理`,
-            name: recipe.name || `AI推荐：${query}创意料理`,
-            description: recipe.description || `基于"${query}"搜索词，AI为您量身定制的创意美食。`,
+            title: recipe.name || `${query}食谱`,
+            name: recipe.name || `${query}食谱`,
+            description: recipe.description || `使用${query}制作的美味食谱。`,
             cookingTime: recipe.cookingTime || '25分钟',
             difficulty: recipe.difficulty?.toString() || '简单',
             servings: recipe.servings || 2,
-            rating: recipe.rating || 4.8,
-            cookingMethods: ['炒制', '调味'], // 添加必需的烹饪方法
+            rating: recipe.rating || 4.5,
+            cookingMethods: ['炒制', '调味'],
             ingredients: Array.isArray(recipe.ingredients)
               ? recipe.ingredients.map(ing =>
                   typeof ing === 'string' ? ing : ing.name || ing.toString()
                 )
-              : [`新鲜${query}`, '橄榄油', '蒜蓉', '黑胡椒', '香草', '柠檬汁'],
+              : [query, '食用油', '盐', '胡椒粉'],
             steps: Array.isArray(recipe.steps)
               ? recipe.steps.map(step =>
                   typeof step === 'string' ? step : step.description || step.toString()
                 )
-              : ['准备食材', '预处理', '调味腌制', '烹饪制作', '装盘上桌'],
-            image: '/images/recipes/gongbao-jiding.svg', // 添加图片路径
+              : ['准备食材', '烹饪制作', '装盘上桌'],
+            image: '/images/recipes/gongbao-jiding.svg',
           } as Recipe,
         ]
       } else {
@@ -413,25 +437,23 @@
       }
     } catch (error) {
       console.error('AI推荐生成失败:', error)
-      // 如果AI服务失败，使用备用模板
-      const templates: Recipe[] = [
+      // 如果AI服务失败，使用基于搜索词的简单模板
+      aiRecommendedRecipes.value = [
         {
           id: Date.now().toString(),
-          title: `AI推荐：${query}创意料理`,
-          name: `AI推荐：${query}创意料理`,
-          description: `基于"${query}"搜索词，AI为您量身定制的创意美食，融合经典与创新。`,
-          cookingTime: '25分钟',
+          title: `${query}食谱`,
+          name: `${query}食谱`,
+          description: `使用${query}制作的传统食谱，简单易做。`,
+          cookingTime: '20分钟',
           difficulty: '简单',
           servings: 2,
-          rating: 4.8,
-          cookingMethods: ['炒制', '调味'], // 添加必需的烹饪方法
-          ingredients: [`新鲜${query}`, '橄榄油', '蒜蓉', '黑胡椒', '香草', '柠檬汁'],
-          steps: ['准备食材', '预处理', '调味腌制', '烹饪制作', '装盘上桌'],
-          image: '/images/recipes/fanqie-jidan-mian.svg', // 添加图片路径
-        },
+          rating: 4.2,
+          cookingMethods: ['炒制', '调味'],
+          ingredients: [query, '食用油', '盐', '胡椒粉', '葱姜蒜'],
+          steps: ['准备食材', '热锅下油', '烹饪制作', '调味装盘'],
+          image: '/images/recipes/fanqie-jidan-mian.svg',
+        } as Recipe,
       ]
-
-      aiRecommendedRecipes.value = templates
     }
   }
 

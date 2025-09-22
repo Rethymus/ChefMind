@@ -8,6 +8,8 @@ import type {
   PersonalizedRecommendation,
 } from '@/types/recipe'
 import type { UserHistoryItem, UserPreferences } from '@/services/aiService'
+import { PromptBuilder } from './promptBuilder'
+import { ParamAdapter } from './paramAdapter'
 
 export class GeminiProvider implements BaseAIProvider {
   private readonly apiKey: string
@@ -71,61 +73,42 @@ export class GeminiProvider implements BaseAIProvider {
     }
   }
 
-  async generateRecipe(params: RecipeGenerationParams): Promise<Recipe> {
+  async generateRecipe(ingredientsOrParams: string[] | RecipeGenerationParams, preferences?: UserPreferences): Promise<Recipe> {
     try {
-      const prompt = this.buildRecipePrompt(params)
+      console.log('🚀 Gemini生成食谱开始，参数:', JSON.stringify(ingredientsOrParams, null, 2))
+
+      // 转换为标准参数格式
+      const standardParams = ParamAdapter.toRecipeGenerationParams(ingredientsOrParams, preferences)
+
+      console.log('📋 转换后的标准参数:', JSON.stringify(standardParams, null, 2))
+      console.log('🔍 参数验证:')
+      console.log('- 饮食限制:', standardParams.dietaryRestrictions)
+      console.log('- 健康目标:', standardParams.healthGoals)
+      console.log('- 过敏原:', standardParams.allergies)
+      console.log('- 口味偏好:', standardParams.flavorPreferences)
+      console.log('- 辣度:', standardParams.spiceLevel)
+      console.log('- 甜度:', standardParams.sweetnessLevel)
+
+      // 构建通用提示词
+      const prompt = PromptBuilder.buildRecipePrompt(standardParams)
+      console.log('📝 生成的Prompt:', prompt)
+
       const response = await this.callGemini(prompt, {
         maxTokens: 2000,
         temperature: 0.7
       })
 
       const recipeResult = this.parseJsonResponse<Partial<Recipe>>(response)
-      return this.buildRecipeFromResult(recipeResult, params)
+      const recipe = this.buildRecipeFromResult(recipeResult, standardParams)
+
+      console.log('✅ Gemini食谱生成成功:', recipe.title)
+      return recipe
     } catch (error) {
       console.error('Gemini生成食谱失败:', error)
-      return this.createFallbackRecipe(params)
+      return this.createFallbackRecipe(standardParams || ingredientsOrParams as RecipeGenerationParams)
     }
   }
 
-  private buildRecipePrompt(params: RecipeGenerationParams): string {
-    const ingredients = params.ingredients.join(', ')
-    const constraints = [
-      params.cookingMethods?.length && `烹饪方式: ${params.cookingMethods.join(', ')}`,
-      params.dietaryRestrictions?.length && `饮食限制: ${params.dietaryRestrictions.join(', ')}`,
-      params.servings && `份量: ${params.servings}人份`,
-      params.cookingTime && `制作时间: ${params.cookingTime}`,
-      params.difficulty && `难度: ${params.difficulty}`
-    ].filter(Boolean).join('\n')
-
-    return `
-请根据以下食材和要求，生成一个详细的食谱，并以JSON格式返回：
-
-食材: ${ingredients}
-${constraints}
-
-请严格按照以下JSON格式返回食谱：
-{
-  "title": "食谱标题",
-  "description": "食谱简短描述",
-  "ingredients": ["配料1及用量", "配料2及用量"],
-  "instructions": ["步骤1", "步骤2", "步骤3"],
-  "cookingTime": "30分钟",
-  "servings": 2,
-  "difficulty": "简单",
-  "cookingMethods": ["炒", "煎"],
-  "nutrition": {
-    "calories": 280,
-    "protein": 15,
-    "carbs": 35,
-    "fat": 8
-  },
-  "cookingTips": ["小贴士1", "小贴士2"],
-  "tags": ["标签1", "标签2"]
-}
-
-请确保食谱创意独特、可行，并且充分利用所有提供的食材。
-`
-  }
 
   private buildRecipeFromResult(recipeResult: Partial<Recipe>, params: RecipeGenerationParams): Recipe {
     const title = recipeResult.title || `${params.ingredients[0]}食谱`

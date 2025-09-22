@@ -9,6 +9,8 @@ import type {
 } from '@/types/recipe'
 import type { UserHistoryItem, UserPreferences } from '@/services/aiService'
 import { callGLM, parseJsonResponse } from '@/services/glmService'
+import { aiConfigService } from '@/services/aiConfig'
+import { PromptBuilder } from './promptBuilder'
 
 export class GLMProvider implements BaseAIProvider {
   private apiKey: string
@@ -25,20 +27,17 @@ export class GLMProvider implements BaseAIProvider {
   private async loadConfig(): Promise<void> {
     try {
       // 尝试从AI配置服务获取配置
-      const { aiConfigService } = await import('@/services/aiConfig')
       const config = await aiConfigService.getProviderConfig('GLM')
-      
+
       if (config) {
         this.apiKey = config.apiKey || this.apiKey
         this.baseURL = config.baseUrl || this.baseURL
         this.model = config.model || this.model
-        console.log('GLMProvider: 从AI配置服务加载配置成功')
       } else {
         // 回退到环境变量
         this.apiKey = import.meta.env.VITE_GLM_API_KEY || ''
         this.baseURL = import.meta.env.VITE_GLM_API_URL || 'https://open.bigmodel.cn/api/paas/v4/'
         this.model = import.meta.env.VITE_GLM_MODEL || 'glm-4'
-        console.log('GLMProvider: 回退到环境变量配置')
       }
     } catch (error) {
       console.warn('GLMProvider: 无法加载配置，使用默认值:', error)
@@ -178,10 +177,27 @@ export class GLMProvider implements BaseAIProvider {
 
   async generateRecipe(params: RecipeGenerationParams): Promise<Recipe> {
     try {
-      console.log('🚀 GLM生成食谱开始，参数:', params)
+      console.log('🚀 GLM生成食谱开始，完整参数:', JSON.stringify(params, null, 2))
       console.log('🔑 当前API密钥:', this.apiKey ? '已配置' : '未配置')
 
-      const prompt = this.buildRecipePrompt(params)
+      // 详细记录每个参数
+      console.log('📋 详细参数分析:')
+      console.log('- 食材:', params.ingredients)
+      console.log('- 烹饪方式:', params.cookingMethods)
+      console.log('- 厨具:', params.kitchenware)
+      console.log('- 饮食限制:', params.dietaryRestrictions)
+      console.log('- 健康目标:', params.healthGoals)
+      console.log('- 过敏原:', params.allergies)
+      console.log('- 口味偏好:', params.flavorPreferences)
+      console.log('- 辣度:', params.spiceLevel)
+      console.log('- 甜度:', params.sweetnessLevel)
+      console.log('- 份数:', params.servings)
+      console.log('- 制作时间:', params.cookingTime)
+      console.log('- 难度:', params.difficulty)
+
+      const prompt = PromptBuilder.buildRecipePrompt(params)
+      console.log('📝 生成的Prompt:', prompt)
+
       const response = await callGLM(prompt, {
         temperature: 0.7,
         maxTokens: 2000,
@@ -207,72 +223,7 @@ export class GLMProvider implements BaseAIProvider {
     }
   }
 
-  private buildRecipePrompt(params: RecipeGenerationParams): string {
-    const autoCompleteInstructions = params.autoCompleteIngredients
-      ? `请自动添加必要的调料和辅料，使食谱更加完整。在返回的JSON中，请添加一个"autoCompletedIngredients"字段，列出所有自动添加的食材。`
-      : ''
-
-    const basePrompt =
-      params.requestType === 'dish_recreation' && params.dishName
-        ? this.buildDishRecreationPrompt(params, autoCompleteInstructions)
-        : this.buildIngredientBasedPrompt(params, autoCompleteInstructions)
-
-    return basePrompt + this.getJsonFormatTemplate(params.autoCompleteIngredients)
-  }
-
-  private buildDishRecreationPrompt(
-    params: RecipeGenerationParams,
-    autoCompleteInstructions: string
-  ): string {
-    return `
-    请为"${params.dishName}"这道菜生成一个详细的制作食谱。请注意这是一道具体的菜品，不是食材。
-    
-    请分析这道菜的特点，推断出所需的食材和制作方法，并以JSON格式返回完整的食谱：
-    
-    菜品名称: ${params.dishName}
-    ${params.servings ? `份量: ${params.servings}人份` : ''}
-    ${params.cookingTime ? `制作时间: ${params.cookingTime}` : ''}
-    ${params.difficulty ? `难度: ${params.difficulty}` : ''}
-    ${autoCompleteInstructions}
-    
-    请确保：
-    1. 准确还原这道菜的传统做法
-    2. 提供详细的食材清单（包括用量）
-    3. 详细的制作步骤
-    4. 相关的烹饪技巧和注意事项
-    `
-  }
-
-  private buildIngredientBasedPrompt(
-    params: RecipeGenerationParams,
-    autoCompleteInstructions: string
-  ): string {
-    const parameterLines = [
-      `食材: ${params.ingredients.join(', ')}`,
-      params.cookingMethods?.length ? `烹饪方式: ${params.cookingMethods.join(', ')}` : '',
-      params.noMethodRestriction ? '不限制烹饪方式（请选择最适合的烹饪方式）' : '',
-      params.kitchenware?.length ? `厨具: ${params.kitchenware.join(', ')}` : '',
-      params.dietaryRestrictions?.length
-        ? `饮食限制: ${params.dietaryRestrictions.join(', ')}`
-        : '',
-      params.healthGoals?.length ? `健康目标: ${params.healthGoals.join(', ')}` : '',
-      params.allergies?.length ? `过敏原: ${params.allergies.join(', ')}` : '',
-      params.flavorPreferences?.length ? `口味偏好: ${params.flavorPreferences.join(', ')}` : '',
-      params.spiceLevel ? `辣度: ${params.spiceLevel}` : '',
-      params.sweetnessLevel ? `甜度: ${params.sweetnessLevel}` : '',
-      params.servings ? `份量: ${params.servings}人份` : '',
-      params.cookingTime ? `制作时间: ${params.cookingTime}` : '',
-      params.difficulty ? `难度: ${params.difficulty}` : '',
-      autoCompleteInstructions,
-    ].filter(Boolean)
-
-    return `
-    请根据以下食材和要求，生成一个详细的食谱，并以JSON格式返回：
-    
-    ${parameterLines.join('\n')}
-    `
-  }
-
+  
   private getJsonFormatTemplate(autoCompleteIngredients?: boolean): string {
     const autoCompleteField = autoCompleteIngredients
       ? ',"autoCompletedIngredients": ["自动添加的食材1", "自动添加的食材2"]'

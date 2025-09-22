@@ -3,7 +3,22 @@
  * 负责AI API密钥的数据库存储和管理
  */
 
-import { dataAccess } from '@/services/database/dataAccess'
+// 动态导入dataAccess以避免循环依赖
+let dataAccess: any = null
+
+// 异步初始化dataAccess
+async function initDataAccess() {
+  if (!dataAccess) {
+    try {
+      const module = await import('@/services/database/dataAccess')
+      dataAccess = module.dataAccess
+    } catch (error) {
+      console.warn('无法加载数据访问模块，使用内存存储:', error)
+      dataAccess = null
+    }
+  }
+  return dataAccess
+}
 
 // 动态导入检测环境
 const isNode = typeof process !== 'undefined' && 
@@ -26,7 +41,7 @@ class AIConfigMemoryStorage {
       if (saved) {
         const data = JSON.parse(saved)
         this.configs = new Map(Object.entries(data))
-        console.log(`🔄 从localStorage恢复配置:`, Array.from(this.configs.keys()))
+        // console.log(`🔄 从localStorage恢复配置:`, Array.from(this.configs.keys()))
       }
     } catch (error) {
       console.warn('从localStorage恢复配置失败:', error)
@@ -37,7 +52,7 @@ class AIConfigMemoryStorage {
     try {
       const data = Object.fromEntries(this.configs)
       localStorage.setItem('ai_configs_memory', JSON.stringify(data))
-      console.log(`💾 配置已保存到localStorage`)
+      // console.log(`💾 配置已保存到localStorage`)
     } catch (error) {
       console.error('保存配置到localStorage失败:', error)
     }
@@ -52,15 +67,15 @@ class AIConfigMemoryStorage {
     }
     this.configs.set(key, configToSave)
     this.saveToLocalStorage()
-    console.log(`💾 内存存储已保存配置: ${key}, 配置内容:`, configToSave)
-    console.log(`📊 当前内存存储中的所有配置:`, Array.from(this.configs.keys()))
+    // console.log(`💾 内存存储已保存配置: ${key}, 配置内容:`, configToSave)
+    // console.log(`📊 当前内存存储中的所有配置:`, Array.from(this.configs.keys()))
   }
 
   async getConfig(provider: string): Promise<any | null> {
     const key = `ai_${provider.toLowerCase()}_config`
     const config = this.configs.get(key) || null
-    console.log(`🔍 内存存储查找配置: ${key}, 找到配置:`, config)
-    console.log(`📊 当前内存存储中的所有配置键:`, Array.from(this.configs.keys()))
+    // console.log(`🔍 内存存储查找配置: ${key}, 找到配置:`, config)
+    // console.log(`📊 当前内存存储中的所有配置键:`, Array.from(this.configs.keys()))
     return config
   }
 
@@ -72,13 +87,13 @@ class AIConfigMemoryStorage {
     const key = `ai_${provider.toLowerCase()}_config`
     this.configs.delete(key)
     this.saveToLocalStorage()
-    console.log(`🗑️ 已删除配置: ${key}`)
+    // console.log(`🗑️ 已删除配置: ${key}`)
   }
 
   async clearAllConfigs(): Promise<void> {
     this.configs.clear()
     this.saveToLocalStorage()
-    console.log(`🗑️ 已清空所有配置`)
+    // console.log(`🗑️ 已清空所有配置`)
   }
 }
 
@@ -116,7 +131,7 @@ function restoreFromLocalStorage() {
           globalMemoryStorage!.saveConfig(providerName, configToSave)
         }
       })
-      console.log('🔄 已从localStorage恢复配置到内存存储')
+      // console.log('🔄 已从localStorage恢复配置到内存存储')
     }
   } catch (error) {
     console.warn('从localStorage恢复配置失败:', error)
@@ -169,7 +184,7 @@ export class AIConfigService {
             getMemoryStorage().saveConfig(providerName, configToSave)
           }
         })
-        console.log('🔄 已同步localStorage配置到内存存储')
+        // console.log('🔄 已同步localStorage配置到内存存储')
       }
     } catch (error) {
       console.warn('同步localStorage配置失败:', error)
@@ -183,8 +198,8 @@ export class AIConfigService {
     // 同步localStorage到内存存储
     this.syncFromLocalStorage()
     try {
-      console.log(`💾 正在保存 ${provider} API 配置...`)
-      console.log(`🔍 环境检测: isNode=${isNode}`)
+      // console.log(`💾 正在保存 ${provider} API 配置...`)
+      // console.log(`🔍 环境检测: isNode=${isNode}`)
       
       // 检查是否已存在该提供商的配置
       const existing = await this.getProviderConfig(provider)
@@ -205,22 +220,27 @@ export class AIConfigService {
       
       if (isNode) {
         // Node.js 环境：使用 SQLite 通过 dataAccess
-        console.log(`🗄️ 使用 SQLite 保存 ${provider} 配置`)
+        // console.log(`🗄️ 使用 SQLite 保存 ${provider} 配置`)
         try {
-          if (existing) {
-            await dataAccess.queryOne(
-              `UPDATE settings SET value = ? WHERE key = ?`,
-              [JSON.stringify(newConfig), `ai_${provider.toLowerCase()}_config`]
-            )
+          const db = await initDataAccess()
+          if (db) {
+            if (existing) {
+              await db.queryOne(
+                `UPDATE settings SET value = ? WHERE key = ?`,
+                [JSON.stringify(newConfig), `ai_${provider.toLowerCase()}_config`]
+              )
+            } else {
+              await db.queryOne(
+                `INSERT INTO settings (key, value, category) VALUES (?, ?, ?)`,
+                [
+                  `ai_${provider.toLowerCase()}_config`,
+                  JSON.stringify(newConfig),
+                  'ai_config'
+                ]
+              )
+            }
           } else {
-            await dataAccess.queryOne(
-              `INSERT INTO settings (key, value, category) VALUES (?, ?, ?)`,
-              [
-                `ai_${provider.toLowerCase()}_config`,
-                JSON.stringify(newConfig),
-                'ai_config'
-              ]
-            )
+            throw new Error('数据库访问模块不可用')
           }
         } catch (error) {
           console.warn('SQLite 操作失败，回退到内存存储:', error)
@@ -230,15 +250,15 @@ export class AIConfigService {
         }
       } else {
         // 浏览器环境：使用内存存储
-        console.log(`🧠 使用内存存储保存 ${provider} 配置`)
+        // console.log(`🧠 使用内存存储保存 ${provider} 配置`)
         await getMemoryStorage().saveConfig(provider, newConfig)
         
         // 同时保存到 localStorage 以确保数据持久化
         this.saveToLocalStorage(provider, newConfig)
       }
       
-      console.log(`✅ AI ${provider} API密钥已保存`)
-      console.log(`📊 当前内存存储中的所有配置键:`, Array.from(getMemoryStorage()['configs'].keys()))
+      // console.log(`✅ AI ${provider} API密钥已保存`)
+      // console.log(`📊 当前内存存储中的所有配置键:`, Array.from(getMemoryStorage()['configs'].keys()))
     } catch (error) {
       console.error(`❌ 保存AI ${provider} API密钥失败:`, error)
       throw error
@@ -260,7 +280,7 @@ export class AIConfigService {
       }
       
       localStorage.setItem('ai-api-configs', JSON.stringify(allConfigs))
-      console.log(`💾 配置已同步保存到 localStorage: ${provider}`)
+      // console.log(`💾 配置已同步保存到 localStorage: ${provider}`)
     } catch (error) {
       console.error(`保存配置到 localStorage 失败:`, error)
     }
@@ -271,41 +291,46 @@ export class AIConfigService {
    */
   async getProviderConfig(provider: string): Promise<AIProviderConfig | null> {
     try {
-      console.log(`🔍 正在获取 ${provider} 配置...`)
-      console.log(`🔍 环境检测: isNode=${isNode}`)
+      // console.log(`🔍 正在获取 ${provider} 配置...`)
+      // console.log(`🔍 环境检测: isNode=${isNode}`)
       
       // 同步localStorage到内存存储
       this.syncFromLocalStorage()
       
       if (isNode) {
         // Node.js 环境：使用 SQLite 通过 dataAccess
-        console.log(`🗄️ 使用 SQLite 获取 ${provider} 配置`)
+        // console.log(`🗄️ 使用 SQLite 获取 ${provider} 配置`)
         try {
-          const result = await dataAccess.queryOne(
-            `SELECT value FROM settings WHERE key = ?`,
-            [`ai_${provider.toLowerCase()}_config`]
-          )
-          
-          if (result && result.value) {
-            console.log(`✅ 从 SQLite 找到 ${provider} 配置`)
-            return JSON.parse(result.value)
+          const db = await initDataAccess()
+          if (db) {
+            const result = await db.queryOne(
+              `SELECT value FROM settings WHERE key = ?`,
+              [`ai_${provider.toLowerCase()}_config`]
+            )
+
+            if (result && result.value) {
+              // console.log(`✅ 从 SQLite 找到 ${provider} 配置`)
+              return JSON.parse(result.value)
+            }
+          } else {
+            throw new Error('数据库访问模块不可用')
           }
         } catch (error) {
           console.warn('SQLite 查询失败，回退到内存存储:', error)
         }
       } else {
         // 浏览器环境：使用内存存储
-        console.log(`🧠 使用内存存储获取 ${provider} 配置`)
+        // console.log(`🧠 使用内存存储获取 ${provider} 配置`)
         const config = await getMemoryStorage().getConfig(provider)
         if (config) {
-          console.log(`✅ 从内存存储找到 ${provider} 配置`)
+          // console.log(`✅ 从内存存储找到 ${provider} 配置`)
         } else {
-          console.log(`❌ 内存存储中未找到 ${provider} 配置`)
+          // console.log(`❌ 内存存储中未找到 ${provider} 配置`)
         }
         return config
       }
       
-      console.log(`❌ 未找到 ${provider} 配置`)
+      // console.log(`❌ 未找到 ${provider} 配置`)
       return null
     } catch (error) {
       console.error(`❌ 获取AI ${provider} 配置失败:`, error)
@@ -321,22 +346,27 @@ export class AIConfigService {
       if (isNode) {
         // Node.js 环境：使用 SQLite 通过 dataAccess
         try {
-          const results = await dataAccess.query(
-            `SELECT key, value FROM settings WHERE key LIKE 'ai_%_config'`
-          )
-        
-        const configs: AIProviderConfig[] = []
-        
-        for (const row of results) {
-          try {
-            const config = JSON.parse(row.value)
-            configs.push(config)
-          } catch (error) {
-            console.warn(`解析AI配置失败: ${row.key}`, error)
+          const db = await initDataAccess()
+          if (db) {
+            const results = await db.query(
+              `SELECT key, value FROM settings WHERE key LIKE 'ai_%_config'`
+            )
+
+            const configs: AIProviderConfig[] = []
+
+            for (const row of results) {
+              try {
+                const config = JSON.parse(row.value)
+                configs.push(config)
+              } catch (error) {
+                console.warn(`解析AI配置失败: ${row.key}`, error)
+              }
+            }
+
+            return configs
+          } else {
+            throw new Error('数据库访问模块不可用')
           }
-        }
-        
-        return configs
         } catch (error) {
           console.warn('SQLite 查询失败，回退到内存存储:', error)
           return await getMemoryStorage().getAllConfigs()
@@ -359,10 +389,15 @@ export class AIConfigService {
       if (isNode) {
         // Node.js 环境：使用 SQLite 通过 dataAccess
         try {
-          await dataAccess.queryOne(
-            `DELETE FROM settings WHERE key = ?`,
-            [`ai_${provider.toLowerCase()}_config`]
-          )
+          const db = await initDataAccess()
+          if (db) {
+            await db.queryOne(
+              `DELETE FROM settings WHERE key = ?`,
+              [`ai_${provider.toLowerCase()}_config`]
+            )
+          } else {
+            throw new Error('数据库访问模块不可用')
+          }
         } catch (error) {
           console.warn('SQLite 删除失败，回退到内存存储:', error)
           await getMemoryStorage().deleteConfig(provider)
@@ -372,7 +407,7 @@ export class AIConfigService {
         await getMemoryStorage().deleteConfig(provider)
       }
       
-      console.log(`✅ AI ${provider} 配置已删除`)
+      // console.log(`✅ AI ${provider} 配置已删除`)
     } catch (error) {
       console.error(`❌ 删除AI ${provider} 配置失败:`, error)
       throw error
@@ -396,37 +431,37 @@ export class AIConfigService {
         envValue.length < 30
       )
       
-      console.log(`🔍 getApiKey调试:`, {
-        provider,
-        envKey,
-        envValue: envValue ? '已设置: ' + envValue.substring(0, 10) + '...' : '未设置',
-        envValueLength: envValue?.length,
-        isPlaceholder
-      })
+      // console.log(`🔍 getApiKey调试:`, {
+      //   provider,
+      //   envKey,
+      //   envValue: envValue ? '已设置: ' + envValue.substring(0, 10) + '...' : '未设置',
+      //   envValueLength: envValue?.length,
+      //   isPlaceholder
+      // })
       
       if (envValue && !isPlaceholder) {
-        console.log(`✅ 使用有效的环境变量API密钥: ${envValue.substring(0, 10)}...`)
+        // console.log(`✅ 使用有效的环境变量API密钥: ${envValue.substring(0, 10)}...`)
         return envValue
       } else if (envValue && isPlaceholder) {
-        console.log(`⚠️ 环境变量为占位符值，忽略并使用配置的API密钥`)
+        // console.log(`⚠️ 环境变量为占位符值，忽略并使用配置的API密钥`)
       }
       
       // 然后检查数据库/内存存储
       const config = await this.getProviderConfig(provider)
       const configValue = config?.apiKey || null
       
-      console.log(`🔍 getApiKey配置调试:`, {
-        hasConfig: !!config,
-        configValue: configValue ? '已设置: ' + configValue.substring(0, 10) + '...' : '未设置',
-        configValueLength: configValue?.length
-      })
+      // console.log(`🔍 getApiKey配置调试:`, {
+      //   hasConfig: !!config,
+      //   configValue: configValue ? '已设置: ' + configValue.substring(0, 10) + '...' : '未设置',
+      //   configValueLength: configValue?.length
+      // })
       
       if (configValue) {
-        console.log(`✅ 使用配置的API密钥: ${configValue.substring(0, 10)}...`)
+        // console.log(`✅ 使用配置的API密钥: ${configValue.substring(0, 10)}...`)
         return configValue
       }
       
-      console.log(`❌ 未找到有效的API密钥`)
+      // console.log(`❌ 未找到有效的API密钥`)
       return null
     } catch (error) {
       console.error(`❌ 获取AI ${provider} API密钥失败:`, error)
@@ -494,10 +529,15 @@ export class AIConfigService {
       if (isNode) {
         // Node.js 环境：使用 SQLite 通过 dataAccess
         try {
-          await dataAccess.queryOne(
-            `UPDATE settings SET value = ? WHERE key = ?`,
-            [JSON.stringify(updatedConfig), `ai_${provider.toLowerCase()}_config`]
-          )
+          const db = await initDataAccess()
+          if (db) {
+            await db.queryOne(
+              `UPDATE settings SET value = ? WHERE key = ?`,
+              [JSON.stringify(updatedConfig), `ai_${provider.toLowerCase()}_config`]
+            )
+          } else {
+            throw new Error('数据库访问模块不可用')
+          }
         } catch (error) {
           console.warn('SQLite 更新失败，回退到内存存储:', error)
           await getMemoryStorage().saveConfig(provider, updatedConfig)
@@ -507,7 +547,7 @@ export class AIConfigService {
         await getMemoryStorage().saveConfig(provider, updatedConfig)
       }
       
-      console.log(`✅ AI ${provider} 配置已更新`)
+      // console.log(`✅ AI ${provider} 配置已更新`)
     } catch (error) {
       console.error(`❌ 更新AI ${provider} 配置失败:`, error)
       throw error
@@ -571,9 +611,14 @@ export class AIConfigService {
       if (isNode) {
         // Node.js 环境：使用 SQLite 通过 dataAccess
         try {
-          await dataAccess.queryOne(
-            `DELETE FROM settings WHERE key LIKE 'ai_%_config'`
-          )
+          const db = await initDataAccess()
+          if (db) {
+            await db.queryOne(
+              `DELETE FROM settings WHERE key LIKE 'ai_%_config'`
+            )
+          } else {
+            throw new Error('数据库访问模块不可用')
+          }
         } catch (error) {
           console.warn('SQLite 清理失败，回退到内存存储:', error)
           await getMemoryStorage().clearAllConfigs()
@@ -583,7 +628,7 @@ export class AIConfigService {
         await getMemoryStorage().clearAllConfigs()
       }
       
-      console.log('✅ 所有AI配置已清理')
+      // console.log('✅ 所有AI配置已清理')
     } catch (error) {
       console.error('❌ 清理AI配置失败:', error)
       throw error

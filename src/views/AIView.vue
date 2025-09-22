@@ -1,14 +1,9 @@
 <template>
   <div class="ai-view">
     <!-- API 密钥提醒 -->
-    <APIKeyReminder 
-      ref="apiKeyReminder" 
-      :showQuickConfig="true"
-      @open-config="openAPIConfig"
+    <APIKeyReminder
+      ref="apiKeyReminder"
     />
-    
-    <!-- API 配置弹窗 -->
-    <APIConfigModal v-model="showAPIConfig" @config-saved="handleAPIConfigSaved" />
     
     <!-- 页面头部 -->
     <div class="ai-header">
@@ -315,9 +310,105 @@
             </div>
           </div>
 
-          <!-- 增强版饮食限制选择 -->
+          <!-- 饮食偏好和限制 -->
           <div class="form-section">
-            <!-- EnhancedDietaryRestrictionSelection component removed -->
+            <h3 class="section-title">
+              <el-icon><Opportunity /></el-icon>
+              饮食偏好和限制
+            </h3>
+
+            <!-- 主要饮食限制 -->
+            <div class="dietary-restrictions">
+              <h4 class="subsection-title">饮食限制</h4>
+              <el-checkbox-group v-model="dietaryRestrictions" class="restriction-group">
+                <el-checkbox label="素食主义">素食主义</el-checkbox>
+                <el-checkbox label="纯素食">纯素食</el-checkbox>
+                <el-checkbox label="无麸质">无麸质</el-checkbox>
+                <el-checkbox label="无乳糖">无乳糖</el-checkbox>
+                <el-checkbox label="低钠">低钠</el-checkbox>
+                <el-checkbox label="低糖">低糖</el-checkbox>
+                <el-checkbox label="低脂">低脂</el-checkbox>
+                <el-checkbox label="高蛋白">高蛋白</el-checkbox>
+              </el-checkbox-group>
+            </div>
+
+            <!-- 食物过敏和厌恶 -->
+            <div class="food-preferences">
+              <h4 class="subsection-title">食物过敏和厌恶</h4>
+
+              <!-- 常见过敏原 -->
+              <div class="allergen-section">
+                <h5>常见过敏原</h5>
+                <el-checkbox-group v-model="allergies" class="allergen-group">
+                  <el-checkbox label="花生">花生</el-checkbox>
+                  <el-checkbox label="坚果">坚果</el-checkbox>
+                  <el-checkbox label="海鲜">海鲜</el-checkbox>
+                  <el-checkbox label="鸡蛋">鸡蛋</el-checkbox>
+                  <el-checkbox label="牛奶">牛奶</el-checkbox>
+                  <el-checkbox label="大豆">大豆</el-checkbox>
+                  <el-checkbox label="小麦">小麦</el-checkbox>
+                  <el-checkbox label="芝麻">芝麻</el-checkbox>
+                </el-checkbox-group>
+              </div>
+
+              <!-- 味道偏好 -->
+              <div class="flavor-preferences">
+                <h5>味道偏好</h5>
+                <div class="flavor-options">
+                  <div class="flavor-item">
+                    <span class="flavor-label">辣度：</span>
+                    <el-radio-group v-model="spiceLevel" class="spice-options">
+                      <el-radio label="none">不吃辣</el-radio>
+                      <el-radio label="mild">微辣</el-radio>
+                      <el-radio label="medium">中辣</el-radio>
+                      <el-radio label="hot">重辣</el-radio>
+                    </el-radio-group>
+                  </div>
+
+                  <div class="flavor-item">
+                    <span class="flavor-label">甜度：</span>
+                    <el-radio-group v-model="sweetnessLevel" class="sweetness-options">
+                      <el-radio label="none">不甜</el-radio>
+                      <el-radio label="low">微甜</el-radio>
+                      <el-radio label="medium">适中</el-radio>
+                      <el-radio label="high">很甜</el-radio>
+                    </el-radio-group>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 不喜欢的食材 -->
+              <div class="disliked-ingredients">
+                <h5>不喜欢的食材</h5>
+                <div class="disliked-input">
+                  <el-input
+                    v-model="customDislikedIngredient"
+                    placeholder="输入不喜欢的食材，如香菜、洋葱等"
+                    size="small"
+                    @keyup.enter="addDislikedIngredient"
+                  >
+                    <template #append>
+                      <el-button @click="addDislikedIngredient" size="small">
+                        <el-icon><Plus /></el-icon>
+                        添加
+                      </el-button>
+                    </template>
+                  </el-input>
+                </div>
+                <div v-if="dislikedIngredients.length > 0" class="disliked-tags">
+                  <el-tag
+                    v-for="ingredient in dislikedIngredients"
+                    :key="ingredient"
+                    closable
+                    @close="removeDislikedIngredient(ingredient)"
+                    type="danger"
+                    class="disliked-tag"
+                  >
+                    {{ ingredient }}
+                  </el-tag>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- 生成按钮 -->
@@ -580,29 +671,18 @@
   } from '@element-plus/icons-vue'
   import { aiService } from '@/services/aiService'
   // import type { CookingMethod } from '@/types/recipe' // 暂时未使用
-    import RecipeGenerator from '@/components/recipe/RecipeGenerator.vue'
-  import RecipeResults from '@/components/recipe/RecipeResults.vue'
-  import APIConfigModal from '@/components/common/APIConfigModal.vue'
   import APIKeyReminder from '@/components/common/APIKeyReminder.vue'
-  import FavoritesRecipeCard from '@/components/recipe/FavoritesRecipeCard.vue'
-  import AdvancedNutritionAnalyzer from '@/components/ai/AdvancedNutritionAnalyzer.vue'
-  import EnhancedPersonalizedRecommendations from '@/components/ai/EnhancedPersonalizedRecommendations.vue'
-  import AIEnhancedFeatures from '@/components/recipe/AIEnhancedFeatures.vue'
-  import EnhancedSearchInterface from '@/components/recipe/EnhancedSearchInterface.vue'
-  // 导入烹饪方式数据
-  import cookingMethods from '@/data/cookingMethods'
   import { generateRecipeCardSvg } from '@/utils/svgGenerator'
 
   // 初始化路由和store
   const router = useRouter()
   const recipeStore = useRecipeStore()
   const apiKeyReminder = ref()
-  const showAPIConfig = ref(false)
 
   // 响应式数据
   const selectedIngredients = ref<string[]>([])
-  const selectedCookingMethods = ref<string[]>([])
-  const cookingMethodNoRestriction = ref(false)
+  // const selectedCookingMethods = ref<string[]>([]) // 已移除烹饪方式选择
+  // const cookingMethodNoRestriction = ref(false) // 已移除烹饪方式选择
   const selectedKitchenware = ref<string[]>([])
   const servings = ref(4)
   const cookingTime = ref('')
@@ -613,6 +693,8 @@
   const flavorPreferences = ref<string[]>([])
   const spiceLevel = ref('medium')
   const sweetnessLevel = ref('medium')
+  const customDislikedIngredient = ref('')
+  const dislikedIngredients = ref<string[]>([])
   const isGenerating = ref(false)
   const generatedRecipe = ref<any>(null)
   const recipeRating = ref(4.5)
@@ -753,6 +835,35 @@
     }
   }
 
+  // 管理不喜欢的食材
+  const addDislikedIngredient = () => {
+    if (!customDislikedIngredient.value.trim()) {
+      ElMessage.warning('请输入不喜欢的食材名称')
+      return
+    }
+
+    const ingredient = customDislikedIngredient.value.trim()
+
+    // 检查是否已经添加过
+    if (dislikedIngredients.value.includes(ingredient)) {
+      ElMessage.warning('该食材已经添加过了')
+      customDislikedIngredient.value = ''
+      return
+    }
+
+    dislikedIngredients.value.push(ingredient)
+    customDislikedIngredient.value = ''
+    ElMessage.success(`已添加不喜欢的食材：${ingredient}`)
+  }
+
+  const removeDislikedIngredient = (ingredient: string) => {
+    const index = dislikedIngredients.value.indexOf(ingredient)
+    if (index > -1) {
+      dislikedIngredients.value.splice(index, 1)
+      ElMessage.success(`已移除：${ingredient}`)
+    }
+  }
+
   const addCustomIngredient = async () => {
     if (!customIngredient.value.trim()) {
       ElMessage.warning('请输入食材名称')
@@ -853,8 +964,8 @@
     try {
       const params = {
         ingredients: selectedIngredients.value,
-        cookingMethods: cookingMethodNoRestriction.value ? [] : selectedCookingMethods.value,
-        noMethodRestriction: cookingMethodNoRestriction.value,
+        // cookingMethods: cookingMethodNoRestriction.value ? [] : selectedCookingMethods.value, // 已移除烹饪方式选择
+        // noMethodRestriction: cookingMethodNoRestriction.value, // 已移除烹饪方式选择
         kitchenware: selectedKitchenware.value,
         dietaryRestrictions: dietaryRestrictions.value,
         healthGoals: healthGoals.value,
@@ -862,37 +973,57 @@
         flavorPreferences: flavorPreferences.value,
         spiceLevel: spiceLevel.value,
         sweetnessLevel: sweetnessLevel.value,
+        dislikedIngredients: dislikedIngredients.value,
         servings: servings.value,
         cookingTime: cookingTime.value,
         difficulty: difficulty.value,
         autoCompleteIngredients: autoCompleteIngredients.value, // 添加自动补充食材选项
       }
 
-      console.log('生成食谱参数:', params)
+      console.log('🔍 AIView - 生成食谱参数:', JSON.stringify(params, null, 2))
+
+      // 详细验证数据完整性
+      console.log('📊 数据验证:')
+      console.log('- 饮食限制:', dietaryRestrictions.value)
+      console.log('- 健康目标:', healthGoals.value)
+      console.log('- 过敏原:', allergies.value)
+      console.log('- 口味偏好:', flavorPreferences.value)
+      console.log('- 辣度:', spiceLevel.value)
+      console.log('- 甜度:', sweetnessLevel.value)
+      console.log('- 厨具:', selectedKitchenware.value)
+      console.log('- 份数:', servings.value)
+      console.log('- 制作时间:', cookingTime.value)
+      console.log('- 难度:', difficulty.value)
 
       // Extract ingredients array from params
       const ingredients = params.ingredients
       
       // Create preferences object from other params
       const preferences = {
-        cookingMethods: params.cookingMethods,
+        // cookingMethods: params.cookingMethods, // 已移除烹饪方式选择
         dietaryRestrictions: params.dietaryRestrictions,
         healthGoals: params.healthGoals,
         allergies: params.allergies,
         flavorPreferences: params.flavorPreferences,
-        spiceLevel: params.spiceLevel as 'mild' | 'medium' | 'hot',
+        spiceLevel: params.spiceLevel === 'none' ? 'mild' : params.spiceLevel as 'mild' | 'medium' | 'hot',
         sweetnessLevel: params.sweetnessLevel,
+        dislikedIngredients: params.dislikedIngredients,
         servings: params.servings,
-        cookingTime: parseInt(params.cookingTime) || undefined,
-        difficulty: params.difficulty as 'easy' | 'medium' | 'hard'
+        cookingTime: params.cookingTime, // 保持原始字符串格式
+        difficulty: params.difficulty,
+        kitchenware: params.kitchenware,
+        // noMethodRestriction: params.noMethodRestriction, // 已移除烹饪方式选择
+        autoCompleteIngredients: params.autoCompleteIngredients
       }
+
+      console.log('🎯 AIView - 传递给aiService的preferences:', JSON.stringify(preferences, null, 2))
 
       const result = await aiService.generateRecipe(ingredients, preferences)
       const recipe = result.recipe
       
       // 为生成的菜谱添加唯一ID（如果没有的话）
       if (!recipe.id) {
-        recipe.id = `recipe_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        recipe.id = `recipe_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
       }
       
       generatedRecipe.value = recipe
@@ -1147,18 +1278,6 @@
       })
   }
 
-  // API 配置相关方法
-  const openAPIConfig = () => {
-    showAPIConfig.value = true
-  }
-
-  const handleAPIConfigSaved = () => {
-    ElMessage.success('API 配置已更新')
-    // 刷新提醒组件的状态
-    if (apiKeyReminder.value) {
-      apiKeyReminder.value.resetReminder()
-    }
-  }
 
   const formatTime = (date: Date) => {
     if (!date) return ''
@@ -1431,6 +1550,85 @@
 
   .auto-complete-option {
     margin-top: 10px;
+  }
+
+  /* 饮食偏好和限制样式 */
+  .subsection-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+
+  .dietary-restrictions,
+  .food-preferences {
+    margin-bottom: 20px;
+  }
+
+  .restriction-group,
+  .allergen-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 15px;
+  }
+
+  .allergen-section,
+  .flavor-preferences,
+  .disliked-ingredients {
+    margin-bottom: 20px;
+  }
+
+  .allergen-section h5,
+  .flavor-preferences h5,
+  .disliked-ingredients h5 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--el-text-color-secondary);
+    margin: 0 0 10px 0;
+  }
+
+  .flavor-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .flavor-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .flavor-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--el-text-color-regular);
+    min-width: 60px;
+  }
+
+  .spice-options,
+  .sweetness-options {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+
+  .disliked-input {
+    margin-bottom: 12px;
+  }
+
+  .disliked-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .disliked-tag {
+    margin: 0;
+    font-size: 12px;
   }
 
   .auto-complete-label {
