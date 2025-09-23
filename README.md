@@ -6,6 +6,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.0+-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Element Plus](https://img.shields.io/badge/Element%20Plus-2.4+-409EFF?style=flat-square&logo=element&logoColor=white)](https://element-plus.org/)
+[![Tauri](https://img.shields.io/badge/Tauri-2.0+-FFC13C?style=flat-square&logo=tauri&logoColor=white)](https://tauri.app/)
 [![Version](https://img.shields.io/badge/Version-2.2.0-brightgreen?style=flat-square)](./CHANGELOG.md)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](./LICENSE)
 
@@ -13,19 +14,23 @@
 
 ChefMind 智食谱是一个基于AI技术的智能菜谱生成平台，通过三步式交互帮助用户快速找到适合的菜谱。用户只需选择食材、烹饪方式和约束条件，AI就能生成个性化的菜谱推荐，并提供详细的制作指导。
 
+支持Web和桌面应用双模式，桌面应用基于Tauri构建，提供更好的性能和更小的体积。
+
 ## ✨ 核心特色
 
-- **🤖 AI智能生成**: 支持多种AI提供商（智谱GLM、OpenAI GPT等），可根据食材、烹饪方式和约束条件生成智能菜谱，并能动态生成精美SVG菜谱封面。
+- **🤖 AI智能生成**: 支持多种AI提供商（智谱GLM、OpenAI GPT、Anthropic Claude、Google Gemini等），可根据食材、烹饪方式和约束条件生成智能菜谱，并能动态生成精美SVG菜谱封面。
 - **🎯 交互体验**: 采用三步式交互（食材选择 → 烹饪方式 → 约束条件），响应式设计完美适配移动端和桌面端，并支持亮色/暗色主题切换和多媒体跳转。
 - **📊 智能功能**: 提供评分系统、详细制作步骤、营养信息、数据分析、购物清单、备注功能以及个性化推荐。
 - **🚀 企业级架构**: 具备统一数据访问层（自动适配SQLite、IndexedDB、内存存储）、智能缓存系统（多级缓存策略，支持LRU、LFU、FIFO淘汰算法）和性能监控平台。
+- **💻 多平台支持**: 支持Web浏览器和桌面应用（Windows、macOS、Linux），桌面应用基于Tauri构建，提供原生体验。
 
 ## 🚀 快速开始
 
 ### 环境要求
 
-- Node.js >= 16.0.0
-- npm >= 7.0.0
+- Node.js >= 18.0.0
+- npm >= 8.0.0
+- Rust >= 1.70.0 (用于构建桌面应用)
 
 ### 安装与启动
 
@@ -33,20 +38,26 @@ ChefMind 智食谱是一个基于AI技术的智能菜谱生成平台，通过三
 # 安装依赖
 npm install
 
-# 启动开发服务器
+# 启动Web开发服务器
 npm run dev
+
+# 启动桌面应用开发模式
+npm run tauri dev
 ```
 
-访问 [http://localhost:5173](http://localhost:5173) 查看应用。
+访问 [http://localhost:5173](http://localhost:5173) 查看Web应用。
 
 ### 构建生产版本
 
 ```bash
-# 构建生产版本
+# 构建Web生产版本
 npm run build
 
-# 预览生产版本
+# 预览Web生产版本
 npm run preview
+
+# 构建桌面应用
+npm run tauri build
 ```
 
 ## 🏗️ 项目结构
@@ -80,6 +91,10 @@ ChefMind/
 │   ├── views/              # 页面视图
 │   ├── App.vue             # 根组件
 │   └── main.ts             # 应用入口
+├── src-tauri/              # Tauri桌面应用
+│   ├── src/                # Rust源代码
+│   ├── Cargo.toml          # Rust依赖配置
+│   └── tauri.conf.json     # Tauri配置
 ├── data/                   # 数据库文件目录
 ├── docs/                   # 项目文档
 ├── package.json            # 项目配置
@@ -89,6 +104,7 @@ ChefMind/
 ## 🛠️ 技术栈
 
 - **前端**: Vue 3, TypeScript, Vite, Element Plus, Pinia, Vue Router
+- **桌面应用**: Tauri 2.0, Rust
 - **工具**: axios, lodash-es, animate.css, chart.js, html2canvas, qrcode
 - **数据存储**: better-sqlite3, IndexedDB
 - **开发工具**: ESLint, Prettier, Sass, TypeScript
@@ -100,8 +116,10 @@ ChefMind/
 在项目根目录创建 `.env.local` 文件，配置AI提供商的API Key：
 
 ```bash
-VITE_OPENAI_API_KEY=your_openai_api_key
 VITE_GLM_API_KEY=your_glm_api_key
+VITE_OPENAI_API_KEY=your_openai_api_key
+VITE_ANTHROPIC_API_KEY=your_anthropic_api_key
+VITE_GEMINI_API_KEY=your_gemini_api_key
 ```
 
 ### AI 提供商

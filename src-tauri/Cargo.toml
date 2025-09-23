@@ -1,6 +1,6 @@
 [package]
 name = "chefmind"
-version = "2.2.0"
+version = "3.0.0"
 description = "ChefMind 智食谱 - AI驱动的智能菜谱生成平台"
 authors = ["ChefMind Team"]
 edition = "2021"

@@ -19,7 +19,7 @@ ChefMind 提供了完整的 API 服务层，涵盖 AI 菜谱生成、用户管�
 
 ## 🤖 AI 服务 API
 
-### AI 配置服务 (`aiConfig.ts`)
+### AI 配置服务 (`aiConfigService.ts`)
 
 #### 主要功能
 - 管理 AI 提供商配置
@@ -29,33 +29,26 @@ ChefMind 提供了完整的 API 服务层，涵盖 AI 菜谱生成、用户管�
 #### 主要方法
 
 ```typescript
-// 获取 AI 配置
-getAIConfig(): AIConfig
+// 保存 API 密钥
+saveApiKey(provider: string, apiKey: string, config?: any): Promise<void>
 
-// 更新 AI 配置
-updateAIConfig(config: Partial<AIConfig>): Promise<void>
+// 获取 API 密钥
+getApiKey(provider: string): Promise<string | null>
+
+// 获取提供商配置
+getProviderConfig(provider: string): Promise<any>
+
+// 检查提供商是否已配置
+isProviderConfigured(provider: string): Promise<boolean>
+
+// 获取已配置的提供商列表
+getConfiguredProviders(): Promise<string[]>
 
 // 获取当前 AI 提供商
 getCurrentProvider(): string
 
 // 切换 AI 提供商
 switchProvider(provider: string): Promise<void>
-```
-
-#### 配置结构
-```typescript
-interface AIConfig {
-  defaultProvider: string;
-  providers: {
-    [key: string]: {
-      apiKey: string;
-      baseUrl?: string;
-      model: string;
-      maxTokens: number;
-      temperature: number;
-    }
-  };
-}
 ```
 
 ### AI 菜谱服务 (`aiRecipeService.ts`)
@@ -69,28 +62,34 @@ interface AIConfig {
 
 ```typescript
 // 生成菜谱
-generateRecipe(request: RecipeGenerationRequest): Promise<Recipe>
+generateRecipe(params: RecipeGenerationParams): Promise<Recipe>
 
 // 批量生成菜谱
-generateRecipes(requests: RecipeGenerationRequest[]): Promise<Recipe[]>
+generateRecipes(paramsList: RecipeGenerationParams[]): Promise<Recipe[]>
 
 // 优化菜谱
 optimizeRecipe(recipe: Recipe, preferences: UserPreferences): Promise<Recipe>
 
-// 获取菜谱建议
-getRecipeSuggestions(ingredients: string[], preferences: UserPreferences): Promise<RecipeSuggestion[]>
+// 验证食材
+validateIngredient(ingredient: string): Promise<IngredientValidationResult>
 ```
 
 #### 请求结构
 ```typescript
-interface RecipeGenerationRequest {
+interface RecipeGenerationParams {
   ingredients: string[];
-  dietaryRestrictions: string[];
-  cookingTime: number;
-  difficulty: 'easy' | 'medium' | 'hard';
-  servings: number;
-  cuisine?: string;
-  cookingMethod?: string;
+  cookingMethods?: string[];
+  kitchenware?: string[];
+  dietaryRestrictions?: string[];
+  healthGoals?: string[];
+  allergies?: string[];
+  flavorPreferences?: string[];
+  spiceLevel?: 'mild' | 'medium' | 'hot';
+  sweetnessLevel?: 'low' | 'medium' | 'high';
+  servings?: number;
+  cookingTime?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  autoCompleteIngredients?: boolean;
 }
 ```
 
@@ -105,18 +104,71 @@ interface RecipeGenerationRequest {
 
 ```typescript
 // 分析营养成分
-analyzeNutrition(ingredients: string[]): Promise<NutritionAnalysis>
+analyzeNutrition(recipe: Recipe): Promise<NutritionAnalysisResult>
 
 // 生成膳食建议
-generateDietarySuggestions(userProfile: UserProfile, nutritionData: NutritionAnalysis): Promise<DietarySuggestion[]>
+generateDietarySuggestions(userProfile: UserProfile, nutritionData: NutritionAnalysisResult): Promise<DietarySuggestion[]>
 
 // 计算每日营养需求
 calculateDailyNutritionNeeds(userProfile: UserProfile): Promise<DailyNutritionNeeds>
 ```
 
----
+### AI 提供商服务 (`aiProviders/`)
 
-## 🍳 菜谱服务 API
+#### 主要功能
+- 统一的 AI 提供商接口
+- 支持多种 AI 提供商
+- 动态切换 AI 提供商
+- 提供商工厂模式
+
+#### 主要类和方法
+
+```typescript
+// AI 提供商工厂
+class AIProviderFactory {
+  // 获取工厂实例
+  static getInstance(): AIProviderFactory
+  
+  // 获取当前 AI 提供者
+  getProvider(): BaseAIProvider
+  
+  // 切换 AI 提供者
+  switchProvider(providerName: string): BaseAIProvider
+  
+  // 获取所有可用的 AI 提供者列表
+  getAvailableProviders(): Array<{ name: string; displayName: string; description: string }>
+}
+
+// 基础 AI 提供商接口
+interface BaseAIProvider {
+  // 生成菜谱
+  generateRecipe(params: RecipeGenerationParams): Promise<Recipe>
+  
+  // 分析营养成分
+  analyzeNutrition(recipe: Recipe): Promise<NutritionAnalysisResult>
+  
+  // 验证食材
+  validateIngredient(ingredient: string): Promise<IngredientValidationResult>
+  
+  // 获取个性化推荐
+  getPersonalizedRecommendations(
+    userHistory: UserHistoryItem[],
+    preferences: UserPreferences,
+    limit: number
+  ): Promise<PersonalizedRecommendation[]>
+  
+  // 获取烹饪指导
+  getCookingGuidance(
+    recipe: Recipe,
+    currentStep: number
+  ): Promise<{
+    guidance: string
+    tips: string[]
+    nextStep?: string
+    estimatedTime: number
+  }>
+}
+```
 
 ### 菜谱服务 (`recipeService.ts`)
 

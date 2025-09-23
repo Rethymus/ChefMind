@@ -5,7 +5,6 @@
 ```
 ChefMind/
 ├── public/                 # 静态资源文件
-├── scripts/                # 数据库和开发脚本
 ├── src/                    # Vue.js 源代码目录
 ├── src-tauri/              # Tauri 桌面应用
 ├── data/                   # SQLite数据库文件
@@ -14,7 +13,6 @@ ChefMind/
 ├── .env.example           # 环境变量示例文件
 ├── package.json           # 项目依赖和脚本配置
 ├── vite.config.ts         # Vite 构建配置
-├── tailwind.config.js     # Tailwind CSS 配置
 ├── tsconfig.json          # TypeScript 配置
 └── README.md              # 项目说明文档
 ```
@@ -28,11 +26,21 @@ src/
 │   │   ├── CookingAssistant.vue           # AI烹饪助手
 │   │   ├── IntelligentChatAssistant.vue   # 智能聊天助手
 │   │   ├── SmartIngredientAnalyzer.vue    # 智能食材分析器
-│   │   └── components/
-│   │       └── NutritionReport.vue       # 营养报告组件
+│   │   ├── AIHub.vue                      # AI中心
+│   │   ├── AIProviderSettings.vue         # AI提供商设置
+│   │   ├── NutritionAnalyzer.vue          # 营养分析器
+│   │   ├── AdvancedNutritionAnalyzer.vue  # 高级营养分析器
+│   │   └── EnhancedPersonalizedRecommendations.vue # 增强个性化推荐
+│   │   └── components/                   # AI子组件
+│   │       ├── NutritionReport.vue       # 营养报告
+│   │       ├── NutritionComparison.vue   # 营养对比
+│   │       ├── MealPlanAnalysis.vue      # 膳食计划分析
+│   │       ├── RecipeNutritionAnalysis.vue # 菜谱营养分析
+│   │       └── IngredientNutritionAnalysis.vue # 食材营养分析
 │   ├── analytics/         # 数据分析组件
 │   │   ├── UserDashboard.vue             # 用户仪表板
-│   │   └── AnalyticsUserProfileForm.vue  # 分析用户资料表单
+│   │   ├── AnalyticsUserProfileForm.vue  # 分析用户资料表单
+│   │   └── EnhancedUserBehaviorAnalytics.vue # 增强用户行为分析
 │   ├── common/            # 通用UI组件
 │   │   ├── DesktopNavBar.vue             # 桌面导航栏
 │   │   ├── MobileNavBar.vue              # 移动端导航栏
@@ -41,7 +49,13 @@ src/
 │   │   ├── EnhancedThemeToggle.vue       # 增强主题切换
 │   │   ├── ThemeToggle.vue               # 主题切换
 │   │   ├── NotificationContainer.vue     # 通知容器
-│   │   └── LoadingSpinner.vue            # 加载动画
+│   │   ├── LoadingSpinner.vue            # 加载动画
+│   │   ├── UserProfileForm.vue           # 用户资料表单
+│   │   ├── OptimizedInput.vue            # 优化输入框
+│   │   ├── InputMethodMonitor.vue        # 输入法监控
+│   │   ├── APIKeyReminder.vue            # API密钥提醒
+│   │   ├── APIConfigModal.vue            # API配置模态框
+│   │   └── APIConfigButton.vue           # API配置按钮
 │   ├── layout/            # 布局组件
 │   │   ├── AppHeader.vue                 # 应用头部
 │   │   └── GlassFooter.vue               # 玻璃效果底部
@@ -51,6 +65,7 @@ src/
 │       ├── RecipeGenerator.vue           # 菜谱生成器
 │       ├── RecipeResults.vue             # 菜谱结果
 │       ├── RecipeDetailView.vue          # 菜谱详情视图
+│       ├── RecipeDetail.vue              # 菜谱详情
 │       ├── RecipeNutrition.vue           # 菜谱营养信息
 │       ├── RecipeComments.vue            # 菜谱评论
 │       ├── RecipeShare.vue               # 菜谱分享
@@ -69,56 +84,57 @@ src/
 │       ├── StepIndicator.vue            # 步骤指示器
 │       ├── SmartRecommendation.vue      # 智能推荐
 │       ├── ShoppingList.vue              # 购物清单
-│       ├── RecipeMultimediaPlatforms.vue # 菜谱多媒体平台
 │       ├── AIEnhancedFeatures.vue        # AI增强功能
-│       └── NutritionAnalysis.vue        # 营养分析
-├── composables/           # Vue组合式函数
-│   ├── useUserBehaviorAnalytics.ts       # 用户行为分析
-│   ├── usePersonalizedRecommendations.ts # 个性化推荐
-│   └── useNotification.ts               # 通知管理
-├── config/                # 全局配置文件
-│   ├── sqlite.ts                       # SQLite配置
-│   └── aiConfig.ts                      # AI配置
-├── data/                  # 静态数据配置
-│   ├── chineseDietaryGuidelines.ts     # 中国膳食指南
-│   ├── cookingMethods.ts               # 烹饪方法
-│   └── mockData.ts                     # 模拟数据
+│       ├── NutritionAnalysis.vue        # 营养分析
+│       ├── FavoritesRecipeCard.vue       # 收藏菜谱卡片
+│       ├── RecipeSearch.vue               # 菜谱搜索
+│       ├── EnhancedSearchInterface.vue  # 增强搜索界面
+│       ├── AutoRecipeCard.vue            # 自动菜谱卡片
+│       └── PersonalizedRecommendations.vue # 个性化推荐
 ├── models/                # 数据模型定义
-│   ├── User.ts                         # 用户模型
 │   ├── Recipe.ts                       # 菜谱模型
 │   └── Favorite.ts                     # 收藏模型
 ├── router/                # 路由配置
 │   └── index.ts                        # 路由定义
 ├── services/              # 业务逻辑层
-│   ├── aiProviders/       # 各AI提供商实现
-│   │   ├── baseProvider.ts            # 基础AI提供商
-│   │   └── mockProvider.ts             # 模拟AI提供商
-│   ├── database/          # 数据库服务
-│   │   ├── index.ts                     # 数据库主入口
-│   │   ├── dataAccess.ts               # 数据访问层
-│   │   └── indexedDBStorage.ts         # IndexedDB存储
-│   ├── monitoring/        # 性能监控服务
-│   │   ├── monitoringService.ts        # 监控服务
-│   │   └── performanceDecorators.ts    # 性能装饰器
-│   ├── cache/             # 缓存服务
-│   │   ├── advancedCacheService.ts     # 高级缓存服务
-│   │   └── cacheDecorators.ts          # 缓存装饰器
 │   ├── aiConfig.ts                     # AI配置服务
 │   ├── aiApiKeyService.ts              # AI API密钥服务
-│   ├── favoritesService.ts             # 收藏服务
+│   ├── aiService.ts                    # AI服务
+│   ├── aiRecipeService.ts              # AI菜谱服务
 │   ├── recipeService.ts                # 菜谱服务
+│   ├── userService.ts                  # 用户服务
+│   ├── favoritesService.ts             # 收藏服务
 │   ├── ratingService.ts                # 评分服务
 │   ├── personalizationService.ts       # 个性化服务
 │   ├── analyticsService.ts             # 分析服务
-│   ├── aiRecipeService.ts              # AI菜谱服务
-│   ├── userService.ts                  # 用户服务
 │   ├── searchHistoryService.ts         # 搜索历史服务
 │   ├── aiPersonalizedNutritionService.ts # AI个性化营养服务
 │   ├── shoppingListService.ts          # 购物清单服务
 │   ├── nutritionAnalysisService.ts      # 营养分析服务
 │   ├── communityService.ts             # 社区服务
 │   ├── videoTutorialService.ts         # 视频教程服务
-│   └── tcmConstitutionService.ts       # 中医体质服务
+│   ├── tcmConstitutionService.ts       # 中医体质服务
+│   ├── videoService.ts                 # 视频服务
+│   └── tauriVideoService.ts            # Tauri视频服务
+│   ├── aiProviders/                    # AI提供商实现
+│   │   ├── index.ts                   # AI提供商工厂和入口
+│   │   ├── baseProvider.ts            # AI提供商基础接口
+│   │   ├── mockProvider.ts            # 模拟AI提供商
+│   │   ├── glmProvider.ts             # 智谱AI提供商
+│   │   ├── anthropicProvider.ts       # Anthropic提供商
+│   │   ├── geminiProvider.ts          # Google Gemini提供商
+│   │   ├── deepseekProvider.ts        # DeepSeek提供商
+│   │   ├── moonshotProvider.ts        # Moonshot提供商
+│   │   ├── qwenProvider.ts            # 通义千问提供商
+│   │   ├── hunyuanProvider.ts         # 腾讯混元提供商
+│   │   ├── openaiProvider.ts          # OpenAI兼容提供商
+│   │   ├── paramAdapter.ts            # 参数适配器
+│   │   └── promptBuilder.ts           # Prompt构建器
+│   └── database/                      # 数据库访问层
+│       ├── aiConfigService.ts         # AI配置数据库服务
+│       ├── dataAccess.ts              # 通用数据访问层
+│       ├── indexedDBStorage.ts        # IndexedDB存储实现
+│       └── sqliteStorage.ts           # SQLite存储实现
 ├── stores/                # Pinia状态管理
 │   ├── recipe.ts                        # 菜谱状态
 │   └── theme.ts                         # 主题状态
