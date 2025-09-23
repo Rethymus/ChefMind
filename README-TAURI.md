@@ -45,6 +45,4 @@ npm run tauri:build
 3. DISPLAY环境变量正确设置
 
 ## AI API配置
-应用程序已预配置了AI API密钥，包含在.env文件中：
-- API密钥: ms-07eb8667-2750-46ef-a074-4a5872e8c7f3
-- API基础URL: https://api-inference.modelscope.cn/v1/chat/completions
+应用程序使用环境变量配置AI API密钥，请参考 .env.example 文件进行配置。不要在代码或文档中直接暴露真实的API密钥。
