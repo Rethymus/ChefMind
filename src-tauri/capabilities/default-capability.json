@@ -1,0 +1,9 @@
+{
+  "$schema": "https://schemas.tauri.app/capability/2.json",
+  "identifier": "default-capability",
+  "description": "Default capability for ChefMind application",
+  "windows": ["main"],
+  "permissions": [
+    "core:default"
+  ]
+}

@@ -25,6 +25,15 @@
         <span class="nav-text">收藏</span>
       </router-link>
 
+      <router-link
+        to="/video-demo"
+        class="nav-item"
+        :class="{ active: $route.name === 'VideoDemo' }"
+      >
+        <span class="nav-icon">🎬</span>
+        <span class="nav-text">视频</span>
+      </router-link>
+
       </div>
   </nav>
 </template>

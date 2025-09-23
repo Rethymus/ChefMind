@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.tauri.app/config/2.0.0",
+  "productName": "ChefMind",
+  "version": "2.2.0",
+  "identifier": "com.chefmind.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420"
+  },
+  "plugins": {},
+  "bundle": {
+    "active": false,
+    "targets": "all",
+    "category": "Productivity",
+    "copyright": "Copyright © 2024 ChefMind Team",
+    "longDescription": "ChefMind 智食谱 - AI驱动的智能菜谱生成平台",
+    "shortDescription": "智能厨房助手，创造美味料理",
+    "icon": []
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "ChefMind 智食谱",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 800,
+        "minHeight": 600,
+        "center": true,
+        "resizable": true,
+        "decorations": true,
+        "transparent": false,
+        "visible": true
+      }
+    ]
+  }
+}

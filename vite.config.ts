@@ -62,10 +62,10 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 0, // 使用随机可用端口
+    port: 1420, // Tauri开发服务器端口
     open: false,
     cors: true,
-    strictPort: false
+    strictPort: true
   },
   preview: {
     host: '0.0.0.0',

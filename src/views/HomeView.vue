@@ -1,5 +1,6 @@
 <template>
   <div class="home-view">
+
     <!-- 英雄区域 -->
     <section class="hero-section">
       <div class="hero-content">
