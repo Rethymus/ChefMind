@@ -11,7 +11,6 @@ import ShoppingListView from '@/views/ShoppingListView.vue'
 import CookingGuideView from '@/views/CookingGuideView.vue'
 import AnalyticsView from '@/views/AnalyticsView.vue'
 import RecipeDetailView from '@/views/RecipeDetailView.vue'
-import VideoDemoView from '@/views/VideoDemoView.vue'
 
 // 组件映射
 const viewComponents = {
@@ -23,7 +22,6 @@ const viewComponents = {
   CookingGuideView,
   AnalyticsView,
   RecipeDetailView,
-  VideoDemoView
 }
 
 // 简单的组件加载函数
@@ -94,14 +92,6 @@ const routes: RouteRecordRaw[] = [
     component: loadView('RecipeDetailView'),
     meta: {
       title: 'ChefMind 智食谱 - 食谱详情',
-    },
-  },
-  {
-    path: '/video-demo',
-    name: 'VideoDemo',
-    component: loadView('VideoDemoView'),
-    meta: {
-      title: 'ChefMind 智食谱 - 视频演示',
     },
   },
 ]

@@ -1386,6 +1386,12 @@
     background-color: var(--el-color-primary-light-9);
     border-radius: 8px;
     padding: 20px;
+
+    /* Dark mode styles */
+    [data-theme="dark"] & {
+      background-color: var(--bg-color-secondary);
+      color: var(--text-color);
+    }
   }
 
   .header-content {
@@ -1404,6 +1410,10 @@
     font-size: 28px;
     margin-bottom: 8px;
     color: var(--el-color-primary);
+
+    [data-theme="dark"] & {
+      color: var(--primary-color);
+    }
   }
 
   .title-icon {
@@ -1415,6 +1425,10 @@
     font-size: 16px;
     color: var(--el-text-color-secondary);
     margin: 0;
+
+    [data-theme="dark"] & {
+      color: var(--text-color-secondary);
+    }
   }
 
   .ai-stats {
@@ -1423,22 +1437,37 @@
   }
 
   .stat-card {
-    background-color: white;
+    background-color: var(--el-bg-color);
     border-radius: 6px;
     padding: 10px 20px;
     text-align: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--el-border-color);
+
+    [data-theme="dark"] & {
+      background-color: var(--bg-color-light);
+      color: var(--text-color);
+      border-color: var(--border-color);
+    }
   }
 
   .stat-number {
     font-size: 24px;
     font-weight: bold;
     color: var(--el-color-primary);
+
+    [data-theme="dark"] & {
+      color: var(--primary-color);
+    }
   }
 
   .stat-label {
     font-size: 14px;
     color: var(--el-text-color-secondary);
+
+    [data-theme="dark"] & {
+      color: var(--text-color-secondary);
+    }
   }
 
   .recipe-generator-section {
@@ -1447,6 +1476,34 @@
 
   .generator-card {
     border-radius: 8px;
+
+    /* Dark mode styles */
+    [data-theme="dark"] & {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+
+      :deep(.el-card__body) {
+        background-color: var(--card-bg);
+        color: var(--text-color);
+      }
+
+      :deep(.el-card__header) {
+        background-color: var(--card-bg);
+        color: var(--text-color);
+        border-bottom-color: var(--border-color);
+      }
+    }
+
+    :deep(.el-card__body) {
+      background-color: var(--el-bg-color);
+      color: var(--el-text-color-primary);
+    }
+
+    :deep(.el-card__header) {
+      background-color: var(--el-bg-color);
+      color: var(--el-text-color-primary);
+      border-bottom-color: var(--el-border-color);
+    }
   }
 
   .card-header {
@@ -1456,11 +1513,19 @@
   .card-header h2 {
     margin: 0 0 8px 0;
     font-size: 22px;
+
+    [data-theme="dark"] & {
+      color: var(--text-color);
+    }
   }
 
   .card-header p {
     margin: 0;
     color: var(--el-text-color-secondary);
+
+    [data-theme="dark"] & {
+      color: var(--text-color-secondary);
+    }
   }
 
   .generator-form {
@@ -1477,6 +1542,10 @@
     gap: 8px;
     font-size: 18px;
     margin-bottom: 15px;
+
+    [data-theme="dark"] & {
+      color: var(--text-color) !important;
+    }
   }
 
   .ingredient-quick-select {
@@ -1521,6 +1590,11 @@
     margin: 0 0 12px 0;
     padding-bottom: 8px;
     border-bottom: 1px solid var(--el-border-color-lighter);
+
+    [data-theme="dark"] & {
+      color: var(--text-color) !important;
+      border-bottom-color: var(--border-color-lighter) !important;
+    }
   }
 
   .dietary-restrictions,
@@ -1549,6 +1623,10 @@
     font-weight: 600;
     color: var(--el-text-color-secondary);
     margin: 0 0 10px 0;
+
+    [data-theme="dark"] & {
+      color: var(--text-color) !important;
+    }
   }
 
   .flavor-options {
@@ -1611,8 +1689,167 @@
     margin: 0;
   }
 
-  .ingredient-dialog .el-dialog__body {
-    padding-top: 10px;
+  .ingredient-dialog {
+    /* Light mode styles (default) */
+    :deep(.el-dialog) {
+      background-color: var(--el-bg-color);
+      color: var(--el-text-color-primary);
+      border: 1px solid var(--el-border-color);
+    }
+
+    /* Dark mode styles with enhanced specificity */
+    [data-theme="dark"] & :deep(.el-dialog) {
+      background-color: var(--card-bg) !important;
+      color: var(--text-color) !important;
+      border-color: var(--border-color) !important;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    /* Enhanced dialog sections with maximum specificity */
+    [data-theme="dark"] & {
+      /* Main dialog container */
+      :deep(.el-dialog) {
+        background-color: var(--card-bg) !important;
+      }
+
+      /* Dialog header */
+      :deep(.el-dialog__header) {
+        background-color: var(--card-bg) !important;
+        color: var(--text-color) !important;
+        border-bottom-color: var(--border-color) !important;
+        padding: 20px 20px 10px 20px !important;
+      }
+
+      /* Dialog body - CRITICAL FIX */
+      :deep(.el-dialog__body) {
+        background-color: var(--card-bg) !important;
+        color: var(--text-color) !important;
+        padding: 10px 20px !important;
+
+        /* Override any nested white backgrounds */
+        * {
+          background-color: transparent !important;
+        }
+
+        /* Specific fixes for common white background elements */
+        .ingredient-category,
+        .ingredient-grid,
+        .ingredient-tabs {
+          background-color: transparent !important;
+        }
+      }
+
+      /* Dialog footer */
+      :deep(.el-dialog__footer) {
+        background-color: var(--card-bg) !important;
+        color: var(--text-color) !important;
+        border-top-color: var(--border-color) !important;
+        padding: 10px 20px 20px 20px !important;
+      }
+
+      /* Text elements */
+      :deep(.el-dialog__title) {
+        color: var(--text-color) !important;
+        font-weight: 600 !important;
+      }
+
+      :deep(.el-dialog__headerbtn .el-icon) {
+        color: var(--text-color-secondary) !important;
+
+        &:hover {
+          color: var(--text-color) !important;
+        }
+      }
+
+      /* Ingredient grid buttons with enhanced specificity */
+      :deep(.ingredient-grid-btn) {
+        background-color: var(--bg-color-light) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-color) !important;
+
+        &.el-button--primary {
+          background-color: var(--primary-color) !important;
+          border-color: var(--primary-color) !important;
+          color: white !important;
+        }
+
+        &:hover:not(.el-button--primary) {
+          background-color: var(--hover-color) !important;
+          border-color: var(--primary-color) !important;
+        }
+
+        /* Override any Element Plus default backgrounds */
+        &,
+        &:hover,
+        &:focus,
+        &:active {
+          background-color: var(--bg-color-light) !important;
+        }
+
+        &.el-button--primary,
+        &.el-button--primary:hover,
+        &.el-button--primary:focus,
+        &.el-button--primary:active {
+          background-color: var(--primary-color) !important;
+        }
+      }
+
+      /* Tab buttons with enhanced specificity */
+      :deep(.el-button-group .el-button) {
+        background-color: var(--bg-color-light) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-color) !important;
+
+        &.el-button--primary {
+          background-color: var(--primary-color) !important;
+          border-color: var(--primary-color) !important;
+          color: white !important;
+        }
+
+        &:hover:not(.el-button--primary) {
+          background-color: var(--hover-color) !important;
+          border-color: var(--primary-color) !important;
+        }
+      }
+
+      /* Ingredient category titles */
+      :deep(.ingredient-category h4) {
+        color: var(--text-color) !important;
+        background-color: transparent !important;
+      }
+
+      /* Custom ingredient input in dialog */
+      :deep(.custom-ingredient-input .el-input) {
+        background-color: var(--bg-color-light) !important;
+        border-color: var(--border-color) !important;
+      }
+
+      :deep(.custom-ingredient-input .el-input .el-input__inner) {
+        background-color: var(--bg-color-light) !important;
+        color: var(--text-color) !important;
+        border-color: var(--border-color) !important;
+      }
+
+      :deep(.custom-ingredient-input .el-button) {
+        background-color: var(--primary-color) !important;
+        border-color: var(--primary-color) !important;
+        color: white !important;
+      }
+
+      /* Override any remaining white backgrounds in child elements */
+      :deep(.el-dialog__body > div),
+      :deep(.el-dialog__body > div > div),
+      :deep(.ingredient-categories),
+      :deep(.ingredient-category),
+      :deep(.ingredient-grid) {
+        background-color: transparent !important;
+      }
+
+      /* Fix for any inline styles that might be applied */
+      :deep([style*="background"]) {
+        background-color: var(--card-bg) !important;
+      }
+    }
   }
 
   .ingredient-category {
@@ -1686,6 +1923,18 @@
 
   .recipe-card {
     border-radius: 8px;
+
+    /* Dark mode styles */
+    [data-theme="dark"] & :deep(.el-card__body) {
+      background-color: var(--card-bg) !important;
+      color: var(--text-color) !important;
+    }
+
+    [data-theme="dark"] & :deep(.el-card__header) {
+      background-color: var(--card-bg) !important;
+      color: var(--text-color) !important;
+      border-bottom-color: var(--border-color) !important;
+    }
   }
 
   .recipe-header {
@@ -1702,6 +1951,10 @@
     margin: 0 0 15px 0;
     font-size: 24px;
     color: var(--el-color-primary);
+
+    [data-theme="dark"] & {
+      color: var(--primary-color) !important;
+    }
   }
 
   .recipe-meta {
@@ -1764,6 +2017,10 @@
     margin-bottom: 20px;
     font-style: italic;
     color: var(--el-text-color-secondary);
+
+    [data-theme="dark"] & {
+      color: var(--text-color-secondary) !important;
+    }
   }
 
   .recipe-content {
@@ -1950,6 +2207,18 @@
 
   .history-card {
     border-radius: 8px;
+
+    /* Dark mode styles */
+    [data-theme="dark"] & :deep(.el-card__body) {
+      background-color: var(--card-bg) !important;
+      color: var(--text-color) !important;
+    }
+
+    [data-theme="dark"] & :deep(.el-card__header) {
+      background-color: var(--card-bg) !important;
+      color: var(--text-color) !important;
+      border-bottom-color: var(--border-color) !important;
+    }
   }
 
   .history-list {
@@ -1964,6 +2233,10 @@
     padding: 15px 0;
     cursor: pointer;
     border-bottom: 1px solid var(--el-border-color-lighter);
+
+    [data-theme="dark"] & {
+      border-bottom-color: var(--border-color-lighter);
+    }
   }
 
   .history-item:last-child {
@@ -2006,15 +2279,27 @@
   .history-title {
     font-weight: 500;
     margin-bottom: 5px;
+
+    [data-theme="dark"] & {
+      color: var(--text-color) !important;
+    }
   }
 
   .history-meta {
     font-size: 14px;
     color: var(--el-text-color-secondary);
+
+    [data-theme="dark"] & {
+      color: var(--text-color-secondary) !important;
+    }
   }
 
   .history-arrow {
     color: var(--el-text-color-secondary);
+
+    [data-theme="dark"] & {
+      color: var(--text-color-secondary) !important;
+    }
   }
 
   @media (max-width: 768px) {
@@ -2059,5 +2344,281 @@
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
+  }
+
+  /* Form controls dark mode */
+  [data-theme="dark"] .form-section .el-select,
+  [data-theme="dark"] .form-section .el-input {
+    background-color: var(--bg-color-light) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  [data-theme="dark"] .form-section .el-select .el-input__inner,
+  [data-theme="dark"] .form-section .el-input .el-input__inner {
+    background-color: var(--bg-color-light) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  [data-theme="dark"] .form-section :deep(.el-select-dropdown) {
+    background-color: var(--bg-color-light) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  [data-theme="dark"] .form-section :deep(.el-select-dropdown__item) {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .form-section :deep(.el-select-dropdown__item.hover) {
+    background-color: var(--hover-color) !important;
+  }
+
+  [data-theme="dark"] .form-section .subsection-title {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .form-section .el-form-item__label {
+    color: var(--text-color) !important;
+  }
+
+  /* Preferences section dark mode */
+  [data-theme="dark"] .dietary-restrictions {
+    background-color: var(--bg-color-secondary);
+    border-color: var(--border-color);
+  }
+
+  [data-theme="dark"] .dietary-restrictions h4 {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .dietary-restrictions .el-checkbox-group {
+    background-color: transparent;
+  }
+
+  [data-theme="dark"] .dietary-restrictions .el-checkbox {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .dietary-restrictions .el-checkbox__label {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .food-preferences {
+    background-color: var(--bg-color-secondary);
+    border-color: var(--border-color);
+  }
+
+  [data-theme="dark"] .food-preferences h4 {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .allergen-section {
+    background-color: transparent;
+    border-color: var(--border-color);
+  }
+
+  [data-theme="dark"] .allergen-section h5 {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .allergen-section .el-checkbox-group {
+    background-color: transparent;
+  }
+
+  [data-theme="dark"] .allergen-section .el-checkbox {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .allergen-section .el-checkbox__label {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .flavor-preferences {
+    background-color: transparent;
+    border-color: var(--border-color);
+  }
+
+  [data-theme="dark"] .flavor-preferences h5 {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .flavor-options {
+    background-color: transparent;
+  }
+
+  [data-theme="dark"] .flavor-item {
+    border-color: var(--border-color);
+  }
+
+  [data-theme="dark"] .flavor-label {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .spice-options .el-radio,
+  [data-theme="dark"] .sweetness-options .el-radio {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .spice-options .el-radio__label,
+  [data-theme="dark"] .sweetness-options .el-radio__label {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .disliked-ingredients {
+    background-color: transparent;
+    border-color: var(--border-color);
+  }
+
+  [data-theme="dark"] .disliked-ingredients h5 {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .disliked-input .el-input {
+    background-color: var(--bg-color-light) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  [data-theme="dark"] .disliked-input .el-input .el-input__inner {
+    background-color: var(--bg-color-light) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  [data-theme="dark"] .disliked-input .el-button {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: white !important;
+  }
+
+  [data-theme="dark"] .disliked-tags {
+    background-color: transparent;
+  }
+
+  [data-theme="dark"] .disliked-tag {
+    background-color: var(--danger-color) !important;
+    border-color: var(--danger-color) !important;
+    color: white !important;
+  }
+
+  /* Ingredient selection dark mode */
+  [data-theme="dark"] .ingredient-selection {
+    background-color: var(--bg-color-secondary);
+    border-color: var(--border-color);
+  }
+
+  [data-theme="dark"] .ingredient-selection h4 {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .ingredient-tabs {
+    background-color: transparent;
+    border-color: var(--border-color);
+  }
+
+  [data-theme="dark"] .ingredient-tabs .el-tabs__nav-wrap {
+    background-color: transparent;
+  }
+
+  [data-theme="dark"] .ingredient-tabs .el-tabs__nav-scroll {
+    background-color: transparent;
+  }
+
+  [data-theme="dark"] .ingredient-tabs .el-tabs__nav {
+    background-color: transparent;
+  }
+
+  [data-theme="dark"] .ingredient-tabs .el-tabs__item {
+    color: var(--text-color) !important;
+    background-color: transparent;
+  }
+
+  [data-theme="dark"] .ingredient-tabs .el-tabs__item.is-active {
+    color: var(--primary-color) !important;
+    background-color: var(--bg-color-light);
+  }
+
+  [data-theme="dark"] .ingredient-tabs .el-tabs__active-bar {
+    background-color: var(--primary-color);
+  }
+
+  [data-theme="dark"] .ingredient-grid {
+    background-color: transparent;
+  }
+
+  [data-theme="dark"] .ingredient-item {
+    background-color: var(--bg-color-light);
+    border-color: var(--border-color);
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .ingredient-item .el-checkbox {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .ingredient-item .el-checkbox__label {
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .custom-ingredient-input {
+    background-color: var(--bg-color-light);
+    border-color: var(--border-color);
+  }
+
+  [data-theme="dark"] .custom-ingredient-input .el-input {
+    background-color: var(--bg-color-light) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  [data-theme="dark"] .custom-ingredient-input .el-input .el-input__inner {
+    background-color: var(--bg-color-light) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  [data-theme="dark"] .custom-ingredient-input .el-button {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: white !important;
+  }
+
+  [data-theme="dark"] .show-more-btn {
+    background-color: var(--bg-color-light);
+    border-color: var(--border-color);
+    color: var(--text-color) !important;
+  }
+
+  [data-theme="dark"] .show-more-btn:hover {
+    background-color: var(--hover-color);
+    border-color: var(--primary-color);
+  }
+
+  /* Generate button dark mode */
+  [data-theme="dark"] .generate-section {
+    background-color: var(--bg-color-secondary);
+    border-color: var(--border-color);
+  }
+
+  [data-theme="dark"] .generate-btn {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: white !important;
+  }
+
+  [data-theme="dark"] .generate-btn:hover {
+    background-color: var(--primary-dark) !important;
+    border-color: var(--primary-dark) !important;
+  }
+
+  [data-theme="dark"] .generate-tip {
+    color: var(--text-color-secondary) !important;
+  }
+
+  /* Global overlay fix for dark mode */
+  [data-theme="dark"] {
+    :deep(.el-overlay) {
+      background-color: rgba(0, 0, 0, 0.8) !important;
+      backdrop-filter: blur(2px);
+    }
   }
 </style>

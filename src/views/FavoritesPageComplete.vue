@@ -363,9 +363,13 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  background-color: #f5f7fa;
+  background-color: var(--el-bg-color-page);
   min-height: 100vh;
   position: relative;
+
+  [data-theme="dark"] & {
+    background-color: var(--bg-color);
+  }
 }
 
 /* 页面头部 */
@@ -415,16 +419,23 @@ onMounted(() => {
 .loading-container {
   text-align: center;
   padding: 80px 20px;
-  background: white;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color);
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+
+  [data-theme="dark"] & {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+    color: var(--text-color);
+  }
 }
 
 .loading-spinner {
   width: 50px;
   height: 50px;
-  border: 5px solid #f3f3f3;
-  border-top: 5px solid #667eea;
+  border: 5px solid var(--el-border-color-lighter);
+  border-top: 5px solid var(--el-color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;
@@ -439,9 +450,24 @@ onMounted(() => {
 .empty-container {
   text-align: center;
   padding: 80px 20px;
-  background: white;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color);
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+
+  [data-theme="dark"] & {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+    color: var(--text-color);
+
+    h2 {
+      color: var(--text-color);
+    }
+
+    p {
+      color: var(--text-color-secondary);
+    }
+  }
 }
 
 .empty-icon {
@@ -451,14 +477,22 @@ onMounted(() => {
 }
 
 .empty-container h2 {
-  color: #4a5568;
+  color: var(--el-text-color-primary);
+
+  [data-theme="dark"] & {
+    color: var(--text-color) !important;
+  }
   margin-bottom: 16px;
   font-size: 28px;
   font-weight: 600;
 }
 
 .empty-container p {
-  color: #718096;
+  color: var(--el-text-color-regular);
+
+  [data-theme="dark"] & {
+    color: var(--text-color-secondary) !important;
+  }
   margin-bottom: 32px;
   font-size: 18px;
 }
@@ -483,10 +517,16 @@ onMounted(() => {
 
 /* 内容容器 */
 .content-container {
-  background: white;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color);
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+
+  [data-theme="dark"] & {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+  }
 }
 
 .recipes-header {
@@ -496,13 +536,26 @@ onMounted(() => {
   padding: 24px;
   border-bottom: 2px solid #f7fafc;
   background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-}
 
-.recipes-header h2 {
-  margin: 0;
-  color: #2d3748;
-  font-size: 24px;
-  font-weight: 700;
+  [data-theme="dark"] & {
+    background: var(--card-bg);
+    border-bottom-color: var(--border-color);
+
+    h2 {
+      color: var(--text-color);
+    }
+  }
+
+  h2 {
+    margin: 0;
+    color: var(--el-text-color-primary);
+
+  [data-theme="dark"] & {
+    color: var(--text-color) !important;
+  }
+    font-size: 24px;
+    font-weight: 700;
+  }
 }
 
 .clear-all-btn {
@@ -531,12 +584,17 @@ onMounted(() => {
 }
 
 .recipe-card {
-  background: white;
+  background: var(--el-bg-color);
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--el-border-color);
+
+  [data-theme="dark"] & {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+  }
 }
 
 .recipe-card:hover {
@@ -607,6 +665,10 @@ onMounted(() => {
   font-size: 64px;
   background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
   color: #a0aec0;
+
+  [data-theme="dark"] & {
+    color: var(--text-color-secondary) !important;
+  }
 }
 
 .recipe-overlay {
@@ -647,11 +709,25 @@ onMounted(() => {
 /* 菜谱信息 */
 .recipe-info {
   padding: 20px;
+
+  [data-theme="dark"] & {
+    .recipe-title {
+      color: var(--text-color);
+    }
+
+    .recipe-description {
+      color: var(--text-color-secondary);
+    }
+  }
 }
 
 .recipe-title {
   margin: 0 0 12px 0;
-  color: #2d3748;
+  color: var(--el-text-color-primary);
+
+  [data-theme="dark"] & {
+    color: var(--text-color) !important;
+  }
   font-size: 20px;
   font-weight: 700;
   line-height: 1.3;
@@ -663,7 +739,11 @@ onMounted(() => {
 }
 
 .recipe-description {
-  color: #4a5568;
+  color: var(--el-text-color-regular);
+
+  [data-theme="dark"] & {
+    color: var(--text-color-secondary) !important;
+  }
   font-size: 14px;
   line-height: 1.5;
   margin-bottom: 16px;
@@ -693,16 +773,28 @@ onMounted(() => {
 .time-tag {
   background: linear-gradient(135deg, #fbb6ce 0%, #f687b3 100%);
   color: #702459;
+
+  [data-theme="dark"] & {
+    color: #d6336c !important;
+  }
 }
 
 .difficulty-tag {
   background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
   color: #7c2d12;
+
+  [data-theme="dark"] & {
+    color: #fd7e14 !important;
+  }
 }
 
 .ingredient-tag {
   background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
   color: #1e3a8a;
+
+  [data-theme="dark"] & {
+    color: #3b82f6 !important;
+  }
 }
 
 /* 操作按钮 */
@@ -749,8 +841,8 @@ onMounted(() => {
   position: fixed;
   bottom: 80px;
   right: 20px;
-  background: white;
-  border: 2px solid #e2e8f0;
+  background: var(--el-bg-color);
+  border: 2px solid var(--el-border-color);
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -760,14 +852,22 @@ onMounted(() => {
 
 .debug-panel h3 {
   margin: 0 0 12px 0;
-  color: #2d3748;
+  color: var(--el-text-color-primary);
+
+  [data-theme="dark"] & {
+    color: var(--text-color) !important;
+  }
   font-size: 16px;
 }
 
 .debug-content p {
   margin: 8px 0;
   font-size: 14px;
-  color: #4a5568;
+  color: var(--el-text-color-regular);
+
+  [data-theme="dark"] & {
+    color: var(--text-color-secondary) !important;
+  }
 }
 
 .debug-content button {

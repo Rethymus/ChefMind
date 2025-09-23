@@ -131,7 +131,7 @@ export async function getRecipeComments(recipeId: string, limit: number = 5): Pr
     "username": "用户名",
     "rating": 评分(1-5),
     "content": "评论内容",
-    "createdAt": "2023-XX-XX",
+    "createdAt": "2025-08-XX",
     "likes": 点赞数
   }
 ]`;
