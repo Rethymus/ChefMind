@@ -10,6 +10,7 @@ import 'animate.css'
 import './styles/global.scss'
 import './styles/print.scss'
 import { AIProviderFactory } from './services/aiProviders'
+import { setupDevShortcuts, debugUtils } from './utils/devtools'
 
 const app = createApp(App)
 
@@ -48,4 +49,26 @@ aiProviderFactory.initialize().catch(error => {
   console.error('❌ AI提供商工厂初始化失败:', error)
 })
 
+// 设置开发者工具
+setupDevShortcuts()
+
+// 应用挂载前的调试检查
+if (import.meta.env.DEV) {
+  console.log('🔧 [Debug] Environment:', import.meta.env.MODE)
+  console.log('🔧 [Debug] Tauri Available:', debugUtils.checkTauriAPI())
+
+  // 延迟检查前端资源加载
+  setTimeout(() => {
+    debugUtils.checkFrontendLoad()
+  }, 1000)
+}
+
 app.mount('#app')
+
+// 应用挂载后的调试检查
+if (import.meta.env.DEV) {
+  setTimeout(() => {
+    console.log('🔧 [Debug] App mounted successfully')
+    console.log('🔧 [Debug] Current route:', window.location.pathname)
+  }, 2000)
+}
