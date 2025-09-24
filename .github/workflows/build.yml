@@ -42,9 +42,26 @@ jobs:
                 tag: tag
               });
 
-              // If release exists and is not a draft, return its id
+              // If release exists and is not a draft, delete existing assets first
               if (existingRelease && !existingRelease.draft) {
-                console.log(`Release ${tag} already exists, using existing release`);
+                console.log(`Release ${tag} already exists, cleaning up existing assets...`);
+
+                // Delete existing assets
+                const { data: assets } = await github.rest.repos.listReleaseAssets({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: existingRelease.id
+                });
+
+                for (const asset of assets) {
+                  await github.rest.repos.deleteReleaseAsset({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    asset_id: asset.id
+                  });
+                  console.log(`Deleted existing asset: ${asset.name}`);
+                }
+
                 return existingRelease.id;
               }
             } catch (error) {
@@ -140,37 +157,21 @@ jobs:
       - name: build frontend
         run: npm run build
 
-      - name: Verify frontend build output
+      - name: Copy frontend build to src-tauri directory
         shell: bash
         run: |
-          echo "=== Verifying Frontend Build Output ==="
+          echo "=== Copying frontend build to Tauri directory ==="
           echo "Current directory: $(pwd)"
-          echo "Directory contents:"
-          ls -la
-          echo "=== Checking dist directory ==="
-          if [ -d "dist" ]; then
-            echo "dist directory exists"
-            echo "dist directory contents:"
-            ls -la dist/
-            echo "=== Checking dist/index.html ==="
-            if [ -f "dist/index.html" ]; then
-              echo "dist/index.html exists and is readable"
-              head -5 dist/index.html
-            else
-              echo "ERROR: dist/index.html not found"
-              exit 1
-            fi
+          echo "Copying dist/ to src-tauri/dist/"
+          cp -r dist/ src-tauri/
+          echo "Verifying copy:"
+          ls -la src-tauri/dist/
+          echo "Checking src-tauri/dist/index.html:"
+          if [ -f "src-tauri/dist/index.html" ]; then
+            echo "Frontend assets successfully copied to src-tauri/dist/"
+            head -5 src-tauri/dist/index.html
           else
-            echo "ERROR: dist directory not found"
-            exit 1
-          fi
-          echo "=== Checking src-tauri directory ==="
-          if [ -d "src-tauri" ]; then
-            echo "src-tauri directory exists"
-            echo "dist should be accessible from src-tauri as ../dist"
-            echo "Actual path: $(realpath src-tauri/../dist)"
-          else
-            echo "ERROR: src-tauri directory not found"
+            echo "ERROR: Failed to copy frontend assets"
             exit 1
           fi
 
@@ -182,7 +183,7 @@ jobs:
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
-          args: ${{ matrix.args }} --config src-tauri/tauri.conf.json
+          args: ${{ matrix.args }}
           tauriScript: npm run tauri
           tagName: app-v__VERSION__ # Let tauri-action handle the version
           includeDebug: false # Only build release mode
@@ -217,7 +218,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform }}-${{ matrix.target }}-artifacts
+          name: ${{ matrix.platform }}-${{ matrix.target }}-artifacts-${{ github.run_number }}
           path: |
             src-tauri/target/${{ matrix.target }}/release/bundle/**/*
             src-tauri/target/${{ matrix.target }}/release/*.exe
@@ -228,6 +229,15 @@ jobs:
             src-tauri/target/${{ matrix.target }}/release/*.dmg
           if-no-files-found: warn
           overwrite: true # Overwrite if artifacts with same name exist
+
+      - name: Clean up frontend copy
+        shell: bash
+        run: |
+          echo "=== Cleaning up frontend copy ==="
+          if [ -d "src-tauri/dist" ]; then
+            rm -rf src-tauri/dist
+            echo "Removed src-tauri/dist"
+          fi
 
   publish-release:
     permissions:
