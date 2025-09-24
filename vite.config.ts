@@ -48,6 +48,7 @@ export default defineConfig({
       }
     },
     rollupOptions: {
+      external: ['@tauri-apps/api/tauri', '@tauri-apps/api'],
       output: {
         chunkFileNames: 'js/[name]-[hash].js',
         entryFileNames: 'js/[name]-[hash].js',
@@ -59,8 +60,8 @@ export default defineConfig({
             }
             return 'vendor';
           }
-          if (id.includes('services/aiService') || 
-              id.includes('services/glmService') || 
+          if (id.includes('services/aiService') ||
+              id.includes('services/glmService') ||
               id.includes('services/aiConfig')) {
             return 'aiServices';
           }

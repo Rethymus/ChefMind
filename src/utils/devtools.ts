@@ -1,11 +1,18 @@
-import { invoke } from '@tauri-apps/api/tauri'
+// 动态导入Tauri API，仅在Tauri环境中可用
+let invoke: any = null
 
 // 开发者工具控制
 export const devTools = {
   // 打开/关闭开发者工具
   toggle: async () => {
     try {
-      await invoke('toggle_devtools')
+      if (!invoke && typeof window !== 'undefined' && window.__TAURI__) {
+        const tauri = await import('@tauri-apps/api/tauri')
+        invoke = tauri.invoke
+      }
+      if (invoke) {
+        await invoke('toggle_devtools')
+      }
     } catch (error) {
       console.error('Failed to toggle devtools:', error)
     }
@@ -14,9 +21,18 @@ export const devTools = {
   // 发送日志消息到Rust后端
   log: async (message: string) => {
     try {
-      await invoke('log_message', { message })
+      if (!invoke && typeof window !== 'undefined' && window.__TAURI__) {
+        const tauri = await import('@tauri-apps/api/tauri')
+        invoke = tauri.invoke
+      }
+      if (invoke) {
+        await invoke('log_message', { message })
+      } else {
+        console.log('[Tauri Log]:', message)
+      }
     } catch (error) {
       console.error('Failed to log message:', error)
+      console.log('[Tauri Log]:', message)
     }
   }
 }
@@ -64,7 +80,7 @@ export const debugUtils = {
       const { version, name } = await app.getAppInfo()
       return { version, name }
     } catch (error) {
-      return { error: error.message }
+      return { error: error instanceof Error ? error.message : 'Unknown error' }
     }
   },
 
