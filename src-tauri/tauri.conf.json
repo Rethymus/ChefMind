@@ -17,7 +17,13 @@
     "copyright": "Copyright © 2025 ChefMind Team",
     "longDescription": "ChefMind 智食谱 - AI驱动的智能菜谱生成平台",
     "shortDescription": "智能厨房助手，创造美味料理",
-    "icon": []
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
   },
   "app": {
     "withGlobalTauri": false,
