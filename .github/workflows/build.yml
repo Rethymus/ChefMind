@@ -80,32 +80,31 @@ jobs:
                   repo: context.repo.repo,
                   tag_name: tag,
                   name: `ChefMind Desktop App v${process.env.PACKAGE_VERSION}`,
-                  body: |
-                    ## ChefMind Desktop App v${process.env.PACKAGE_VERSION}
+                  body: `## ChefMind Desktop App v${process.env.PACKAGE_VERSION}
 
-                    ### Installation
+### Installation
 
-                    **Windows:**
-                    - Download and run the `.msi` installer
-                    - The app will be installed in Program Files
-                    - Developer tools can be accessed with Ctrl+Shift+I or F12
+**Windows:**
+- Download and run the \`.msi\` installer
+- The app will be installed in Program Files
+- Developer tools can be accessed with Ctrl+Shift+I or F12
 
-                    **Linux:**
-                    - Download the `.deb` package for Debian/Ubuntu
-                    - Download the `.rpm` package for Fedora/CentOS
-                    - Developer tools can be accessed with Ctrl+Shift+I or F12
+**Linux:**
+- Download the \`.deb\` package for Debian/Ubuntu
+- Download the \`.rpm\` package for Fedora/CentOS
+- Developer tools can be accessed with Ctrl+Shift+I or F12
 
-                    ### Features
-                    - AI-powered recipe generation
-                    - Smart kitchen assistant
-                    - Enterprise-grade data storage
-                    - Built-in developer tools for debugging
+### Features
+- AI-powered recipe generation
+- Smart kitchen assistant
+- Enterprise-grade data storage
+- Built-in developer tools for debugging
 
-                    ### Troubleshooting
-                    If you encounter any issues:
-                    1. Press F12 or Ctrl+Shift+I to open developer tools
-                    2. Check the console for error messages
-                    3. Verify that all frontend resources loaded correctly
+### Troubleshooting
+If you encounter any issues:
+1. Press F12 or Ctrl+Shift+I to open developer tools
+2. Check the console for error messages
+3. Verify that all frontend resources loaded correctly`
                   draft: true,
                   prerelease: false
                 });
