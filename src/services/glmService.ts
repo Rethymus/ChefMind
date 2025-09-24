@@ -18,7 +18,6 @@ interface GLMCallOptions {
  * @returns 响应文本
  */
 export async function callGLM(prompt: string, options: GLMCallOptions = {}): Promise<string> {
-  console.log('调用 GLM API:', prompt, options)
 
   // 首先尝试从AI配置服务获取API密钥
   let apiKey = ''
@@ -37,11 +36,6 @@ export async function callGLM(prompt: string, options: GLMCallOptions = {}): Pro
       model = config.model || model
     }
     
-    console.log('从AI配置服务获取到GLM配置:', { 
-      hasApiKey: !!apiKey, 
-      baseURL, 
-      model 
-    })
   } catch (error) {
     console.warn('无法从AI配置服务获取GLM配置，回退到环境变量:', error)
     
@@ -52,20 +46,11 @@ export async function callGLM(prompt: string, options: GLMCallOptions = {}): Pro
   }
 
   // 如果没有 API 密钥，返回模拟响应
-  console.log('🔍 检查API密钥:', { 
-    apiKey: apiKey ? '已设置' : '未设置', 
-    apiKeyLength: apiKey?.length,
-    apiKeyValue: apiKey?.substring(0, 10) + '...',
-    check1: !apiKey,
-    check2: apiKey === 'your_glm_api_key_here'
-  })
   
   if (!apiKey || apiKey === 'your_glm_api_key_here') {
-    console.log('❌ 未配置 GLM API 密钥，返回模拟响应')
     return mockGLMResponse(prompt)
   }
   
-  console.log('✅ API密钥检查通过，准备调用GLM API')
 
   try {
     // 构建符合GLM API标准的请求体
@@ -82,7 +67,6 @@ export async function callGLM(prompt: string, options: GLMCallOptions = {}): Pro
       max_tokens: options.maxTokens || 1000,
     }
 
-    console.log('GLM API 请求体:', JSON.stringify(requestBody, null, 2))
 
     // 发送请求
     const response = await fetch(`${baseURL}chat/completions`, {
@@ -103,7 +87,6 @@ export async function callGLM(prompt: string, options: GLMCallOptions = {}): Pro
 
     // 解析响应
     const data = await response.json()
-    console.log('GLM API 响应:', data)
 
     // 检查响应结构
     if (!data.choices?.[0]?.message) {
@@ -204,7 +187,6 @@ export function parseJsonResponse<T>(response: string): T {
    * 尝试高级解析方法
    */
   function tryAdvancedParse(): T {
-    console.log('直接解析失败，尝试提取JSON:', response)
 
     // 清理并提取JSON
     const cleanResponse = cleanJsonResponse(response)
@@ -222,8 +204,7 @@ export function parseJsonResponse<T>(response: string): T {
     // 首先尝试直接解析
     return tryDirectParse(response)
   } catch (directError) {
-    // 直接解析失败，记录错误并尝试高级解析
-    console.log('直接JSON解析失败，尝试高级解析:', directError)
+    // 直接解析失败，尝试高级解析
 
     try {
       return tryAdvancedParse()
@@ -241,7 +222,6 @@ export function parseJsonResponse<T>(response: string): T {
  * @returns 模拟响应文本
  */
 function mockGLMResponse(prompt: string): string {
-  console.log('生成模拟 GLM 响应:', prompt)
 
   // 根据提示词中的关键词生成不同的模拟响应
   if (prompt.includes('食材') && prompt.includes('JSON')) {

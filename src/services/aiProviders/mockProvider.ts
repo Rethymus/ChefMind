@@ -7,7 +7,6 @@ import type { BaseAIProvider } from './baseProvider'
  */
 export class MockAIProvider implements BaseAIProvider {
   async generateRecipe(params: RecipeGenerationParams): Promise<Recipe> {
-    console.log('🎭 使用模拟AI生成食谱，参数:', params)
 
     // 模拟API调用延迟
     await new Promise(resolve => setTimeout(resolve, 1500))
@@ -139,7 +138,6 @@ export class MockAIProvider implements BaseAIProvider {
   }
 
   async validateIngredient(ingredient: string): Promise<IngredientValidationResult> {
-    console.log('验证食材:', ingredient)
 
     // 模拟API调用延迟
     await new Promise(resolve => setTimeout(resolve, 800))

@@ -21,7 +21,6 @@ export class DatabaseInitializer {
    */
   public async initialize(): Promise<void> {
     try {
-      console.log('🚀 Initializing SQLite database...')
       await this.initializeSQLiteDatabase()
     } catch (error) {
       console.error('❌ Database initialization failed:', error)
@@ -63,7 +62,6 @@ export class DatabaseInitializer {
       // 创建同步队列表
       this.createSyncQueueTable(db)
 
-      console.log('✅ Database initialization completed successfully')
     } catch (error) {
       console.error('❌ Database initialization failed:', error)
       throw error
@@ -88,7 +86,6 @@ export class DatabaseInitializer {
       
       // 创建索引
       db.exec('CREATE INDEX idx_users_session_id ON users(session_id)')
-      console.log('📋 Created users table')
     }
   }
 
@@ -125,7 +122,6 @@ export class DatabaseInitializer {
       db.exec('CREATE INDEX idx_recipes_title ON recipes(title)')
       db.exec('CREATE INDEX idx_recipes_category ON recipes(category)')
       db.exec('CREATE INDEX idx_recipes_created_at ON recipes(created_at)')
-      console.log('📋 Created recipes table')
     }
   }
 
@@ -152,7 +148,6 @@ export class DatabaseInitializer {
       // 创建索引
       db.exec('CREATE INDEX idx_favorites_session_id ON favorites(session_id)')
       db.exec('CREATE INDEX idx_favorites_recipe_id ON favorites(recipe_id)')
-      console.log('📋 Created favorites table')
     }
   }
 
@@ -180,7 +175,6 @@ export class DatabaseInitializer {
       // 创建索引
       db.exec('CREATE INDEX idx_ratings_session_id ON ratings(session_id)')
       db.exec('CREATE INDEX idx_ratings_recipe_id ON ratings(recipe_id)')
-      console.log('📋 Created ratings table')
     }
   }
 
@@ -205,7 +199,6 @@ export class DatabaseInitializer {
       
       // 创建索引
       db.exec('CREATE INDEX idx_shopping_lists_session_id ON shopping_lists(session_id)')
-      console.log('📋 Created shopping_lists table')
     }
   }
 
@@ -229,7 +222,6 @@ export class DatabaseInitializer {
       // 创建索引
       db.exec('CREATE INDEX idx_user_sessions_session_id ON user_sessions(session_id)')
       db.exec('CREATE INDEX idx_user_sessions_expires_at ON user_sessions(expires_at)')
-      console.log('📋 Created user_sessions table')
     }
   }
 
@@ -256,7 +248,6 @@ export class DatabaseInitializer {
       db.exec('CREATE INDEX idx_analytics_session_id ON analytics(session_id)')
       db.exec('CREATE INDEX idx_analytics_event_type ON analytics(event_type)')
       db.exec('CREATE INDEX idx_analytics_timestamp ON analytics(timestamp)')
-      console.log('📋 Created analytics table')
     }
   }
 
@@ -286,7 +277,6 @@ export class DatabaseInitializer {
       db.exec('CREATE INDEX idx_sync_queue_status ON sync_queue(status)')
       db.exec('CREATE INDEX idx_sync_queue_model_name ON sync_queue(model_name)')
       db.exec('CREATE INDEX idx_sync_queue_created_at ON sync_queue(created_at)')
-      console.log('📋 Created sync_queue table')
     }
   }
 
@@ -309,7 +299,6 @@ export class DatabaseInitializer {
       
       sqliteConfig.execute('DELETE FROM sync_queue WHERE status = \'completed\' AND updated_at < ?', [sevenDaysAgo.toISOString()])
       
-      console.log('🧹 Database cleanup completed')
     } catch (error) {
       console.error('❌ Database cleanup failed:', error)
     }
@@ -335,7 +324,6 @@ export class DatabaseInitializer {
       // 创建索引
       db.exec('CREATE INDEX idx_search_history_session_id ON search_history(session_id)')
       db.exec('CREATE INDEX idx_search_history_created_at ON search_history(created_at)')
-      console.log('📋 Created search_history table')
     }
   }
 }

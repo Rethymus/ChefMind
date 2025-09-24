@@ -39,7 +39,6 @@ export class PWAManager {
     if ('serviceWorker' in navigator) {
       try {
         this.sw = await navigator.serviceWorker.register('/sw.js');
-        console.log('[PWA] Service Worker 注册成功:', this.sw.scope);
         
         // 监听Service Worker状态变化
         this.sw.addEventListener('updatefound', () => {

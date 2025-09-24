@@ -44,9 +44,7 @@ app.use(ElementPlus)
 
 // 初始化AI提供商
 const aiProviderFactory = AIProviderFactory.getInstance()
-aiProviderFactory.initialize().then(() => {
-  console.log('✅ AI提供商工厂初始化完成')
-}).catch(error => {
+aiProviderFactory.initialize().catch(error => {
   console.error('❌ AI提供商工厂初始化失败:', error)
 })
 

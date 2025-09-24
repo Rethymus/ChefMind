@@ -55,7 +55,6 @@ class AIPersonalizedNutritionService {
    */
   async analyzeUserNutrition(request: AIAnalysisRequest): Promise<AIAnalysisResult> {
     try {
-      console.log('开始AI营养分析...', request)
 
       // 1. 构建AI分析提示词
       const analysisPrompt = this.buildAnalysisPrompt(request)
@@ -65,7 +64,6 @@ class AIPersonalizedNutritionService {
         maxTokens: 2000,
         temperature: 0.3,
       })
-      console.log('营养分析 AI 响应:', aiResponse)
 
       // 3. 解析AI响应
       const parsedResult = this.parseAIResponse(aiResponse)
@@ -147,7 +145,6 @@ ${userProfile.meals.map(meal => `${this.getMealName(meal.type)}：${meal.descrip
         return this.getDefaultAnalysis()
       }
 
-      console.log('开始解析AI响应:', content.substring(0, 200) + '...')
 
       // 清理内容
       const cleanContent = this.cleanResponseContent(content)
@@ -172,7 +169,6 @@ ${userProfile.meals.map(meal => `${this.getMealName(meal.type)}：${meal.descrip
   private cleanResponseContent(content: string): string {
     // 移除可能的 markdown 标记
     const cleanContent = content.replace(/```json\s*|\s*```/g, '').trim()
-    console.log('移除markdown后:', cleanContent.substring(0, 200) + '...')
     return cleanContent
   }
 
@@ -188,7 +184,6 @@ ${userProfile.meals.map(meal => `${this.getMealName(meal.type)}：${meal.descrip
     try {
       const cleanedJson = this.cleanJsonString(jsonString)
       const parsed = JSON.parse(cleanedJson)
-      console.log('成功解析AI响应:', parsed)
 
       return this.convertToAnalysisResult(parsed)
     } catch (parseError) {
@@ -204,7 +199,6 @@ ${userProfile.meals.map(meal => `${this.getMealName(meal.type)}：${meal.descrip
   private extractJsonFromContent(content: string): string | null {
     // 尝试提取第一个完整的 JSON 对象
     const firstBraceIndex = content.indexOf('{')
-    console.log('找到第一个{的位置:', firstBraceIndex)
 
     if (firstBraceIndex === -1) {
       return null
@@ -219,7 +213,6 @@ ${userProfile.meals.map(meal => `${this.getMealName(meal.type)}：${meal.descrip
 
       if (braceCount === 0) {
         const jsonString = content.substring(firstBraceIndex, i + 1)
-        console.log('提取的JSON字符串:', jsonString.substring(0, 300) + '...')
         return jsonString
       }
     }
@@ -239,7 +232,6 @@ ${userProfile.meals.map(meal => `${this.getMealName(meal.type)}：${meal.descrip
     // 第二步：处理带引号的数字+单位组合: "45g" -> "45"
     cleanJsonStr = cleanJsonStr.replace(/"(\d+(?:\.\d+)?)([a-zA-Z]+)"/g, '"$1"')
 
-    console.log('清理后的JSON:', cleanJsonStr.substring(0, 300) + '...')
     return cleanJsonStr
   }
 

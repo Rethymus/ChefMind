@@ -45,7 +45,6 @@ export class AIApiKeyService {
         aiConfigs
       })
       
-      console.log(`✅ ${providerName} API密钥保存成功`)
       return true
     } catch (error) {
       console.error(`保存${providerName} API密钥失败:`, error)
@@ -69,7 +68,6 @@ export class AIApiKeyService {
           aiConfigs
         })
         
-        console.log(`✅ ${providerName} API密钥删除成功`)
         return true
       }
       
@@ -289,7 +287,6 @@ export class AIApiKeyService {
         aiConfigs: configs
       })
       
-      console.log('✅ API配置恢复成功')
       return true
     } catch (error) {
       console.error('恢复API配置失败:', error)

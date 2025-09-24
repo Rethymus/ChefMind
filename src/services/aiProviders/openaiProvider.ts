@@ -82,28 +82,17 @@ export class OpenAIProvider {
     _preferences?: UserPreferences
   ): Promise<RecipeGenerationResult> {
     try {
-      console.log('🚀 OpenAI生成食谱开始，参数:', JSON.stringify(ingredientsOrParams, null, 2))
 
       // 转换为标准参数格式
       const standardParams = ParamAdapter.toRecipeGenerationParams(ingredientsOrParams, _preferences)
 
-      console.log('📋 转换后的标准参数:', JSON.stringify(standardParams, null, 2))
-      console.log('🔍 参数验证:')
-      console.log('- 饮食限制:', standardParams.dietaryRestrictions)
-      console.log('- 健康目标:', standardParams.healthGoals)
-      console.log('- 过敏原:', standardParams.allergies)
-      console.log('- 口味偏好:', standardParams.flavorPreferences)
-      console.log('- 辣度:', standardParams.spiceLevel)
-      console.log('- 甜度:', standardParams.sweetnessLevel)
 
       // 构建通用提示词
       const prompt = PromptBuilder.buildRecipePrompt(standardParams)
-      console.log('📝 生成的Prompt:', prompt)
 
       // 这里应该调用OpenAI API，现在返回一个基于参数的智能模拟结果
       const recipe = this.createSmartRecipe(standardParams)
 
-      console.log('✅ OpenAI食谱生成成功:', recipe.title)
       return recipe
     } catch (error) {
       console.error('生成食谱失败:', error)

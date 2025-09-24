@@ -69,19 +69,16 @@ export class SQLiteConfig {
     }
 
     try {
-      console.log(`🔌 Connecting to SQLite database: ${this.dbPath}`)
       
       // 创建数据库连接
       this.db = new Database(this.dbPath, {
         fileMustExist: false, // 允许创建新数据库
         timeout: 5000, // 5秒超时
-        verbose: process.env.SQLITE_DEBUG === 'true' ? console.log : undefined
       })
 
       // 配置数据库设置
       this.configureDatabase()
 
-      console.log('✅ SQLite database connected successfully')
       return this.db
     } catch (error) {
       console.error('❌ Failed to connect to SQLite database:', error)
@@ -112,7 +109,6 @@ export class SQLiteConfig {
     this.db.pragma('cache_size = -10000') // 10MB cache
     this.db.pragma('temp_store = MEMORY')
 
-    console.log('🔧 SQLite database configured with optimal settings')
   }
 
   /**
@@ -132,7 +128,6 @@ export class SQLiteConfig {
     if (this.db) {
       this.db.close()
       this.db = null
-      console.log('🔌 SQLite database connection closed')
     }
   }
 
@@ -283,7 +278,6 @@ export class SQLiteConfig {
     const name = indexName || `idx_${tableName}_${columns.join('_')}`
     const query = `CREATE INDEX IF NOT EXISTS ${name} ON ${tableName}(${columns.join(', ')})`
     this.execute(query)
-    console.log(`✅ Created index: ${name}`)
   }
 
   /**
@@ -306,7 +300,6 @@ export class SQLiteConfig {
       backupDb.exec('COMMIT')
       backupDb.exec('DETACH DATABASE source')
       
-      console.log(`✅ Database backed up to: ${backupPath}`)
     } catch (error) {
       backupDb.exec('ROLLBACK')
       backupDb.exec('DETACH DATABASE source')
@@ -323,7 +316,6 @@ export class SQLiteConfig {
     const db = this.getConnection()
     db.exec('VACUUM')
     db.exec('ANALYZE')
-    console.log('✅ Database optimized')
   }
 
   /**
@@ -346,7 +338,6 @@ class SQLiteBrowserFallback {
   private static instance: SQLiteBrowserFallback
   
   private constructor() {
-    console.log('🌐 Running in browser environment - SQLite operations disabled')
   }
   
   public static getInstance(): SQLiteBrowserFallback {

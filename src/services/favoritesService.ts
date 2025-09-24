@@ -78,7 +78,6 @@ export class FavoritesService {
       })
 
       if (existing) {
-        console.log('食谱已收藏:', recipe.title)
         return true
       }
 
@@ -98,7 +97,6 @@ export class FavoritesService {
         recipe_nutrition: recipe.nutrition ? JSON.stringify(recipe.nutrition) : null
       })
 
-      console.log('✅ 收藏成功:', recipe.title)
       
       // 同时更新 localStorage 用于兼容性
       await this.updateLocalStorageBackup(sessionId)
@@ -124,7 +122,6 @@ export class FavoritesService {
       })
 
       if (!favorite) {
-        console.log('收藏不存在:', recipeId)
         return false
       }
 
@@ -132,7 +129,6 @@ export class FavoritesService {
       const result = await Favorite.delete(favorite.id)
       
       if (result) {
-        console.log('✅ 取消收藏成功:', recipeId)
         // 同时更新 localStorage 用于兼容性
         await this.updateLocalStorageBackup(sessionId)
         return true
@@ -205,7 +201,6 @@ export class FavoritesService {
         return
       }
 
-      console.log(`🔄 开始迁移 ${oldFavorites.length} 个收藏记录...`)
 
       let migratedCount = 0
       for (const recipe of oldFavorites) {
@@ -234,12 +229,10 @@ export class FavoritesService {
         }
       }
 
-      console.log(`✅ 迁移完成: ${migratedCount}/${oldFavorites.length}`)
 
       // 清理旧数据
       if (migratedCount > 0) {
         localStorage.removeItem('savedRecipes')
-        console.log('🧹 已清理旧的 localStorage 数据')
       }
     } catch (error) {
       console.error('迁移收藏数据失败:', error)
@@ -260,7 +253,6 @@ export class FavoritesService {
       // 清理 localStorage 备份
       localStorage.removeItem(this.STORAGE_KEY)
       
-      console.log('✅ 用户收藏已清理')
       return true
     } catch (error) {
       console.error('清理用户收藏失败:', error)

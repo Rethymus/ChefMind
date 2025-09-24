@@ -177,26 +177,8 @@ export class GLMProvider implements BaseAIProvider {
 
   async generateRecipe(params: RecipeGenerationParams): Promise<Recipe> {
     try {
-      console.log('🚀 GLM生成食谱开始，完整参数:', JSON.stringify(params, null, 2))
-      console.log('🔑 当前API密钥:', this.apiKey ? '已配置' : '未配置')
-
-      // 详细记录每个参数
-      console.log('📋 详细参数分析:')
-      console.log('- 食材:', params.ingredients)
-      console.log('- 烹饪方式:', params.cookingMethods)
-      console.log('- 厨具:', params.kitchenware)
-      console.log('- 饮食限制:', params.dietaryRestrictions)
-      console.log('- 健康目标:', params.healthGoals)
-      console.log('- 过敏原:', params.allergies)
-      console.log('- 口味偏好:', params.flavorPreferences)
-      console.log('- 辣度:', params.spiceLevel)
-      console.log('- 甜度:', params.sweetnessLevel)
-      console.log('- 份数:', params.servings)
-      console.log('- 制作时间:', params.cookingTime)
-      console.log('- 难度:', params.difficulty)
 
       const prompt = PromptBuilder.buildRecipePrompt(params)
-      console.log('📝 生成的Prompt:', prompt)
 
       const response = await callGLM(prompt, {
         temperature: 0.7,

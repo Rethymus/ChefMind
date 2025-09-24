@@ -41,11 +41,6 @@ export class QwenProvider implements BaseAIProvider {
     }
 
     try {
-      console.log('🌐 调用Qwen API:', {
-        url: this.baseURL,
-        model: this.model,
-        hasApiKey: !!this.apiKey
-      })
 
       const response = await fetch(this.baseURL, {
         method: 'POST',
@@ -77,7 +72,6 @@ export class QwenProvider implements BaseAIProvider {
       }
 
       const data = await response.json()
-      console.log('✅ Qwen API调用成功')
 
       if (!data.choices || !data.choices[0] || !data.choices[0].message) {
         console.error('❌ Qwen API响应格式错误:', data)
@@ -106,23 +100,13 @@ export class QwenProvider implements BaseAIProvider {
 
   async generateRecipe(ingredientsOrParams: string[] | RecipeGenerationParams, preferences?: UserPreferences): Promise<Recipe> {
     try {
-      console.log('🚀 Qwen生成食谱开始，参数:', JSON.stringify(ingredientsOrParams, null, 2))
 
       // 转换为标准参数格式
       const standardParams = ParamAdapter.toRecipeGenerationParams(ingredientsOrParams, preferences)
 
-      console.log('📋 转换后的标准参数:', JSON.stringify(standardParams, null, 2))
-      console.log('🔍 参数验证:')
-      console.log('- 饮食限制:', standardParams.dietaryRestrictions)
-      console.log('- 健康目标:', standardParams.healthGoals)
-      console.log('- 过敏原:', standardParams.allergies)
-      console.log('- 口味偏好:', standardParams.flavorPreferences)
-      console.log('- 辣度:', standardParams.spiceLevel)
-      console.log('- 甜度:', standardParams.sweetnessLevel)
 
       // 构建通用提示词
       const prompt = PromptBuilder.buildRecipePrompt(standardParams)
-      console.log('📝 生成的Prompt:', prompt)
 
       const response = await this.callQwen(prompt, {
         maxTokens: 2000,
@@ -132,7 +116,6 @@ export class QwenProvider implements BaseAIProvider {
       const recipeResult = this.parseJsonResponse<Partial<Recipe>>(response)
       const recipe = this.buildRecipeFromResult(recipeResult, standardParams)
 
-      console.log('✅ Qwen食谱生成成功:', recipe.title)
       return recipe
     } catch (error) {
       console.error('Qwen生成食谱失败:', error)

@@ -117,8 +117,6 @@ class AIService {
       this.currentProvider = this.providerFactory.getProvider()
       
       this.isInitialized = true
-      console.log('AI服务初始化完成，当前提供者:', this.providerFactory.getProviderName())
-      console.log('当前提供商实例:', this.currentProvider.constructor.name)
     } catch (error) {
       console.error('AI服务初始化失败:', error)
       ElMessage.error('AI服务初始化失败')
@@ -156,7 +154,6 @@ class AIService {
       // 切换提供商
       this.currentProvider = this.providerFactory.switchProvider(provider)
       this.clearCache() // 切换提供商时清理缓存
-      console.log(`已切换到AI提供商: ${provider}`)
       
       ElMessage.success(`已切换到${this.getProviderName(provider)}`)
     } catch (error) {
@@ -168,7 +165,6 @@ class AIService {
   // 食材识别分析
   async analyzeIngredient(imageFile: File): Promise<IngredientAnalysisResult> {
     if (!this.isInitialized) {
-      console.log('⏳ AI服务未初始化，正在初始化...')
       await this.init()
     }
 
@@ -200,7 +196,6 @@ class AIService {
   // 营养成分分析
   async analyzeNutrition(recipe: Recipe): Promise<NutritionAnalysisResult> {
     if (!this.isInitialized) {
-      console.log('⏳ AI服务未初始化，正在初始化...')
       await this.init()
     }
 
@@ -229,7 +224,6 @@ class AIService {
     options?: { maxTokens?: number; temperature?: number }
   ): Promise<string> {
     if (!this.isInitialized) {
-      console.log('⏳ AI服务未初始化，正在初始化...')
       await this.init()
     }
 
@@ -261,7 +255,6 @@ class AIService {
     preferences?: UserPreferences
   ): Promise<RecipeGenerationResult> {
     if (!this.isInitialized) {
-      console.log('⏳ AI服务未初始化，正在初始化...')
       await this.init()
     }
 
@@ -304,20 +297,7 @@ class AIService {
         ...params,
       }
 
-      console.log('🚀 aiService - 调用AI提供商生成食谱，完整参数:', JSON.stringify(params, null, 2))
-
-      // 验证关键参数是否正确传递
-      console.log('🔍 aiService - 参数验证:')
-      console.log('- 饮食限制:', params.dietaryRestrictions)
-      console.log('- 健康目标:', params.healthGoals)
-      console.log('- 过敏原:', params.allergies)
-      console.log('- 口味偏好:', params.flavorPreferences)
-      console.log('- 辣度:', params.spiceLevel)
-      console.log('- 甜度:', params.sweetnessLevel)
-      console.log('- 厨具:', params.kitchenware)
-      console.log('- 份数:', params.servings)
-      console.log('- 制作时间:', params.cookingTime)
-      console.log('- 难度:', params.difficulty)
+      // 调用AI提供商生成食谱
       const result = await this.currentProvider.generateRecipe(params)
 
       // 确保返回结果符合RecipeGenerationResult格式
@@ -379,7 +359,6 @@ class AIService {
     limit: number = 5
   ): Promise<PersonalizedRecommendation[]> {
     if (!this.isInitialized) {
-      console.log('⏳ AI服务未初始化，正在初始化...')
       await this.init()
     }
 
@@ -423,7 +402,6 @@ class AIService {
     estimatedTime: number
   }> {
     if (!this.isInitialized) {
-      console.log('⏳ AI服务未初始化，正在初始化...')
       await this.init()
     }
 
@@ -442,7 +420,6 @@ class AIService {
   // 烹饪助手 - 获取烹饪建议和帮助
   async getCookingAssistance(query: string, context?: RecipeContext): Promise<CookingAssistance> {
     if (!this.isInitialized) {
-      console.log('⏳ AI服务未初始化，正在初始化...')
       await this.init()
     }
 
@@ -494,7 +471,6 @@ class AIService {
     suggestions: string[]
   }> {
     if (!this.isInitialized) {
-      console.log('⏳ AI服务未初始化，正在初始化...')
       await this.init()
     }
 
@@ -522,7 +498,6 @@ class AIService {
   // 验证食材是否可食用
   async validateIngredient(ingredient: string): Promise<IngredientValidationResult> {
     if (!this.isInitialized) {
-      console.log('⏳ AI服务未初始化，正在初始化...')
       await this.init()
     }
 
@@ -546,7 +521,6 @@ class AIService {
     chatHistory: Array<{ role: string; content: string }>
   ): Promise<{ content: string; suggestions?: string[] }> {
     if (!this.isInitialized) {
-      console.log('⏳ AI服务未初始化，正在初始化...')
       await this.init()
     }
 
@@ -562,7 +536,6 @@ class AIService {
     try {
       // 分析聊天历史以提供更好的上下文理解
       const recentContext = chatHistory.slice(-5) // 只保留最近5条对话
-      console.log('Recent context length:', recentContext.length)
 
       // 基于消息内容确定回复类型
       let response = ''

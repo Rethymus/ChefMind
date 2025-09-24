@@ -17,7 +17,7 @@ export const lazyLoadDirective = {
         imageElement.addEventListener('load', () => {
           setTimeout(() => el.classList.add('loaded'), 100);
         });
-        imageElement.addEventListener('error', () => console.log('图片加载失败'));
+        imageElement.addEventListener('error', () => {});
         imageElement.src = binding.value;
       }
     }
@@ -224,10 +224,8 @@ export function registerServiceWorker(): void {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js')
         .then((registration) => {
-          console.log('SW registered: ', registration);
         })
         .catch((registrationError) => {
-          console.log('SW registration failed: ', registrationError);
         });
     });
   }

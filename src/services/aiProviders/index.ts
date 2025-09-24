@@ -31,7 +31,6 @@ class AIProviderFactory {
     }
 
     this.currentProvider = this.selectProvider(this.currentProviderName)
-    console.log(`🏭 AI提供商工厂初始化，初始提供商: ${this.currentProviderName}`)
     // Don't call async method in constructor
   }
 
@@ -50,7 +49,6 @@ class AIProviderFactory {
     try {
       // 检查是否启用模拟模式
       const enableMockMode = import.meta.env.VITE_ENABLE_MOCK_MODE === 'true'
-      console.log('🔧 Mock模式状态:', enableMockMode)
 
       if (!enableMockMode) {
         // 获取通用配置
@@ -59,13 +57,6 @@ class AIProviderFactory {
         const genericBaseUrl = import.meta.env.VITE_API_BASE_URL
         const genericModel = import.meta.env.VITE_API_MODEL
 
-        console.log('🔧 通用API配置:', {
-          hasApiKey: !!genericApiKey,
-          provider: genericProvider,
-          hasBaseUrl: !!genericBaseUrl,
-          model: genericModel,
-          apiKey: genericApiKey ? genericApiKey.substring(0, 10) + '...' : 'none'
-        })
 
         if (genericApiKey) {
           // 如果有通用API密钥，测试连接性
@@ -89,7 +80,6 @@ class AIProviderFactory {
             if (!provider) continue
 
             if (await this.testProviderConnectivity(provider.name, provider.apiKey, provider.baseUrl, provider.model)) {
-              console.log(`✅ 使用可连接的AI提供商: ${provider.name}`)
               this.currentProviderName = provider.name
               this.currentProvider = this.selectProvider(provider.name, provider.apiKey, provider.baseUrl, provider.model)
               return
@@ -102,7 +92,6 @@ class AIProviderFactory {
         if (configuredProviders.length > 0) {
           const preferredProvider = this.findPreferredProvider(configuredProviders)
           if (preferredProvider) {
-            console.log(`✅ 使用已配置的AI提供商: ${preferredProvider}`)
             this.currentProviderName = preferredProvider
             this.currentProvider = this.selectProvider(preferredProvider)
             return
@@ -111,7 +100,6 @@ class AIProviderFactory {
       }
 
       // 如果所有真实提供商都不可用，使用mock
-      console.log('⚠️ 使用模拟模式')
       this.currentProviderName = 'mock'
       this.currentProvider = this.selectProvider('mock')
     } catch (error) {
@@ -123,30 +111,15 @@ class AIProviderFactory {
 
   private async testProviderConnectivity(providerName: string, apiKey: string, baseUrl?: string, model?: string): Promise<boolean> {
     try {
-      console.log(`🧪 开始测试 ${providerName} 连接性...`)
-      console.log(`🧪 配置参数:`, {
-        providerName,
-        hasApiKey: !!apiKey,
-        baseUrl,
-        model
-      })
 
       const provider = this.selectProvider(providerName, apiKey, baseUrl, model)
 
       // 简单的连接测试 - 发送一个小的测试请求
       const testPrompt = '请回复"连接成功"'
-      console.log(`🧪 发送测试请求...`)
       await provider.generateRecipe(['test'])
 
-      console.log(`✅ ${providerName} 连接测试成功`)
       return true
     } catch (error) {
-      console.log(`❌ ${providerName} 连接测试失败:`, error)
-      console.log(`❌ 错误详情:`, {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      })
       return false
     }
   }
@@ -294,7 +267,6 @@ const aiProviderFactory = AIProviderFactory.getInstance()
 export const aiProvider = new Proxy({} as BaseAIProvider, {
   get: (target, prop) => {
     if (!aiProviderFactory['isInitialized']) {
-      console.warn('⚠️ AI提供商工厂未初始化，正在初始化...')
       aiProviderFactory.initialize().catch(error => {
         console.error('AI提供商工厂初始化失败:', error)
       })
