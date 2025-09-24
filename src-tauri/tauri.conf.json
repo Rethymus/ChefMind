@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2.0.0",
   "productName": "chefmind",
   "version": "3.0.0",
-  "identifier": "com.chefmind.app",
+  "identifier": "com.chefmind.tauri",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
@@ -18,8 +18,7 @@
     "longDescription": "ChefMind 智食谱 - AI驱动的智能菜谱生成平台",
     "shortDescription": "智能厨房助手，创造美味料理",
     "icon": [
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
+      "icons/icon.png",
       "icons/icon.icns",
       "icons/icon.ico"
     ]

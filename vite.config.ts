@@ -31,7 +31,7 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `@use "@/styles/variables.scss" as *;`
+        additionalData: `@use \"@/styles/variables.scss\" as *;`
       }
     }
   },
@@ -52,13 +52,25 @@ export default defineConfig({
         chunkFileNames: 'js/[name]-[hash].js',
         entryFileNames: 'js/[name]-[hash].js',
         assetFileNames: '[ext]/[name]-[hash].[ext]',
-        manualChunks: {
-          vendor: ['vue', 'vue-router', 'pinia'],
-          elementPlus: ['element-plus']
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('element-plus')) {
+              return 'elementPlus';
+            }
+            return 'vendor';
+          }
+          if (id.includes('services/aiService') || 
+              id.includes('services/glmService') || 
+              id.includes('services/aiConfig')) {
+            return 'aiServices';
+          }
+          if (id.includes('services/database')) {
+            return 'database';
+          }
         }
       }
     },
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1200  // Increased to accommodate large bundles; consider further optimization if needed
   },
   server: {
     host: '0.0.0.0',
