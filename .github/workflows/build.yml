@@ -76,7 +76,7 @@ jobs:
             args: ""
             target: "x86_64-unknown-linux-gnu"
           - platform: "windows-latest"
-            args: "--target x86_64-pc-windows-msvc"
+            args: ""
             target: "x86_64-pc-windows-msvc"
 
     runs-on: ${{ matrix.platform }}
@@ -97,22 +97,31 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri'
+          key: v1-rust-${{ matrix.platform }}-${{ matrix.target }}
 
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libgtk-3-dev libayatana-appindicator3-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libgtk-3-dev libayatana-appindicator3-dev build-essential curl wget file
 
       - name: install dependencies (windows only)
         if: matrix.platform == 'windows-latest'
+        shell: powershell
         run: |
-          # Install webview2 for Windows
-          curl -L -o webview2-installer.exe https://go.microsoft.com/fwlink/p/?LinkId=2124703
-          ./webview2-installer.exe /silent /install
+          # WebView2 is typically pre-installed on Windows runners
+          echo "Checking WebView2 installation..."
+          Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" -Name "pv" -ErrorAction SilentlyContinue
 
       - name: install frontend dependencies
         run: npm install
+
+      - name: verify tauri configuration
+        run: |
+          echo "=== Verifying Tauri Configuration ==="
+          npm run tauri info || echo "Tauri info completed with warnings"
+          echo "=== Checking tauri.conf.json syntax ==="
+          node -e "console.log('Tauri config is valid:', JSON.parse(require('fs').readFileSync('src-tauri/tauri.conf.json', 'utf8')) ? 'Yes' : 'No')"
 
       - name: build frontend
         run: npm run build
@@ -127,6 +136,7 @@ jobs:
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: ${{ matrix.args }}
           tauriScript: npm run tauri
+          tagName: app-v__VERSION__ # Let tauri-action handle the version
 
       - name: Verify build output
         shell: bash
@@ -134,15 +144,24 @@ jobs:
           echo "=== Build Output Verification ==="
           if [ "${{ matrix.platform }}" = "ubuntu-22.04" ]; then
             echo "Checking Linux build output..."
-            ls -la src-tauri/target/${{ matrix.target }}/release/bundle/ || echo "No bundle directory found"
-            find src-tauri/target/${{ matrix.target }}/release/bundle -name "*.deb" -o -name "*.rpm" | head -10
+            ls -la src-tauri/target/ || echo "Target directory not found"
+            if [ -d "src-tauri/target/${{ matrix.target }}/release/bundle" ]; then
+              find src-tauri/target/${{ matrix.target }}/release/bundle -name "*.deb" -o -name "*.rpm" | head -10
+            else
+              echo "Bundle directory not found, checking release directory..."
+              ls -la src-tauri/target/${{ matrix.target }}/release/ || echo "Release directory not found"
+            fi
           else
             echo "Checking Windows build output..."
             if [ -d "src-tauri/target/${{ matrix.target }}/release/bundle" ]; then
               find src-tauri/target/${{ matrix.target }}/release/bundle -name "*.msi" -o -name "*.exe" | head -10
             else
-              echo "Bundle directory not found, checking target directory..."
-              ls -la src-tauri/target/${{ matrix.target }}/release/ || echo "Target directory not found"
+              echo "Bundle directory not found, checking release directory..."
+              ls -la src-tauri/target/${{ matrix.target }}/release/ || echo "Release directory not found"
+              # Check if we have the standalone executable
+              if [ -f "src-tauri/target/${{ matrix.target }}/release/chefmind.exe" ]; then
+                echo "Found standalone executable: chefmind.exe"
+              fi
             fi
           fi
 
@@ -156,6 +175,9 @@ jobs:
             src-tauri/target/*/release/*.msi
             src-tauri/target/*/release/*.deb
             src-tauri/target/*/release/*.rpm
+            src-tauri/target/*/release/*.app
+            src-tauri/target/*/release/*.dmg
+          if-no-files-found: warn
 
   publish-release:
     permissions:

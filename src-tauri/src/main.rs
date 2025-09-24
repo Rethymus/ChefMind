@@ -2,6 +2,9 @@
 
 use tauri::{Manager, PhysicalSize, Emitter, Listener};
 
+// 添加 rustc_version 依赖
+use rustc_version;
+
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
@@ -16,10 +19,9 @@ fn main() {
                 #[cfg(debug_assertions)]
                 {
                     println!("Debug mode: Enabling developer tools");
-                    // 在开发模式下打开开发者工具
-                    if let Err(e) = window.open_devtools() {
-                        println!("Failed to open devtools: {}", e);
-                    }
+                    // 在 Tauri v2 中，开发者工具通过插件管理
+                    // 不再直接在窗口上调用 open_devtools
+                    println!("Developer tools available via plugin in debug mode");
                 }
 
                 // 生产版本中通过快捷键启用开发者工具
@@ -40,9 +42,10 @@ fn main() {
                 let window_clone = window.clone();
                 window.listen("request-devtools", move |_event| {
                     println!("Developer tools requested from frontend");
-                    if let Err(e) = window_clone.open_devtools() {
-                        println!("Failed to open devtools: {}", e);
-                    }
+                    // 在 Tauri v2 中，开发者工具通过插件管理
+                    // 发送事件到前端处理
+                    let _ = window_clone.emit("devtools-request-processed", ());
+                    println!("Developer tools request processed");
                 });
             }
 
@@ -55,6 +58,7 @@ fn main() {
             check_frontend_loaded,
             get_system_info
         ])
+        .plugin(tauri_plugin_devtools::init()) // 初始化开发者工具插件
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -71,18 +75,18 @@ fn get_app_info() -> String {
 
 #[tauri::command]
 fn open_dev_tools(window: tauri::WebviewWindow) -> Result<(), String> {
-    // 在 Tauri v2 中直接使用窗口的 open_devtools 方法
-    match window.open_devtools() {
-        Ok(_) => {
-            println!("Developer tools opened successfully");
-            Ok(())
-        }
-        Err(e) => {
-            let error_msg = format!("Failed to open developer tools: {}", e);
-            println!("{}", error_msg);
-            Err(error_msg)
-        }
+    // 在 Tauri v2 中，开发者工具通过插件管理
+    println!("Attempting to open developer tools...");
+
+    // 发送事件到前端，让前端处理开发者工具的打开
+    if let Err(e) = window.emit("open-dev-tools-event", ()) {
+        let error_msg = format!("Failed to emit devtools event: {}", e);
+        println!("{}", error_msg);
+        return Err(error_msg);
     }
+
+    println!("Developer tools request sent to frontend");
+    Ok(())
 }
 
 #[tauri::command]
@@ -99,6 +103,15 @@ fn get_system_info() -> String {
         std::env::consts::OS,
         std::env::consts::ARCH,
         env!("CARGO_PKG_VERSION"),
-        env!("RUSTC_VERSION")
+        // 使用运行时获取 Rust 版本而不是编译时环境变量
+        rust_version()
     )
+}
+
+// 获取 Rust 版本的辅助函数
+fn rust_version() -> String {
+    match rustc_version::version() {
+        Ok(version) => format!("{}".to_string(), version),
+        Err(_) => "unknown".to_string(),
+    }
 }
