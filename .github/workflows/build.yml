@@ -90,11 +90,26 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Clean Rust cache and build artifacts
+        shell: bash
+        run: |
+          echo "=== Cleaning Rust cache and build artifacts ==="
+          cd src-tauri
+          if [ -d "target" ]; then
+            echo "Cleaning target directory"
+            cargo clean
+          fi
+          # Remove any cached configuration
+          if [ -f "Cargo.lock" ]; then
+            echo "Removing Cargo.lock to ensure fresh dependencies"
+            rm Cargo.lock
+          fi
+
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri'
-          key: v1-rust-${{ matrix.platform }}-${{ matrix.target }}
+          key: v1-rust-${{ matrix.platform }}-${{ matrix.target }}-fresh-${{ github.run_id }}
 
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
@@ -125,6 +140,8 @@ jobs:
           npm run tauri info || echo "Tauri info completed with warnings"
           echo "=== Checking tauri.conf.json syntax ==="
           node -e "console.log('Tauri config is valid:', JSON.parse(require('fs').readFileSync('src-tauri/tauri.conf.json', 'utf8')) ? 'Yes' : 'No')"
+          echo "=== Verifying frontendDist configuration ==="
+          node -e "const config = JSON.parse(require('fs').readFileSync('src-tauri/tauri.conf.json', 'utf8')); console.log('frontendDist value:', config.build.frontendDist); if (config.build.frontendDist !== 'dist') { console.log('ERROR: frontendDist should be \"dist\" but is', config.build.frontendDist); process.exit(1); }"
           echo "=== Checking Rust compilation ==="
           cargo check --manifest-path src-tauri/Cargo.toml || echo "Rust check completed with warnings"
 
@@ -156,52 +173,32 @@ jobs:
             exit 1
           fi
 
-      - name: Create frontend dist directory for Tauri (Windows)
-        if: matrix.platform == 'windows-latest'
-        shell: powershell
-        run: |
-          Write-Host "=== Creating frontend dist directory for Tauri (Windows) ==="
-          Write-Host "Current directory: $(Get-Location)"
-          if (Test-Path "dist") {
-            Write-Host "dist directory exists, creating src-tauri\dist directory"
-            New-Item -Path "src-tauri\dist" -ItemType Directory -Force | Out-Null
-            Write-Host "Copying dist contents to src-tauri\dist"
-            Copy-Item -Path "dist\*" -Destination "src-tauri\dist" -Recurse -Force
-            Write-Host "Copy completed"
-            if (Test-Path "src-tauri\dist\index.html") {
-              Write-Host "Frontend assets successfully copied"
-              $fileSize = (Get-Item "src-tauri\dist\index.html").Length
-              Write-Host "index.html size: $fileSize bytes"
-            } else {
-              Write-Host "ERROR: Failed to copy frontend assets"
-              exit 1
-            }
-          } else {
-            Write-Host "ERROR: dist directory not found"
-            exit 1
-          }
-
-      - name: Create frontend dist directory for Tauri (Linux)
-        if: matrix.platform == 'ubuntu-22.04'
+      - name: Ensure frontend assets are available for Tauri
         shell: bash
         run: |
-          echo "=== Creating frontend dist directory for Tauri (Linux) ==="
+          echo "=== Ensuring frontend assets are available for Tauri ==="
           echo "Current directory: $(pwd)"
-          if [ -d "dist" ]; then
-            echo "dist directory exists, creating src-tauri/dist directory"
-            mkdir -p src-tauri/dist
-            echo "Copying dist contents to src-tauri/dist"
-            cp -r dist/* src-tauri/dist/
-            echo "Copy completed"
-            if [ -f "src-tauri/dist/index.html" ]; then
-              echo "Frontend assets successfully copied"
-              echo "index.html size: $(stat -c%s src-tauri/dist/index.html) bytes"
-            else
-              echo "ERROR: Failed to copy frontend assets"
-              exit 1
-            fi
+
+          # Remove any existing src-tauri/dist directory to ensure clean state
+          if [ -d "src-tauri/dist" ]; then
+            echo "Removing existing src-tauri/dist directory"
+            rm -rf src-tauri/dist
+          fi
+
+          # Create fresh src-tauri/dist directory
+          echo "Creating src-tauri/dist directory"
+          mkdir -p src-tauri/dist
+
+          # Copy frontend assets to src-tauri/dist
+          echo "Copying frontend assets to src-tauri/dist"
+          cp -r dist/* src-tauri/dist/
+
+          # Verify copy was successful
+          if [ -f "src-tauri/dist/index.html" ]; then
+            echo "Frontend assets successfully copied to src-tauri/dist"
+            echo "index.html size: $(stat -c%s src-tauri/dist/index.html) bytes"
           else
-            echo "ERROR: dist directory not found"
+            echo "ERROR: Failed to copy frontend assets to src-tauri/dist"
             exit 1
           fi
 
