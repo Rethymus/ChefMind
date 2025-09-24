@@ -37,8 +37,7 @@
         "resizable": true,
         "decorations": true,
         "transparent": false,
-        "visible": true,
-        "fileDropEnabled": false
+        "visible": true
       }
     ]
   }
