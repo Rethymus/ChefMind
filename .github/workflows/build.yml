@@ -72,7 +72,32 @@ jobs:
                   repo: context.repo.repo,
                   tag_name: tag,
                   name: `ChefMind Desktop App v${process.env.PACKAGE_VERSION}`,
-                  body: '## ChefMind Desktop App v${process.env.PACKAGE_VERSION}\n\n### Installation\n\n**Windows:**\n- Download and run the `.msi` installer\n- The app will be installed in Program Files\n- Developer tools can be accessed with Ctrl+Shift+I or F12\n\n**Linux:**\n- Download the `.deb` package for Debian/Ubuntu\n- Download the `.rpm` package for Fedora/CentOS\n- Developer tools can be accessed with Ctrl+Shift+I or F12\n\n### Features\n- AI-powered recipe generation\n- Smart kitchen assistant\n- Enterprise-grade data storage\n- Built-in developer tools for debugging\n\n### Troubleshooting\nIf you encounter any issues:\n1. Press F12 or Ctrl+Shift+I to open developer tools\n2. Check the console for error messages\n3. Verify that all frontend resources loaded correctly',
+                  body: |
+                    ## ChefMind Desktop App v${{ env.PACKAGE_VERSION }}
+
+                    ### Installation
+
+                    **Windows:**
+                    - Download and run the `.msi` installer
+                    - The app will be installed in Program Files
+                    - Developer tools can be accessed with Ctrl+Shift+I or F12
+
+                    **Linux:**
+                    - Download the `.deb` package for Debian/Ubuntu
+                    - Download the `.rpm` package for Fedora/CentOS
+                    - Developer tools can be accessed with Ctrl+Shift+I or F12
+
+                    ### Features
+                    - AI-powered recipe generation
+                    - Smart kitchen assistant
+                    - Enterprise-grade data storage
+                    - Built-in developer tools for debugging
+
+                    ### Troubleshooting
+                    If you encounter any issues:
+                    1. Press F12 or Ctrl+Shift+I to open developer tools
+                    2. Check the console for error messages
+                    3. Verify that all frontend resources loaded correctly
                   draft: true,
                   prerelease: false
                 });
