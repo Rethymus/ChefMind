@@ -111,7 +111,7 @@ fn get_system_info() -> String {
 // 获取 Rust 版本的辅助函数
 fn rust_version() -> String {
     match rustc_version::version() {
-        Ok(version) => format!("{}".to_string(), version),
+        Ok(version) => format!("{}", version),
         Err(_) => "unknown".to_string(),
     }
 }

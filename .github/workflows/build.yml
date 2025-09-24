@@ -103,7 +103,13 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libgtk-3-dev libayatana-appindicator3-dev build-essential curl wget file
+          sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev patchelf libssl-dev libgtk-3-dev build-essential curl wget file
+          # Use libayatana-appindicator3-dev instead of libappindicator3-dev to avoid conflicts
+          sudo apt-get install -y libayatana-appindicator3-dev
+          # Remove conflicting packages if they exist
+          sudo apt-get remove -y libappindicator3-dev || true
+          sudo apt-get autoremove -y
+          sudo apt-get install -f
 
       - name: install dependencies (windows only)
         if: matrix.platform == 'windows-latest'
@@ -122,6 +128,8 @@ jobs:
           npm run tauri info || echo "Tauri info completed with warnings"
           echo "=== Checking tauri.conf.json syntax ==="
           node -e "console.log('Tauri config is valid:', JSON.parse(require('fs').readFileSync('src-tauri/tauri.conf.json', 'utf8')) ? 'Yes' : 'No')"
+          echo "=== Checking Rust compilation ==="
+          cargo check --manifest-path src-tauri/Cargo.toml || echo "Rust check completed with warnings"
 
       - name: build frontend
         run: npm run build
@@ -137,6 +145,7 @@ jobs:
           args: ${{ matrix.args }}
           tauriScript: npm run tauri
           tagName: app-v__VERSION__ # Let tauri-action handle the version
+          includeDebug: false # Only build release mode
 
       - name: Verify build output
         shell: bash
