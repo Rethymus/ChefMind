@@ -1,140 +1,86 @@
-name: "publish"
+name: "Build and Release Tauri App"
 
-on: workflow_dispatch
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'draft'
+        type: choice
+        options:
+          - draft
+          - release
+          - prerelease
 
 # `tauri-action` can also upload app bundles to an existing GitHub release.
 # This workflow uses different actions to create and publish the release.
 # `tauri-action` will only build and upload the app bundles to the specified release.
 
 jobs:
-  create-release:
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    outputs:
-      release_id: ${{ steps.create-release.outputs.result }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
-      - name: get version
-        run: echo "PACKAGE_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
-
-      - name: create release
-        id: create-release
-        uses: actions/github-script@v6
-        with:
-          script: |
-            // Check if release already exists
-            const tag = `app-v${process.env.PACKAGE_VERSION}`;
-            try {
-              const { data: existingRelease } = await github.rest.repos.getReleaseByTag({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                tag: tag
-              });
-
-              // If release exists, use its ID
-              console.log(`Release ${tag} already exists, using existing release`);
-              return existingRelease.id;
-            } catch (error) {
-              // Release doesn't exist, create new one
-              if (error.status === 404) {
-                const { data } = await github.rest.repos.createRelease({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  tag_name: tag,
-                  name: `ChefMind Desktop App v${process.env.PACKAGE_VERSION}`,
-                  body: 'Take a look at the assets to download and install this app.',
-                  draft: true,
-                  prerelease: false
-                });
-                console.log(`Created new release ${tag}`);
-                return data.id;
-              }
-              throw error;
-            }
-
-  build-tauri:
-    needs: create-release
-    permissions:
-      contents: write
+  build-and-test:
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: "ubuntu-22.04"
-            target: "x86_64-unknown-linux-gnu"
-            args: ""
-          - platform: "windows-latest"
-            target: "x86_64-pc-windows-msvc"
-            args: ""
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundle_targets: deb
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundle_targets: msi,nsis
 
-    runs-on: ${{ matrix.platform }}
-    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: setup node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: '20'
+          cache: 'npm'
 
-      - name: install Rust stable
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
 
-      - name: Clean Rust cache and build artifacts
-        shell: bash
-        run: |
-          echo "=== Cleaning Rust cache and build artifacts ==="
-          cd src-tauri
-          if [ -d "target" ]; then
-            echo "Cleaning target directory"
-            cargo clean
-          fi
-          # Remove any cached configuration
-          if [ -f "Cargo.lock" ]; then
-            echo "Removing Cargo.lock to ensure fresh dependencies"
-            rm Cargo.lock
-          fi
-
-      - name: Rust cache
+      - name: Rust Cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri'
-          key: v1-rust-${{ matrix.platform }}-${{ matrix.target }}-fresh-${{ github.run_id }}
+          key: ${{ matrix.os }}-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04'
+      - name: Install system dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev patchelf libssl-dev libgtk-3-dev build-essential curl wget file
-          # Use libayatana-appindicator3-dev instead of libappindicator3-dev to avoid conflicts
-          sudo apt-get install -y libayatana-appindicator3-dev
-          # Remove conflicting packages if they exist
-          sudo apt-get remove -y libappindicator3-dev || true
-          sudo apt-get autoremove -y
-          sudo apt-get install -f
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libgtk-3-dev \
+            build-essential \
+            curl \
+            wget \
+            file
 
-      - name: install dependencies (windows only)
-        if: matrix.platform == 'windows-latest'
+      - name: Install system dependencies (Windows)
+        if: matrix.os == 'windows-latest'
         shell: powershell
         run: |
-          # WebView2 is typically pre-installed on Windows runners
-          echo "Checking WebView2 installation..."
-          Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" -Name "pv" -ErrorAction SilentlyContinue
+          echo "Installing Windows dependencies..."
+          # WebView2 is pre-installed on Windows runners
 
-      - name: install frontend dependencies
-        run: npm install
+      - name: Install frontend dependencies
+        run: npm ci
 
-      - name: verify tauri configuration
+      - name: Verify Tauri configuration
         run: |
           echo "=== Verifying Tauri Configuration ==="
           npm run tauri info || echo "Tauri info completed with warnings"
@@ -142,133 +88,106 @@ jobs:
           node -e "console.log('Tauri config is valid:', JSON.parse(require('fs').readFileSync('src-tauri/tauri.conf.json', 'utf8')) ? 'Yes' : 'No')"
           echo "=== Verifying frontendDist configuration ==="
           node -e "const config = JSON.parse(require('fs').readFileSync('src-tauri/tauri.conf.json', 'utf8')); console.log('frontendDist value:', config.build.frontendDist); if (config.build.frontendDist !== '../dist') { console.log('ERROR: frontendDist should be \"../dist\" but is', config.build.frontendDist); process.exit(1); }"
-          echo "=== Rust compilation will be checked after frontend build ==="
 
-      - name: build frontend
-        run: npm run build
-
-      - name: Verify frontend build output
-        shell: bash
+      - name: Build frontend
         run: |
-          echo "=== Verifying Frontend Build Output ==="
-          echo "Current directory: $(pwd)"
-          echo "Contents of current directory:"
-          ls -la
-          echo "=== Checking dist directory ==="
-          if [ -d "dist" ]; then
-            echo "dist directory exists"
-            echo "dist directory contents:"
-            ls -la dist/
-            echo "=== Checking dist/index.html ==="
-            if [ -f "dist/index.html" ]; then
-              echo "dist/index.html exists and is readable"
-              echo "File size: $(stat -c%s dist/index.html) bytes"
-            else
-              echo "ERROR: dist/index.html not found"
-              exit 1
-            fi
+          echo "=== Building Frontend ==="
+          npm run build
+          # Verify frontend build
+          if [ ! -f "dist/index.html" ]; then
+            echo "ERROR: Frontend build failed - dist/index.html not found"
+            exit 1
+          fi
+          echo "Frontend build successful"
+          echo "=== Frontend build output ==="
+          ls -la dist/ | head -10
+
+      - name: Verify frontend assets
+        run: |
+          echo "=== Verifying Frontend Assets ==="
+          if [ -f "dist/index.html" ]; then
+            echo "✓ index.html exists ($(stat -c%s dist/index.html) bytes)"
           else
-            echo "ERROR: dist directory not found"
+            echo "✗ index.html missing"
+            exit 1
+          fi
+          if [ -d "dist/assets" ]; then
+            echo "✓ assets directory exists"
+            echo "Asset count: $(ls dist/assets/ | wc -l)"
+          else
+            echo "✗ assets directory missing"
             exit 1
           fi
 
-      - name: Verify frontend build output and check Rust compilation
-        shell: bash
-        run: |
-          echo "=== Verifying Frontend Build Output ==="
-          echo "Current working directory: $(pwd)"
-          echo "=== Checking if dist directory exists at project root ==="
-          if [ -d "dist" ]; then
-            echo "dist directory exists at project root"
-            echo "dist directory contents:"
-            ls -la dist/ | head -5
-            if [ -f "dist/index.html" ]; then
-              echo "Frontend assets are available at project root/dist"
-              echo "index.html size: $(stat -c%s dist/index.html) bytes"
-            else
-              echo "ERROR: dist/index.html not found"
-              exit 1
-            fi
-          else
-            echo "ERROR: dist directory not found at project root"
-            exit 1
-          fi
-          echo "=== Checking Rust compilation with frontend assets present ==="
-          cd src-tauri
-          cargo check || echo "Rust check completed with warnings"
-
-      - uses: tauri-apps/tauri-action@v0
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0.5.23
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
-          releaseId: ${{ needs.create-release.outputs.release_id }}
-          args: ${{ matrix.args }} --config src-tauri/tauri.conf.json --target ${{ matrix.target }}
+          tagName: v__VERSION__
+          releaseName: 'ChefMind v__VERSION__'
+          releaseBody: 'ChefMind 智食谱 - AI驱动的智能菜谱生成平台'
+          releaseDraft: ${{ github.event.inputs.release_type == 'draft' }}
+          prerelease: ${{ github.event.inputs.release_type == 'prerelease' }}
+          args: --target ${{ matrix.target }}
           tauriScript: npm run tauri
-          tagName: app-v__VERSION__
-          includeDebug: false
 
-  publish-release:
+      - name: Verify build artifacts
+        run: |
+          echo "=== Verifying Build Artifacts ==="
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            if [ -d "src-tauri/target/${{ matrix.target }}/release/bundle" ]; then
+              echo "✓ Bundle directory exists"
+              find src-tauri/target/${{ matrix.target }}/release/bundle -name "*.msi" -o -name "*.nsis" | head -5
+            else
+              echo "✗ Bundle directory missing"
+              exit 1
+            fi
+          elif [ "${{ matrix.os }}" = "ubuntu-22.04" ]; then
+            if [ -d "src-tauri/target/${{ matrix.target }}/release/bundle" ]; then
+              echo "✓ Bundle directory exists"
+              find src-tauri/target/${{ matrix.target }}/release/bundle -name "*.deb" | head -5
+            else
+              echo "✗ Bundle directory missing"
+              exit 1
+            fi
+          fi
+
+  create-release:
+    needs: build-and-test
+    runs-on: ubuntu-latest
     permissions:
       contents: write
-    runs-on: ubuntu-latest
-    needs: [create-release, build-tauri]
 
     steps:
-      - name: publish release
-        id: publish-release
-        uses: actions/github-script@v6
-        env:
-          release_id: ${{ needs.create-release.outputs.release_id }}
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          script: |
-            const release_id = process.env.release_id;
+          draft: ${{ github.event.inputs.release_type == 'draft' }}
+          prerelease: ${{ github.event.inputs.release_type == 'prerelease' }}
+          generate_release_notes: true
+          files: |
+            src-tauri/target/*/release/bundle/**/*.msi
+            src-tauri/target/*/release/bundle/**/*.nsis
+            src-tauri/target/*/release/bundle/**/*.deb
+            src-tauri/target/*/release/bundle/**/*.rpm
+          body: |
+            ## ChefMind 智食谱 v__VERSION__
 
-            // Get current release information
-            const { data: release } = await github.rest.repos.getRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: release_id
-            });
+            AI驱动的智能菜谱生成平台，配备企业级数据存储和性能监控架构。
 
-            console.log(`Publishing release: ${release.name}`);
-            console.log(`Current asset count: ${release.assets.length}`);
+            ### 安装说明
+            - **Windows**: 下载 `.msi` 或 `.nsis` 安装包
+            - **Linux**: 下载 `.deb` 安装包
 
-            // Clean up duplicate assets if any exist
-            if (release.assets.length > 0) {
-              console.log('Cleaning up existing assets...');
-              for (const asset of release.assets) {
-                try {
-                  await github.rest.repos.deleteReleaseAsset({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    asset_id: asset.id
-                  });
-                  console.log(`Deleted asset: ${asset.name}`);
-                } catch (error) {
-                  console.log(`Failed to delete asset ${asset.name}: ${error.message}`);
-                }
-              }
-            }
+            ### 开发者工具
+            程序内置开发者工具，可以通过以下方式打开：
+            1. 使用快捷键 `F12` 或 `Ctrl+Shift+I`
+            2. 在浏览器控制台中执行：`window.__TAURI__.window.getCurrent().openDevtools()`
 
-            // Update release to publish it
-            const { data: updatedRelease } = await github.rest.repos.updateRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: release_id,
-              draft: false,
-              prerelease: false
-            });
-
-            console.log(`Release published successfully: ${updatedRelease.html_url}`);
-            console.log(`Final asset count: ${updatedRelease.assets.length}`);
-
-            return updatedRelease.html_url;
-
-      - name: display release info
-        run: |
-          echo "=== Release Information ==="
-          echo "Release URL: ${{ steps.publish-release.outputs.result }}"
-          echo "Release ID: ${{ needs.create-release.outputs.release_id }}"
-          echo "Build status: completed successfully"
+            ### 系统要求
+            - Windows 10+ 或 Linux (Ubuntu 20.04+)
+            - 至少 100MB 可用空间
+            - 网络连接（AI功能需要）

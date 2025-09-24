@@ -19,10 +19,7 @@
     "targets": [
       "msi",
       "nsis",
-      "deb",
-      "rpm",
-      "app",
-      "dmg"
+      "deb"
     ],
     "category": "Productivity",
     "copyright": "Copyright © 2025 ChefMind Team",
@@ -39,7 +36,8 @@
       "timestampUrl": "",
       "nsis": {
         "displayLanguageSelector": true,
-        "languages": ["English", "SimpChinese"]
+        "languages": ["English", "SimpChinese"],
+        "installMode": "both"
       }
     },
     "linux": {
@@ -47,7 +45,13 @@
         "bundleMediaFramework": true
       },
       "deb": {
-        "depends": ["libwebkit2gtk-4.1-dev", "libayatana-appindicator3-dev", "librsvg2-dev"]
+        "depends": [
+          "libwebkit2gtk-4.1-dev",
+          "libayatana-appindicator3-dev",
+          "librsvg2-dev",
+          "libgtk-3-dev",
+          "libssl-dev"
+        ]
       }
     }
   },
