@@ -3,15 +3,24 @@ let invoke: any = null
 
 // 开发者工具控制
 export const devTools = {
-  // 打开/关闭开发者工具
+  // 打开/关闭开发者工具 (Tauri v2 中需要使用其他方法)
   toggle: async () => {
     try {
-      if (!invoke && typeof window !== 'undefined' && window.__TAURI__) {
-        const tauri = await import('@tauri-apps/api/tauri')
-        invoke = tauri.invoke
-      }
-      if (invoke) {
-        await invoke('toggle_devtools')
+      // 在Tauri v2中，开发者工具的打开方式不同
+      // 这里提供一个备用方案，使用浏览器原生开发者工具
+      if (typeof window !== 'undefined' && window.__TAURI__) {
+        // Tauri环境中，可以尝试使用快捷键或者通过系统命令打开
+        console.log('Dev tools toggle requested. Use F12 or Ctrl+Shift+I in Tauri v2.')
+      } else {
+        // 浏览器环境中，尝试打开开发者工具
+        const event = new KeyboardEvent('keydown', {
+          key: 'F12',
+          ctrlKey: false,
+          shiftKey: false,
+          altKey: false,
+          metaKey: false
+        })
+        document.dispatchEvent(event)
       }
     } catch (error) {
       console.error('Failed to toggle devtools:', error)
