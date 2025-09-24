@@ -157,25 +157,98 @@ jobs:
       - name: build frontend
         run: npm run build
 
-      - name: Copy frontend build to src-tauri directory
+      - name: Verify frontend build output
         shell: bash
         run: |
-          echo "=== Copying frontend build to Tauri directory ==="
+          echo "=== Verifying Frontend Build Output ==="
           echo "Current directory: $(pwd)"
-          echo "Copying dist/ to src-tauri/dist/"
-          cp -r dist/ src-tauri/
-          echo "Verifying copy:"
-          ls -la src-tauri/dist/
-          echo "Checking src-tauri/dist/index.html:"
-          if [ -f "src-tauri/dist/index.html" ]; then
-            echo "Frontend assets successfully copied to src-tauri/dist/"
-            head -5 src-tauri/dist/index.html
+          echo "Contents of current directory:"
+          ls -la
+          echo "=== Checking dist directory ==="
+          if [ -d "dist" ]; then
+            echo "dist directory exists"
+            echo "dist directory contents:"
+            ls -la dist/
+            echo "=== Checking dist/index.html ==="
+            if [ -f "dist/index.html" ]; then
+              echo "dist/index.html exists and is readable"
+              echo "File size: $(stat -c%s dist/index.html) bytes"
+            else
+              echo "ERROR: dist/index.html not found"
+              exit 1
+            fi
           else
-            echo "ERROR: Failed to copy frontend assets"
+            echo "ERROR: dist directory not found"
             exit 1
           fi
 
-      - name: build tauri app
+      - name: Create frontend dist directory for Tauri (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: powershell
+        run: |
+          Write-Host "=== Creating frontend dist directory for Tauri (Windows) ==="
+          Write-Host "Current directory: $(Get-Location)"
+          if (Test-Path "dist") {
+            Write-Host "dist directory exists, creating src-tauri\dist directory"
+            New-Item -Path "src-tauri\dist" -ItemType Directory -Force | Out-Null
+            Write-Host "Copying dist contents to src-tauri\dist"
+            Copy-Item -Path "dist\*" -Destination "src-tauri\dist" -Recurse -Force
+            Write-Host "Copy completed"
+            if (Test-Path "src-tauri\dist\index.html") {
+              Write-Host "Frontend assets successfully copied"
+              $fileSize = (Get-Item "src-tauri\dist\index.html").Length
+              Write-Host "index.html size: $fileSize bytes"
+            } else {
+              Write-Host "ERROR: Failed to copy frontend assets"
+              exit 1
+            }
+          } else {
+            Write-Host "ERROR: dist directory not found"
+            exit 1
+          }
+
+      - name: Create frontend dist directory for Tauri (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        shell: bash
+        run: |
+          echo "=== Creating frontend dist directory for Tauri (Linux) ==="
+          echo "Current directory: $(pwd)"
+          if [ -d "dist" ]; then
+            echo "dist directory exists, creating src-tauri/dist directory"
+            mkdir -p src-tauri/dist
+            echo "Copying dist contents to src-tauri/dist"
+            cp -r dist/* src-tauri/dist/
+            echo "Copy completed"
+            if [ -f "src-tauri/dist/index.html" ]; then
+              echo "Frontend assets successfully copied"
+              echo "index.html size: $(stat -c%s src-tauri/dist/index.html) bytes"
+            else
+              echo "ERROR: Failed to copy frontend assets"
+              exit 1
+            fi
+          else
+            echo "ERROR: dist directory not found"
+            exit 1
+          fi
+
+      - name: Verify tauri configuration content
+        shell: bash
+        run: |
+          echo "=== Verifying tauri.conf.json content ==="
+          echo "Current working directory: $(pwd)"
+          echo "tauri.conf.json content:"
+          cat src-tauri/tauri.conf.json
+          echo "=== Extracting frontendDist value ==="
+          node -e "const config = require('./src-tauri/tauri.conf.json'); console.log('frontendDist:', JSON.stringify(config.build.frontendDist));"
+          echo "=== Checking if dist directory exists in src-tauri ==="
+          if [ -d "src-tauri/dist" ]; then
+            echo "src-tauri/dist exists"
+            ls -la src-tauri/dist/ | head -5
+          else
+            echo "src-tauri/dist does not exist"
+          fi
+
+    - name: build tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -183,7 +256,7 @@ jobs:
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
-          args: ${{ matrix.args }}
+          args: ${{ matrix.args }} --config src-tauri/tauri.conf.json
           tauriScript: npm run tauri
           tagName: app-v__VERSION__ # Let tauri-action handle the version
           includeDebug: false # Only build release mode
@@ -215,25 +288,48 @@ jobs:
             fi
           fi
 
-      - name: Upload build artifacts
+      - name: Upload build artifacts (Windows)
+        if: matrix.platform == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform }}-${{ matrix.target }}-artifacts-${{ github.run_number }}
+          name: windows-${{ matrix.target }}-artifacts-${{ github.run_number }}
           path: |
-            src-tauri/target/${{ matrix.target }}/release/bundle/**/*
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.msi
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.exe
             src-tauri/target/${{ matrix.target }}/release/*.exe
             src-tauri/target/${{ matrix.target }}/release/*.msi
+          if-no-files-found: warn
+          overwrite: true
+
+      - name: Upload build artifacts (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.target }}-artifacts-${{ github.run_number }}
+          path: |
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.deb
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.rpm
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage
             src-tauri/target/${{ matrix.target }}/release/*.deb
             src-tauri/target/${{ matrix.target }}/release/*.rpm
-            src-tauri/target/${{ matrix.target }}/release/*.app
-            src-tauri/target/${{ matrix.target }}/release/*.dmg
           if-no-files-found: warn
-          overwrite: true # Overwrite if artifacts with same name exist
+          overwrite: true
 
-      - name: Clean up frontend copy
+      - name: Clean up frontend copy (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: powershell
+        run: |
+          Write-Host "=== Cleaning up frontend copy (Windows) ==="
+          if (Test-Path "src-tauri\dist") {
+            Remove-Item -Path "src-tauri\dist" -Recurse -Force
+            Write-Host "Removed src-tauri\dist"
+          }
+
+    - name: Clean up frontend copy (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
         shell: bash
         run: |
-          echo "=== Cleaning up frontend copy ==="
+          echo "=== Cleaning up frontend copy (Linux) ==="
           if [ -d "src-tauri/dist" ]; then
             rm -rf src-tauri/dist
             echo "Removed src-tauri/dist"
