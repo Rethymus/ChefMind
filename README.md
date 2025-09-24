@@ -113,13 +113,13 @@ ChefMind/
 
 ### 环境变量
 
-在项目根目录创建 `.env.local` 文件，配置AI提供商的API Key：
+在项目根目录创建 `.env` 文件，配置AI提供商的API Key：
 
 ```bash
-VITE_GLM_API_KEY=your_glm_api_key
-VITE_OPENAI_API_KEY=your_openai_api_key
-VITE_ANTHROPIC_API_KEY=your_anthropic_api_key
-VITE_GEMINI_API_KEY=your_gemini_api_key
+VITE_AI_PROVIDER=your_ai_provider_name
+VITE_API_KEY=your_ai_api_key
+VITE_API_BASE_URL=https://your-api-url.com/
+VITE_API_MODEL=your-model-name
 ```
 
 ### AI 提供商
