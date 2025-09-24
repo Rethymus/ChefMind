@@ -16,10 +16,23 @@ export class QwenProvider implements BaseAIProvider {
   private readonly baseURL: string
   private readonly model: string
 
-  constructor(apiKey?: string, baseURL?: string) {
+  constructor(apiKey?: string, baseURL?: string, model?: string) {
     this.apiKey = apiKey || import.meta.env.VITE_API_KEY || import.meta.env.VITE_QWEN_API_KEY || ''
-    this.baseURL = baseURL || import.meta.env.VITE_API_BASE_URL || 'https://api-inference.modelscope.cn/v1/chat/completions'
-    this.model = import.meta.env.VITE_API_MODEL || import.meta.env.VITE_QWEN_MODEL || 'qwen-turbo'
+
+    // 处理baseURL，确保包含正确的路径
+    if (baseURL) {
+      this.baseURL = baseURL.endsWith('/chat/completions')
+        ? baseURL
+        : baseURL.endsWith('/')
+          ? baseURL + 'chat/completions'
+          : baseURL + '/chat/completions'
+    } else {
+      this.baseURL = (import.meta.env.VITE_API_BASE_URL || 'https://api-inference.modelscope.cn/v1/').endsWith('/chat/completions')
+        ? import.meta.env.VITE_API_BASE_URL || 'https://api-inference.modelscope.cn/v1/chat/completions'
+        : (import.meta.env.VITE_API_BASE_URL || 'https://api-inference.modelscope.cn/v1/') + 'chat/completions'
+    }
+
+    this.model = model || import.meta.env.VITE_API_MODEL || import.meta.env.VITE_QWEN_MODEL || 'qwen-turbo'
   }
 
   private async callQwen(prompt: string, options?: { maxTokens?: number; temperature?: number }): Promise<string> {

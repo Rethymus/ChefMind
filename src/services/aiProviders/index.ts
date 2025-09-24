@@ -53,44 +53,118 @@ class AIProviderFactory {
       console.log('🔧 Mock模式状态:', enableMockMode)
 
       if (!enableMockMode) {
-        // 如果没有启用模拟模式，检查环境变量配置的提供商
-        const envProvider = import.meta.env.VITE_AI_PROVIDER
-        const envApiKey = import.meta.env.VITE_API_KEY
+        // 获取通用配置
+        const genericApiKey = import.meta.env.VITE_API_KEY
+        const genericProvider = import.meta.env.VITE_AI_PROVIDER
+        const genericBaseUrl = import.meta.env.VITE_API_BASE_URL
+        const genericModel = import.meta.env.VITE_API_MODEL
 
-        console.log('🔧 环境变量提供商:', envProvider)
-        console.log('🔧 环境变量API Key存在:', !!envApiKey)
+        console.log('🔧 通用API配置:', {
+          hasApiKey: !!genericApiKey,
+          provider: genericProvider,
+          hasBaseUrl: !!genericBaseUrl,
+          model: genericModel,
+          apiKey: genericApiKey ? genericApiKey.substring(0, 10) + '...' : 'none'
+        })
 
-        if (envProvider && envApiKey && envProvider !== 'mock') {
-          // 使用环境变量配置的提供商
-          this.currentProviderName = envProvider
-          this.currentProvider = this.selectProvider(envProvider)
-          console.log(`✅ 使用环境变量配置的AI提供商: ${envProvider}`)
-          return
+        if (genericApiKey) {
+          // 如果有通用API密钥，测试连接性
+          const availableProviders = [
+            { name: 'qwen', apiKey: genericApiKey, baseUrl: genericBaseUrl, model: genericModel },
+            { name: 'glm', apiKey: genericApiKey, baseUrl: genericBaseUrl, model: genericModel },
+            { name: 'openai', apiKey: genericApiKey, baseUrl: genericBaseUrl, model: genericModel },
+            { name: 'anthropic', apiKey: genericApiKey, baseUrl: genericBaseUrl, model: genericModel },
+            { name: 'gemini', apiKey: genericApiKey, baseUrl: genericBaseUrl, model: genericModel },
+            { name: 'deepseek', apiKey: genericApiKey, baseUrl: genericBaseUrl, model: genericModel },
+            { name: 'moonshot', apiKey: genericApiKey, baseUrl: genericBaseUrl, model: genericModel },
+            { name: 'hunyuan', apiKey: genericApiKey, baseUrl: genericBaseUrl, model: genericModel }
+          ]
+
+          // 优先使用指定的提供商，如果没有指定则按顺序测试
+          const providersToTest = genericProvider
+            ? [availableProviders.find(p => p.name === genericProvider), ...availableProviders.filter(p => p.name !== genericProvider)]
+            : availableProviders
+
+          for (const provider of providersToTest) {
+            if (!provider) continue
+
+            if (await this.testProviderConnectivity(provider.name, provider.apiKey, provider.baseUrl, provider.model)) {
+              console.log(`✅ 使用可连接的AI提供商: ${provider.name}`)
+              this.currentProviderName = provider.name
+              this.currentProvider = this.selectProvider(provider.name, provider.apiKey, provider.baseUrl, provider.model)
+              return
+            }
+          }
+        }
+
+        // 如果通用配置不可用，尝试检查具体提供商配置
+        const configuredProviders = await this.getConfiguredProviders()
+        if (configuredProviders.length > 0) {
+          const preferredProvider = this.findPreferredProvider(configuredProviders)
+          if (preferredProvider) {
+            console.log(`✅ 使用已配置的AI提供商: ${preferredProvider}`)
+            this.currentProviderName = preferredProvider
+            this.currentProvider = this.selectProvider(preferredProvider)
+            return
+          }
         }
       }
 
-      // 尝试从AI配置服务获取已配置的提供商
-      const { aiConfigService } = await import('@/services/aiConfig')
-      const configuredProviders = await aiConfigService.getConfiguredProviders()
-
-      if (configuredProviders.length > 0) {
-        // 优先使用已配置的提供商
-        const preferredProvider = this.findPreferredProvider(configuredProviders)
-        if (preferredProvider && preferredProvider !== this.currentProviderName) {
-          console.log(`✅ 切换到已配置的AI提供商: ${preferredProvider}`)
-          this.currentProviderName = preferredProvider
-          this.currentProvider = this.selectProvider(preferredProvider)
-        }
-      } else if (!enableMockMode) {
-        // 如果没有配置的提供商且未启用模拟模式，尝试使用环境变量
-        const envProvider = import.meta.env.VITE_AI_PROVIDER || 'openai'
-        this.currentProviderName = envProvider
-        this.currentProvider = this.selectProvider(envProvider)
-        console.log(`⚠️ 没有已配置的提供商，使用环境变量: ${envProvider}`)
-      }
+      // 如果所有真实提供商都不可用，使用mock
+      console.log('⚠️ 使用模拟模式')
+      this.currentProviderName = 'mock'
+      this.currentProvider = this.selectProvider('mock')
     } catch (error) {
-      console.warn('无法从AI配置服务获取提供商信息:', error)
+      console.warn('初始化AI提供商失败:', error)
+      this.currentProviderName = 'mock'
+      this.currentProvider = this.selectProvider('mock')
     }
+  }
+
+  private async testProviderConnectivity(providerName: string, apiKey: string, baseUrl?: string, model?: string): Promise<boolean> {
+    try {
+      console.log(`🧪 开始测试 ${providerName} 连接性...`)
+      console.log(`🧪 配置参数:`, {
+        providerName,
+        hasApiKey: !!apiKey,
+        baseUrl,
+        model
+      })
+
+      const provider = this.selectProvider(providerName, apiKey, baseUrl, model)
+
+      // 简单的连接测试 - 发送一个小的测试请求
+      const testPrompt = '请回复"连接成功"'
+      console.log(`🧪 发送测试请求...`)
+      await provider.generateRecipe(['test'])
+
+      console.log(`✅ ${providerName} 连接测试成功`)
+      return true
+    } catch (error) {
+      console.log(`❌ ${providerName} 连接测试失败:`, error)
+      console.log(`❌ 错误详情:`, {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      })
+      return false
+    }
+  }
+
+  private async getConfiguredProviders(): Promise<string[]> {
+    const providers: string[] = []
+
+    // 检查各个提供商是否有配置
+    if (import.meta.env.VITE_OPENAI_API_KEY) providers.push('openai')
+    if (import.meta.env.VITE_GLM_API_KEY) providers.push('glm')
+    if (import.meta.env.VITE_ANTHROPIC_API_KEY) providers.push('anthropic')
+    if (import.meta.env.VITE_GOOGLE_API_KEY) providers.push('gemini')
+    if (import.meta.env.VITE_DEEPSEEK_API_KEY) providers.push('deepseek')
+    if (import.meta.env.VITE_MOONSHOT_API_KEY) providers.push('moonshot')
+    if (import.meta.env.VITE_QWEN_API_KEY) providers.push('qwen')
+    if (import.meta.env.VITE_HUNYUAN_API_KEY) providers.push('hunyuan')
+
+    return providers
   }
 
   private findPreferredProvider(configuredProviders: string[]): string | null {
@@ -136,11 +210,14 @@ class AIProviderFactory {
   /**
    * 切换AI提供者
    * @param providerName 提供者名称
+   * @param apiKey 可选的API密钥
+   * @param baseUrl 可选的基础URL
+   * @param model 可选的模型名称
    * @returns 新的AI提供者实例
    */
-  public switchProvider(providerName: string): BaseAIProvider {
+  public switchProvider(providerName: string, apiKey?: string, baseUrl?: string, model?: string): BaseAIProvider {
     this.currentProviderName = providerName
-    this.currentProvider = this.selectProvider(providerName)
+    this.currentProvider = this.selectProvider(providerName, apiKey, baseUrl, model)
     // Switched to AI provider: ${providerName}
     return this.currentProvider
   }
@@ -148,34 +225,37 @@ class AIProviderFactory {
   /**
    * 根据提供者名称选择AI提供者
    * @param providerName 提供者名称
+   * @param apiKey 可选的API密钥
+   * @param baseUrl 可选的基础URL
+   * @param model 可选的模型名称
    * @returns AI提供者实例
    */
-  private selectProvider(providerName: string): BaseAIProvider {
+  private selectProvider(providerName: string, apiKey?: string, baseUrl?: string, model?: string): BaseAIProvider {
     switch (providerName.toLowerCase()) {
       case 'openai':
         // Using OpenAI-compatible provider (Qwen in this case)
-        return new QwenProvider()
+        return new QwenProvider(apiKey, baseUrl)
       case 'glm':
         // Using GLM provider
-        return new GLMProvider()
+        return new GLMProvider(apiKey)
       case 'anthropic':
         // Using Anthropic Claude provider
-        return new AnthropicProvider()
+        return new AnthropicProvider(apiKey)
       case 'gemini':
         // Using Google Gemini provider
-        return new GeminiProvider()
+        return new GeminiProvider(apiKey)
       case 'deepseek':
         // Using DeepSeek provider
-        return new DeepSeekProvider()
+        return new DeepSeekProvider(apiKey)
       case 'moonshot':
         // Using Moonshot provider
-        return new MoonshotProvider()
+        return new MoonshotProvider(apiKey)
       case 'qwen':
         // Using Qwen provider
-        return new QwenProvider()
+        return new QwenProvider(apiKey, baseUrl, model)
       case 'hunyuan':
         // Using Hunyuan provider
-        return new HunyuanProvider()
+        return new HunyuanProvider(apiKey)
       case 'mock':
       default:
         // Using mock provider
@@ -210,8 +290,18 @@ class AIProviderFactory {
 // 创建工厂实例
 const aiProviderFactory = AIProviderFactory.getInstance()
 
-// 导出当前AI提供者
-export const aiProvider = aiProviderFactory.getProvider()
+// 导出当前AI提供者（延迟初始化）
+export const aiProvider = new Proxy({} as BaseAIProvider, {
+  get: (target, prop) => {
+    if (!aiProviderFactory['isInitialized']) {
+      console.warn('⚠️ AI提供商工厂未初始化，正在初始化...')
+      aiProviderFactory.initialize().catch(error => {
+        console.error('AI提供商工厂初始化失败:', error)
+      })
+    }
+    return aiProviderFactory.getProvider()[prop]
+  }
+})
 
 // 导出AI提供者工厂
 export { AIProviderFactory }

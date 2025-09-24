@@ -956,6 +956,11 @@
 
     isGenerating.value = true
 
+    // 检查AI服务是否需要初始化
+    if (!aiService['isInitialized']) {
+      ElMessage.info('正在初始化AI服务，请稍候...')
+    }
+
     try {
       const params = {
         ingredients: selectedIngredients.value,
@@ -1029,7 +1034,17 @@
       }, 100)
     } catch (error) {
       console.error('生成食谱失败:', error)
-      ElMessage.error('生成食谱失败，请稍后重试')
+
+      // 根据错误类型给出更具体的提示
+      if (error.message === 'AI服务未初始化') {
+        ElMessage.error('AI服务初始化失败，请刷新页面重试')
+      } else if (error.message.includes('API密钥')) {
+        ElMessage.error('AI服务配置错误，请检查API密钥配置')
+      } else if (error.message.includes('网络') || error.message.includes('Network')) {
+        ElMessage.error('网络连接失败，请检查网络连接')
+      } else {
+        ElMessage.error('生成食谱失败，请稍后重试')
+      }
     } finally {
       isGenerating.value = false
     }

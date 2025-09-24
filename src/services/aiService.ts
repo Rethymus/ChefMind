@@ -168,7 +168,8 @@ class AIService {
   // 食材识别分析
   async analyzeIngredient(imageFile: File): Promise<IngredientAnalysisResult> {
     if (!this.isInitialized) {
-      throw new Error('AI服务未初始化')
+      console.log('⏳ AI服务未初始化，正在初始化...')
+      await this.init()
     }
 
     const cacheKey = this.getCacheKey('analyzeIngredient', {
@@ -199,7 +200,8 @@ class AIService {
   // 营养成分分析
   async analyzeNutrition(recipe: Recipe): Promise<NutritionAnalysisResult> {
     if (!this.isInitialized) {
-      throw new Error('AI服务未初始化')
+      console.log('⏳ AI服务未初始化，正在初始化...')
+      await this.init()
     }
 
     const cacheKey = this.getCacheKey('analyzeNutrition', recipe)
@@ -227,7 +229,8 @@ class AIService {
     options?: { maxTokens?: number; temperature?: number }
   ): Promise<string> {
     if (!this.isInitialized) {
-      throw new Error('AI服务未初始化')
+      console.log('⏳ AI服务未初始化，正在初始化...')
+      await this.init()
     }
 
     const cacheKey = this.getCacheKey('generateText', { prompt, options })
@@ -258,7 +261,8 @@ class AIService {
     preferences?: UserPreferences
   ): Promise<RecipeGenerationResult> {
     if (!this.isInitialized) {
-      throw new Error('AI服务未初始化')
+      console.log('⏳ AI服务未初始化，正在初始化...')
+      await this.init()
     }
 
     const cacheKey = this.getCacheKey('generateRecipe', { ingredientsOrPrompt, preferences })
@@ -375,7 +379,8 @@ class AIService {
     limit: number = 5
   ): Promise<PersonalizedRecommendation[]> {
     if (!this.isInitialized) {
-      throw new Error('AI服务未初始化')
+      console.log('⏳ AI服务未初始化，正在初始化...')
+      await this.init()
     }
 
     const cacheKey = this.getCacheKey('getPersonalizedRecommendations', {
@@ -418,7 +423,8 @@ class AIService {
     estimatedTime: number
   }> {
     if (!this.isInitialized) {
-      throw new Error('AI服务未初始化')
+      console.log('⏳ AI服务未初始化，正在初始化...')
+      await this.init()
     }
 
     try {
@@ -436,7 +442,8 @@ class AIService {
   // 烹饪助手 - 获取烹饪建议和帮助
   async getCookingAssistance(query: string, context?: RecipeContext): Promise<CookingAssistance> {
     if (!this.isInitialized) {
-      throw new Error('AI服务未初始化')
+      console.log('⏳ AI服务未初始化，正在初始化...')
+      await this.init()
     }
 
     const cacheKey = this.getCacheKey('getCookingAssistance', { query, context })
@@ -487,7 +494,8 @@ class AIService {
     suggestions: string[]
   }> {
     if (!this.isInitialized) {
-      throw new Error('AI服务未初始化')
+      console.log('⏳ AI服务未初始化，正在初始化...')
+      await this.init()
     }
 
     try {
@@ -514,7 +522,8 @@ class AIService {
   // 验证食材是否可食用
   async validateIngredient(ingredient: string): Promise<IngredientValidationResult> {
     if (!this.isInitialized) {
-      throw new Error('AI服务未初始化')
+      console.log('⏳ AI服务未初始化，正在初始化...')
+      await this.init()
     }
 
     try {
@@ -537,7 +546,8 @@ class AIService {
     chatHistory: Array<{ role: string; content: string }>
   ): Promise<{ content: string; suggestions?: string[] }> {
     if (!this.isInitialized) {
-      throw new Error('AI服务未初始化')
+      console.log('⏳ AI服务未初始化，正在初始化...')
+      await this.init()
     }
 
     const cacheKey = this.getCacheKey('getChatResponse', {
