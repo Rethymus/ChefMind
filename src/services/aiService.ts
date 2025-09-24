@@ -9,6 +9,7 @@ import type {
   IngredientAnalysisResult,
   NutritionAnalysisResult,
 } from '@/types/recipe'
+import { callGLM } from './glmService'
 
 // AI提供商枚举
 export enum AIProviderType {
@@ -235,7 +236,6 @@ class AIService {
 
     try {
       // 直接调用GLM API进行文本生成
-      const { callGLM } = await import('./glmService')
       const response = await callGLM(prompt, {
         maxTokens: options?.maxTokens || 2000,
         temperature: options?.temperature || 0.7,

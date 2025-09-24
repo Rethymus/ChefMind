@@ -11,6 +11,8 @@ interface GLMCallOptions {
   model?: string
 }
 
+import { aiConfigService } from '@/services/aiConfig'
+
 /**
  * 调用 GLM API
  * @param prompt 提示词
@@ -26,7 +28,6 @@ export async function callGLM(prompt: string, options: GLMCallOptions = {}): Pro
 
   try {
     // 使用统一的AI配置服务
-    const { aiConfigService } = await import('./aiConfig')
     apiKey = await aiConfigService.getApiKey('GLM') || ''
     
     // 获取完整配置以获取baseURL和model

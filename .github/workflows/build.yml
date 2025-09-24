@@ -93,6 +93,13 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Set environment variables for Tauri
+        shell: bash
+        run: |
+          echo "TAURI_FRONTEND_DIST=../dist" >> $GITHUB_ENV
+          echo "Current working directory: $(pwd)"
+          echo "Frontend dist path: $(pwd)/dist"
+
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
@@ -134,15 +141,61 @@ jobs:
       - name: build frontend
         run: npm run build
 
+      - name: Verify frontend build output
+        shell: bash
+        run: |
+          echo "=== Verifying Frontend Build Output ==="
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo "=== Checking dist directory ==="
+          if [ -d "dist" ]; then
+            echo "dist directory exists"
+            echo "dist directory contents:"
+            ls -la dist/
+            echo "=== Checking dist/index.html ==="
+            if [ -f "dist/index.html" ]; then
+              echo "dist/index.html exists and is readable"
+              head -5 dist/index.html
+            else
+              echo "ERROR: dist/index.html not found"
+              exit 1
+            fi
+          else
+            echo "ERROR: dist directory not found"
+            exit 1
+          fi
+          echo "=== Checking src-tauri directory ==="
+          if [ -d "src-tauri" ]; then
+            echo "src-tauri directory exists"
+            echo "Checking if dist is accessible from src-tauri:"
+            if [ -d "src-tauri/../dist" ]; then
+              echo "dist is accessible from src-tauri as ../dist"
+            else
+              echo "ERROR: dist is not accessible from src-tauri as ../dist"
+              echo "Creating symlink for compatibility"
+              cd src-tauri
+              if [ ! -L "../dist" ] && [ ! -d "../dist" ]; then
+                ln -s ../../dist ../dist
+                echo "Created symlink from src-tauri/../dist to ../../dist"
+              fi
+              cd ..
+            fi
+          else
+            echo "ERROR: src-tauri directory not found"
+            exit 1
+          fi
+
       - name: build tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+          TAURI_FRONTEND_DIST: ../dist
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
-          args: ${{ matrix.args }}
+          args: ${{ matrix.args }} --config src-tauri/tauri.conf.json
           tauriScript: npm run tauri
           tagName: app-v__VERSION__ # Let tauri-action handle the version
           includeDebug: false # Only build release mode
@@ -177,16 +230,17 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform }}-artifacts
+          name: ${{ matrix.platform }}-${{ matrix.target }}-artifacts
           path: |
-            src-tauri/target/*/release/bundle/**/*
-            src-tauri/target/*/release/*.exe
-            src-tauri/target/*/release/*.msi
-            src-tauri/target/*/release/*.deb
-            src-tauri/target/*/release/*.rpm
-            src-tauri/target/*/release/*.app
-            src-tauri/target/*/release/*.dmg
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*
+            src-tauri/target/${{ matrix.target }}/release/*.exe
+            src-tauri/target/${{ matrix.target }}/release/*.msi
+            src-tauri/target/${{ matrix.target }}/release/*.deb
+            src-tauri/target/${{ matrix.target }}/release/*.rpm
+            src-tauri/target/${{ matrix.target }}/release/*.app
+            src-tauri/target/${{ matrix.target }}/release/*.dmg
           if-no-files-found: warn
+          overwrite: true # Overwrite if artifacts with same name exist
 
   publish-release:
     permissions:

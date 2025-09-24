@@ -3,20 +3,11 @@
  * 负责AI API密钥的数据库存储和管理
  */
 
-// 动态导入dataAccess以避免循环依赖
-let dataAccess: any = null
+// 静态导入dataAccess
+import { dataAccess } from '@/services/database/dataAccess'
 
 // 异步初始化dataAccess
 async function initDataAccess() {
-  if (!dataAccess) {
-    try {
-      const module = await import('@/services/database/dataAccess')
-      dataAccess = module.dataAccess
-    } catch (error) {
-      console.warn('无法加载数据访问模块，使用内存存储:', error)
-      dataAccess = null
-    }
-  }
   return dataAccess
 }
 

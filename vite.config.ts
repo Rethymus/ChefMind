@@ -32,7 +32,8 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         additionalData: `@use \"@/styles/variables.scss\" as *;`,
-        charset: false
+        charset: false,
+        api: 'modern' // Use modern Sass API to avoid deprecation warnings
       }
     },
     devSourcemap: true,
