@@ -6,6 +6,14 @@ on:
     tags:
       - 'app-v*'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  RUST_TOOLCHAIN: 'stable'
+
 # Tauri v2 GitHub Actions workflow for building desktop applications
 # This workflow creates releases and builds for multiple platforms
 
@@ -23,7 +31,7 @@ jobs:
       - name: setup node
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Use Node 20 for better compatibility
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: get version
         run: echo "PACKAGE_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
@@ -73,7 +81,7 @@ jobs:
                   tag_name: tag,
                   name: `ChefMind Desktop App v${process.env.PACKAGE_VERSION}`,
                   body: |
-                    ## ChefMind Desktop App v${{ env.PACKAGE_VERSION }}
+                    ## ChefMind Desktop App v${process.env.PACKAGE_VERSION}
 
                     ### Installation
 
@@ -110,6 +118,8 @@ jobs:
     needs: create-release
     permissions:
       contents: write
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -120,19 +130,18 @@ jobs:
           - platform: "windows-latest"
             args: ""
             target: "x86_64-pc-windows-msvc"
-
-    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
 
       - name: setup node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
           targets: ${{ matrix.target }}
 
       - name: Set environment variables for Tauri
@@ -273,7 +282,7 @@ jobs:
             echo "src-tauri/dist does not exist"
           fi
 
-    - name: build tauri app
+      - name: build tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -350,7 +359,7 @@ jobs:
             Write-Host "Removed src-tauri\dist"
           }
 
-    - name: Clean up frontend copy (Linux)
+      - name: Clean up frontend copy (Linux)
         if: matrix.platform == 'ubuntu-22.04'
         shell: bash
         run: |
