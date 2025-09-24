@@ -11,6 +11,7 @@ import './styles/global.scss'
 import './styles/print.scss'
 import { AIProviderFactory } from './services/aiProviders'
 import { setupDevShortcuts, debugUtils } from './utils/devtools'
+import { createDebugPanel } from './utils/debugPanel'
 
 const app = createApp(App)
 
@@ -70,5 +71,27 @@ if (import.meta.env.DEV) {
   setTimeout(() => {
     console.log('🔧 [Debug] App mounted successfully')
     console.log('🔧 [Debug] Current route:', window.location.pathname)
+
+    // 创建调试面板
+    createDebugPanel()
+
+    // 发送DOM加载完成事件
+    if (window.__TAURI__) {
+      setTimeout(() => {
+        try {
+          window.__TAURI__.invoke('log_message', {
+            message: 'Frontend application mounted successfully'
+          })
+        } catch (error) {
+          console.log('Failed to send log to backend:', error)
+        }
+      }, 1000)
+    }
   }, 2000)
+} else {
+  // 在生产环境中也创建调试面板，但默认隐藏
+  setTimeout(() => {
+    createDebugPanel()
+    console.log('Debug panel created. Use Ctrl+Shift+D to toggle.')
+  }, 3000)
 }
