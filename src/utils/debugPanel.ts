@@ -1,5 +1,21 @@
-import { invoke } from '@tauri-apps/api/tauri'
-import { listen } from '@tauri-apps/api/event'
+// 动态导入Tauri API，仅在Tauri环境中可用
+let invoke: any = null
+let listen: any = null
+
+async function initTauriAPI() {
+  if (typeof window !== 'undefined' && window.__TAURI__) {
+    try {
+      // 使用动态导入，避免构建时的依赖检查
+      const tauri = await Function('return import("@tauri-apps/api/tauri")')()
+      const event = await Function('return import("@tauri-apps/api/event")')()
+      invoke = tauri.invoke
+      listen = event.listen
+      console.log('Tauri API loaded successfully')
+    } catch (error) {
+      console.log('Failed to load Tauri API:', error)
+    }
+  }
+}
 
 // 调试信息面板组件
 export const DebugPanel = {
@@ -78,6 +94,9 @@ export const DebugPanel = {
   methods: {
     async initDebug() {
       try {
+        // 初始化Tauri API
+        await initTauriAPI()
+
         // 检查各种组件是否加载
         this.tauriAvailable = typeof window !== 'undefined' && !!window.__TAURI__
         this.vueLoaded = typeof Vue !== 'undefined'
@@ -85,7 +104,7 @@ export const DebugPanel = {
         this.elementPlusLoaded = typeof ElementPlus !== 'undefined'
 
         // 获取应用信息
-        if (this.tauriAvailable) {
+        if (this.tauriAvailable && invoke) {
           try {
             this.appInfo = await invoke('get_app_info')
           } catch (error) {
@@ -100,7 +119,7 @@ export const DebugPanel = {
     },
 
     async setupEventListeners() {
-      if (!this.tauriAvailable) return
+      if (!this.tauriAvailable || !listen) return
 
       try {
         // 监听来自Rust的事件
@@ -137,7 +156,7 @@ export const DebugPanel = {
 
         this.addMessage(`Frontend check: ${JSON.stringify(checks)}`)
 
-        if (this.tauriAvailable) {
+        if (this.tauriAvailable && invoke) {
           await invoke('check_frontend_loaded')
         }
       } catch (error) {
@@ -147,7 +166,7 @@ export const DebugPanel = {
 
     async openDevTools() {
       try {
-        if (this.tauriAvailable) {
+        if (this.tauriAvailable && invoke) {
           await invoke('open_dev_tools')
           this.addMessage('Dev tools request sent')
         } else {
@@ -162,7 +181,7 @@ export const DebugPanel = {
 
     async sendLog() {
       try {
-        if (this.tauriAvailable) {
+        if (this.tauriAvailable && invoke) {
           await invoke('log_message', { message: 'Debug panel test log' })
           this.addMessage('Log sent to backend')
         } else {

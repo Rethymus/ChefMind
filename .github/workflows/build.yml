@@ -6,9 +6,8 @@ on:
     tags:
       - 'app-v*'
 
-# `tauri-action` can also upload app bundles to an existing GitHub release.
-# This workflow uses different actions to create and publish the release.
-# `tauri-action` will only build and upload the app bundles to the specified release.
+# Tauri v2 GitHub Actions workflow for building desktop applications
+# This workflow creates releases and builds for multiple platforms
 
 jobs:
   create-release:
@@ -24,7 +23,7 @@ jobs:
       - name: setup node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: '20' # Use Node 20 for better compatibility
 
       - name: get version
         run: echo "PACKAGE_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
@@ -55,8 +54,8 @@ jobs:
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   tag_name: tag,
-                  name: `Desktop App v${process.env.PACKAGE_VERSION}`,
-                  body: 'Take a look at the assets to download and install this app.',
+                  name: `ChefMind Desktop App v${process.env.PACKAGE_VERSION}`,
+                  body: '## ChefMind Desktop App v${process.env.PACKAGE_VERSION}\n\n### Installation\n\n**Windows:**\n- Download and run the `.msi` installer\n- The app will be installed in Program Files\n- Developer tools can be accessed with Ctrl+Shift+I or F12\n\n**Linux:**\n- Download the `.deb` package for Debian/Ubuntu\n- Download the `.rpm` package for Fedora/CentOS\n- Developer tools can be accessed with Ctrl+Shift+I or F12\n\n### Features\n- AI-powered recipe generation\n- Smart kitchen assistant\n- Enterprise-grade data storage\n- Built-in developer tools for debugging\n\n### Troubleshooting\nIf you encounter any issues:\n1. Press F12 or Ctrl+Shift+I to open developer tools\n2. Check the console for error messages\n3. Verify that all frontend resources loaded correctly',
                   draft: true,
                   prerelease: false
                 });
@@ -73,10 +72,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: "ubuntu-22.04" # for Tauri v1 you could replace this with ubuntu-20.04.
+          - platform: "ubuntu-22.04"
             args: ""
+            target: "x86_64-unknown-linux-gnu"
           - platform: "windows-latest"
-            args: ""
+            args: "--target x86_64-pc-windows-msvc"
+            target: "x86_64-pc-windows-msvc"
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -85,76 +86,83 @@ jobs:
       - name: setup node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: '20'
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri'
 
       - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
+        if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-        # webkitgtk 4.0 is for Tauri v1 - webkitgtk 4.1 is for Tauri v2.
-        # You can remove the one that doesn't apply to your app to speed up the workflow a bit.
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libgtk-3-dev libayatana-appindicator3-dev
+
+      - name: install dependencies (windows only)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          # Install webview2 for Windows
+          curl -L -o webview2-installer.exe https://go.microsoft.com/fwlink/p/?LinkId=2124703
+          ./webview2-installer.exe /silent /install
 
       - name: install frontend dependencies
-        run: yarn install # change this to npm, pnpm or bun depending on which one you use.
+        run: npm install
 
-      - uses: tauri-apps/tauri-action@v0
+      - name: build frontend
+        run: npm run build
+
+      - name: build tauri app
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: ${{ matrix.args }}
+          tauriScript: npm run tauri
 
-      # 添加步骤来验证构建产物是否存在
-      - name: List bundle output (Linux)
-        if: matrix.platform == 'ubuntu-22.04'
+      - name: Verify build output
+        shell: bash
         run: |
-          echo "Checking for bundle output..."
-          find /home/runner/work/ChefMind/ChefMind/src-tauri/target/release/bundle -type f 2>/dev/null || echo "No files found in bundle directory"
-          ls -lah /home/runner/work/ChefMind/ChefMind/src-tauri/target/release/bundle/*/
+          echo "=== Build Output Verification ==="
+          if [ "${{ matrix.platform }}" = "ubuntu-22.04" ]; then
+            echo "Checking Linux build output..."
+            ls -la src-tauri/target/${{ matrix.target }}/release/bundle/ || echo "No bundle directory found"
+            find src-tauri/target/${{ matrix.target }}/release/bundle -name "*.deb" -o -name "*.rpm" | head -10
+          else
+            echo "Checking Windows build output..."
+            if [ -d "src-tauri/target/${{ matrix.target }}/release/bundle" ]; then
+              find src-tauri/target/${{ matrix.target }}/release/bundle -name "*.msi" -o -name "*.exe" | head -10
+            else
+              echo "Bundle directory not found, checking target directory..."
+              ls -la src-tauri/target/${{ matrix.target }}/release/ || echo "Target directory not found"
+            fi
+          fi
 
-      - name: List bundle output (Windows)
-        if: matrix.platform == 'windows-latest'
-        shell: pwsh
-        run: |
-          echo "Checking for bundle output..."
-          Get-ChildItem -Path ./src-tauri/target/release/bundle -Recurse -File
-
-      # 上传Linux构建产物
-      - name: Upload Linux artifacts
-        if: matrix.platform == 'ubuntu-22.04'
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux-bundles-${{ matrix.platform }}
+          name: ${{ matrix.platform }}-artifacts
           path: |
-            src-tauri/target/release/bundle/**/*.deb
-            src-tauri/target/release/bundle/**/*.rpm
-            src-tauri/target/debug/bundle/**/*.deb
-            src-tauri/target/debug/bundle/**/*.rpm
-
-      # 上传Windows构建产物
-      - name: Upload Windows artifacts
-        if: matrix.platform == 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-bundles-${{ matrix.platform }}
-          path: |
-            src-tauri/target/release/bundle/**/*.msi
-            src-tauri/target/release/bundle/**/*.exe
-            src-tauri/target/debug/bundle/**/*.msi
-            src-tauri/target/debug/bundle/**/*.exe
+            src-tauri/target/*/release/bundle/**/*
+            src-tauri/target/*/release/*.exe
+            src-tauri/target/*/release/*.msi
+            src-tauri/target/*/release/*.deb
+            src-tauri/target/*/release/*.rpm
 
   publish-release:
     permissions:
       contents: write
     runs-on: ubuntu-latest
     needs: [create-release, build-tauri]
+    if: success() # Only publish if all builds succeeded
 
     steps:
       - name: publish release

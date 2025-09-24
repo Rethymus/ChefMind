@@ -31,24 +31,25 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `@use \"@/styles/variables.scss\" as *;`
+        additionalData: `@use \"@/styles/variables.scss\" as *;`,
+        charset: false
       }
+    },
+    devSourcemap: true,
+    modules: {
+      localsConvention: 'camelCase'
     }
   },
   build: {
     target: 'es2015',
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: false,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
-      }
-    },
+    sourcemap: true,
+    minify: 'esbuild',
+    cssCodeSplit: true,
+    cssMinify: false,
     rollupOptions: {
-      external: ['@tauri-apps/api/tauri', '@tauri-apps/api'],
+      external: [],
       output: {
         chunkFileNames: 'js/[name]-[hash].js',
         entryFileNames: 'js/[name]-[hash].js',

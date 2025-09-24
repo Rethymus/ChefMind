@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChefMind 开发者工具测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            background-color: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background-color: #005a87;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .info {
+            color: #17a2b8;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        h2 {
+            color: #555;
+            border-bottom: 2px solid #007cba;
+            padding-bottom: 5px;
+        }
+        .shortcuts {
+            background-color: #e7f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ChefMind 开发者工具测试页面</h1>
+
+        <div class="test-section">
+            <h2>🔧 开发者工具测试</h2>
+            <button class="test-button" onclick="testDevTools()">打开开发者工具</button>
+            <button class="test-button" onclick="testAppInfo()">获取应用信息</button>
+            <button class="test-button" onclick="testSystemInfo()">获取系统信息</button>
+            <button class="test-button" onclick="testFrontendLoad()">检查前端加载</button>
+            <div id="devtools-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>⌨️ 快捷键测试</h2>
+            <div class="shortcuts">
+                <p><strong>可用快捷键：</strong></p>
+                <ul>
+                    <li><kbd>F12</kbd> - 打开开发者工具</li>
+                    <li><kbd>Ctrl+Shift+I</kbd> - 打开开发者工具</li>
+                    <li><kbd>Ctrl+Shift+J</kbd> - 打开控制台</li>
+                    <li><kbd>Ctrl+Shift+D</kbd> - 切换调试面板</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 前端资源检查</h2>
+            <button class="test-button" onclick="checkFrontendResources()">检查前端资源</button>
+            <div id="resources-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 日志测试</h2>
+            <button class="test-button" onclick="testLogging()">测试日志功能</button>
+            <div id="logging-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🌐 环境检测</h2>
+            <button class="test-button" onclick="detectEnvironment()">检测运行环境</button>
+            <div id="environment-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // 简化的开发者工具测试函数
+        function testDevTools() {
+            const resultDiv = document.getElementById('devtools-result');
+            resultDiv.innerHTML = '<div class="info">正在尝试打开开发者工具...</div>';
+
+            if (window.__TAURI__ && window.__TAURI__.invoke) {
+                window.__TAURI__.invoke('open_dev_tools')
+                    .then(result => {
+                        resultDiv.innerHTML = '<div class="success">✅ 开发者工具打开成功: ' + JSON.stringify(result) + '</div>';
+                    })
+                    .catch(error => {
+                        resultDiv.innerHTML = '<div class="error">❌ 开发者工具打开失败: ' + error.message + '</div>';
+                    });
+            } else {
+                resultDiv.innerHTML = '<div class="info">ℹ️ 在浏览器环境中，请使用 F12 或右键检查元素打开开发者工具</div>';
+            }
+        }
+
+        function testAppInfo() {
+            const resultDiv = document.getElementById('devtools-result');
+            resultDiv.innerHTML = '<div class="info">正在获取应用信息...</div>';
+
+            if (window.__TAURI__ && window.__TAURI__.invoke) {
+                window.__TAURI__.invoke('get_app_info')
+                    .then(info => {
+                        resultDiv.innerHTML = '<div class="success">✅ 应用信息: ' + info + '</div>';
+                    })
+                    .catch(error => {
+                        resultDiv.innerHTML = '<div class="error">❌ 获取应用信息失败: ' + error.message + '</div>';
+                    });
+            } else {
+                resultDiv.innerHTML = '<div class="info">ℹ️ 浏览器环境 - ChefMind v3.0.0 (Web Mode)</div>';
+            }
+        }
+
+        function testSystemInfo() {
+            const resultDiv = document.getElementById('devtools-result');
+            resultDiv.innerHTML = '<div class="info">正在获取系统信息...</div>';
+
+            if (window.__TAURI__ && window.__TAURI__.invoke) {
+                window.__TAURI__.invoke('get_system_info')
+                    .then(info => {
+                        resultDiv.innerHTML = '<div class="success">✅ 系统信息: ' + info + '</div>';
+                    })
+                    .catch(error => {
+                        resultDiv.innerHTML = '<div class="error">❌ 获取系统信息失败: ' + error.message + '</div>';
+                    });
+            } else {
+                const info = 'Web Environment - ' + navigator.userAgent;
+                resultDiv.innerHTML = '<div class="info">ℹ️ 浏览器环境: ' + info + '</div>';
+            }
+        }
+
+        function testFrontendLoad() {
+            const resultDiv = document.getElementById('devtools-result');
+            resultDiv.innerHTML = '<div class="info">正在检查前端加载状态...</div>';
+
+            if (window.__TAURI__ && window.__TAURI__.invoke) {
+                window.__TAURI__.invoke('check_frontend_loaded')
+                    .then(result => {
+                        resultDiv.innerHTML = '<div class="success">✅ 前端加载检查: ' + JSON.stringify(result) + '</div>';
+                    })
+                    .catch(error => {
+                        resultDiv.innerHTML = '<div class="error">❌ 前端加载检查失败: ' + error.message + '</div>';
+                    });
+            } else {
+                const checks = {
+                    documentLoaded: document.readyState === 'complete',
+                    bodyExists: document.body !== null,
+                    testContainerExists: document.querySelector('.container') !== null
+                };
+                resultDiv.innerHTML = '<div class="success">✅ 前端加载检查: ' + JSON.stringify(checks, null, 2) + '</div>';
+            }
+        }
+
+        function checkFrontendResources() {
+            const resultDiv = document.getElementById('resources-result');
+            const checks = {
+                htmlLoaded: document.documentElement !== null,
+                cssLoaded: Array.from(document.styleSheets).length > 0,
+                jsLoaded: typeof window !== 'undefined' && window.document !== null,
+                testContainer: document.querySelector('.container') !== null,
+                buttonsExist: document.querySelectorAll('.test-button').length > 0
+            };
+
+            let html = '<div class="success">✅ 前端资源检查结果:</div><ul>';
+            for (const [key, value] of Object.entries(checks)) {
+                html += `<li>${key}: ${value ? '✅' : '❌'}</li>`;
+            }
+            html += '</ul>';
+            resultDiv.innerHTML = html;
+        }
+
+        function testLogging() {
+            const resultDiv = document.getElementById('logging-result');
+            const testMessage = '测试日志消息 - ' + new Date().toISOString();
+
+            console.log('🔍 Console日志:', testMessage);
+
+            if (window.__TAURI__ && window.__TAURI__.invoke) {
+                window.__TAURI__.invoke('log_message', { message: testMessage })
+                    .then(() => {
+                        resultDiv.innerHTML = '<div class="success">✅ 日志发送成功，请检查控制台和Tauri日志</div>';
+                    })
+                    .catch(error => {
+                        resultDiv.innerHTML = '<div class="error">❌ 日志发送失败: ' + error.message + '</div>';
+                    });
+            } else {
+                resultDiv.innerHTML = '<div class="info">ℹ️ 浏览器环境 - 日志已发送到控制台</div>';
+            }
+        }
+
+        function detectEnvironment() {
+            const resultDiv = document.getElementById('environment-result');
+            const env = {
+                tauri: typeof window.__TAURI__ !== 'undefined',
+                node: typeof process !== 'undefined' && process.versions && process.versions.node,
+                browser: typeof window !== 'undefined' && typeof document !== 'undefined',
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language
+            };
+
+            let html = '<div class="info">ℹ️ 环境检测结果:</div><ul>';
+            for (const [key, value] of Object.entries(env)) {
+                html += `<li><strong>${key}:</strong> ${value}</li>`;
+            }
+            html += '</ul>';
+
+            if (env.tauri) {
+                html += '<div class="success">✅ 运行在 Tauri 环境中</div>';
+            } else {
+                html += '<div class="info">ℹ️ 运行在浏览器环境中</div>';
+            }
+
+            resultDiv.innerHTML = html;
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 ChefMind 开发者工具测试页面加载完成');
+
+            // 发送DOM加载事件
+            if (window.__TAURI__ && window.__TAURI__.event) {
+                window.__TAURI__.event.emit('dom-loaded')
+                    .then(() => {
+                        console.log('✅ DOM加载事件已发送到Tauri后端');
+                    })
+                    .catch(error => {
+                        console.error('❌ 发送DOM加载事件失败:', error);
+                    });
+            }
+
+            // 检测环境
+            detectEnvironment();
+        });
+
+        // 键盘快捷键支持
+        document.addEventListener('keydown', function(e) {
+            // F12 - 打开开发者工具
+            if (e.key === 'F12') {
+                e.preventDefault();
+                testDevTools();
+            }
+
+            // Ctrl+Shift+I - 打开开发者工具
+            if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+                e.preventDefault();
+                testDevTools();
+            }
+
+            // Ctrl+Shift+J - 打开控制台
+            if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+                e.preventDefault();
+                console.log('🔧 控制台快捷键激活');
+            }
+
+            // Ctrl+Shift+D - 调试面板
+            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                e.preventDefault();
+                const debugPanel = document.getElementById('debug-panel');
+                if (debugPanel) {
+                    debugPanel.style.display = debugPanel.style.display === 'none' ? 'block' : 'none';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
