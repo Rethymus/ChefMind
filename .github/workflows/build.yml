@@ -30,16 +30,35 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const { data } = await github.rest.repos.createRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag_name: `app-v${process.env.PACKAGE_VERSION}`,
-              name: `Desktop App v${process.env.PACKAGE_VERSION}`,
-              body: 'Take a look at the assets to download and install this app.',
-              draft: true,
-              prerelease: false
-            })
-            return data.id
+            // Check if release already exists
+            const tag = `app-v${process.env.PACKAGE_VERSION}`;
+            try {
+              const { data: existingRelease } = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: tag
+              });
+
+              // If release exists, use its ID
+              console.log(`Release ${tag} already exists, using existing release`);
+              return existingRelease.id;
+            } catch (error) {
+              // Release doesn't exist, create new one
+              if (error.status === 404) {
+                const { data } = await github.rest.repos.createRelease({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  tag_name: tag,
+                  name: `ChefMind Desktop App v${process.env.PACKAGE_VERSION}`,
+                  body: 'Take a look at the assets to download and install this app.',
+                  draft: true,
+                  prerelease: false
+                });
+                console.log(`Created new release ${tag}`);
+                return data.id;
+              }
+              throw error;
+            }
 
   build-tauri:
     needs: create-release
@@ -49,12 +68,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: "ubuntu-22.04" # for Tauri v1 you could replace this with ubuntu-20.04.
+          - platform: "ubuntu-22.04"
+            target: "x86_64-unknown-linux-gnu"
             args: ""
           - platform: "windows-latest"
+            target: "x86_64-pc-windows-msvc"
             args: ""
 
     runs-on: ${{ matrix.platform }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -66,26 +88,151 @@ jobs:
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri'
+          key: v1-rust-${{ matrix.platform }}-${{ matrix.target }}
 
       - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
+        if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-        # webkitgtk 4.0 is for Tauri v1 - webkitgtk 4.1 is for Tauri v2.
-        # You can remove the one that doesn't apply to your app to speed up the workflow a bit.
+          sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev patchelf libssl-dev libgtk-3-dev build-essential curl wget file
+          # Use libayatana-appindicator3-dev instead of libappindicator3-dev to avoid conflicts
+          sudo apt-get install -y libayatana-appindicator3-dev
+          # Remove conflicting packages if they exist
+          sudo apt-get remove -y libappindicator3-dev || true
+          sudo apt-get autoremove -y
+          sudo apt-get install -f
+
+      - name: install dependencies (windows only)
+        if: matrix.platform == 'windows-latest'
+        shell: powershell
+        run: |
+          # WebView2 is typically pre-installed on Windows runners
+          echo "Checking WebView2 installation..."
+          Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" -Name "pv" -ErrorAction SilentlyContinue
 
       - name: install frontend dependencies
-        run: yarn install # change this to npm, pnpm or bun depending on which one you use.
+        run: npm install
+
+      - name: verify tauri configuration
+        run: |
+          echo "=== Verifying Tauri Configuration ==="
+          npm run tauri info || echo "Tauri info completed with warnings"
+          echo "=== Checking tauri.conf.json syntax ==="
+          node -e "console.log('Tauri config is valid:', JSON.parse(require('fs').readFileSync('src-tauri/tauri.conf.json', 'utf8')) ? 'Yes' : 'No')"
+          echo "=== Checking Rust compilation ==="
+          cargo check --manifest-path src-tauri/Cargo.toml || echo "Rust check completed with warnings"
+
+      - name: build frontend
+        run: npm run build
+
+      - name: Verify frontend build output
+        shell: bash
+        run: |
+          echo "=== Verifying Frontend Build Output ==="
+          echo "Current directory: $(pwd)"
+          echo "Contents of current directory:"
+          ls -la
+          echo "=== Checking dist directory ==="
+          if [ -d "dist" ]; then
+            echo "dist directory exists"
+            echo "dist directory contents:"
+            ls -la dist/
+            echo "=== Checking dist/index.html ==="
+            if [ -f "dist/index.html" ]; then
+              echo "dist/index.html exists and is readable"
+              echo "File size: $(stat -c%s dist/index.html) bytes"
+            else
+              echo "ERROR: dist/index.html not found"
+              exit 1
+            fi
+          else
+            echo "ERROR: dist directory not found"
+            exit 1
+          fi
+
+      - name: Create frontend dist directory for Tauri (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: powershell
+        run: |
+          Write-Host "=== Creating frontend dist directory for Tauri (Windows) ==="
+          Write-Host "Current directory: $(Get-Location)"
+          if (Test-Path "dist") {
+            Write-Host "dist directory exists, creating src-tauri\dist directory"
+            New-Item -Path "src-tauri\dist" -ItemType Directory -Force | Out-Null
+            Write-Host "Copying dist contents to src-tauri\dist"
+            Copy-Item -Path "dist\*" -Destination "src-tauri\dist" -Recurse -Force
+            Write-Host "Copy completed"
+            if (Test-Path "src-tauri\dist\index.html") {
+              Write-Host "Frontend assets successfully copied"
+              $fileSize = (Get-Item "src-tauri\dist\index.html").Length
+              Write-Host "index.html size: $fileSize bytes"
+            } else {
+              Write-Host "ERROR: Failed to copy frontend assets"
+              exit 1
+            }
+          } else {
+            Write-Host "ERROR: dist directory not found"
+            exit 1
+          }
+
+      - name: Create frontend dist directory for Tauri (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        shell: bash
+        run: |
+          echo "=== Creating frontend dist directory for Tauri (Linux) ==="
+          echo "Current directory: $(pwd)"
+          if [ -d "dist" ]; then
+            echo "dist directory exists, creating src-tauri/dist directory"
+            mkdir -p src-tauri/dist
+            echo "Copying dist contents to src-tauri/dist"
+            cp -r dist/* src-tauri/dist/
+            echo "Copy completed"
+            if [ -f "src-tauri/dist/index.html" ]; then
+              echo "Frontend assets successfully copied"
+              echo "index.html size: $(stat -c%s src-tauri/dist/index.html) bytes"
+            else
+              echo "ERROR: Failed to copy frontend assets"
+              exit 1
+            fi
+          else
+            echo "ERROR: dist directory not found"
+            exit 1
+          fi
+
+      - name: Verify tauri configuration content
+        shell: bash
+        run: |
+          echo "=== Verifying tauri.conf.json content ==="
+          echo "Current working directory: $(pwd)"
+          echo "tauri.conf.json content:"
+          cat src-tauri/tauri.conf.json
+          echo "=== Extracting frontendDist value ==="
+          node -e "const config = require('./src-tauri/tauri.conf.json'); console.log('frontendDist:', JSON.stringify(config.build.frontendDist));"
+          echo "=== Checking if dist directory exists in src-tauri ==="
+          if [ -d "src-tauri/dist" ]; then
+            echo "src-tauri/dist exists"
+            ls -la src-tauri/dist/ | head -5
+          else
+            echo "src-tauri/dist does not exist"
+          fi
 
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
-          args: ${{ matrix.args }}
+          args: ${{ matrix.args }} --config src-tauri/tauri.conf.json --target ${{ matrix.target }}
+          tauriScript: npm run tauri
+          tagName: app-v__VERSION__
+          includeDebug: false
 
   publish-release:
     permissions:
@@ -101,10 +248,52 @@ jobs:
           release_id: ${{ needs.create-release.outputs.release_id }}
         with:
           script: |
-            github.rest.repos.updateRelease({
+            const release_id = process.env.release_id;
+
+            // Get current release information
+            const { data: release } = await github.rest.repos.getRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              release_id: process.env.release_id,
+              release_id: release_id
+            });
+
+            console.log(`Publishing release: ${release.name}`);
+            console.log(`Current asset count: ${release.assets.length}`);
+
+            // Clean up duplicate assets if any exist
+            if (release.assets.length > 0) {
+              console.log('Cleaning up existing assets...');
+              for (const asset of release.assets) {
+                try {
+                  await github.rest.repos.deleteReleaseAsset({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    asset_id: asset.id
+                  });
+                  console.log(`Deleted asset: ${asset.name}`);
+                } catch (error) {
+                  console.log(`Failed to delete asset ${asset.name}: ${error.message}`);
+                }
+              }
+            }
+
+            // Update release to publish it
+            const { data: updatedRelease } = await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release_id,
               draft: false,
               prerelease: false
-            })
+            });
+
+            console.log(`Release published successfully: ${updatedRelease.html_url}`);
+            console.log(`Final asset count: ${updatedRelease.assets.length}`);
+
+            return updatedRelease.html_url;
+
+      - name: display release info
+        run: |
+          echo "=== Release Information ==="
+          echo "Release URL: ${{ steps.publish-release.outputs.result }}"
+          echo "Release ID: ${{ needs.create-release.outputs.release_id }}"
+          echo "Build status: completed successfully"
