@@ -173,50 +173,28 @@ jobs:
             exit 1
           fi
 
-      - name: Ensure frontend assets are available for Tauri
-        shell: bash
-        run: |
-          echo "=== Ensuring frontend assets are available for Tauri ==="
-          echo "Current directory: $(pwd)"
-
-          # Remove any existing src-tauri/dist directory to ensure clean state
-          if [ -d "src-tauri/dist" ]; then
-            echo "Removing existing src-tauri/dist directory"
-            rm -rf src-tauri/dist
-          fi
-
-          # Create fresh src-tauri/dist directory
-          echo "Creating src-tauri/dist directory"
-          mkdir -p src-tauri/dist
-
-          # Copy frontend assets to src-tauri/dist
-          echo "Copying frontend assets to src-tauri/dist"
-          cp -r dist/* src-tauri/dist/
-
-          # Verify copy was successful
-          if [ -f "src-tauri/dist/index.html" ]; then
-            echo "Frontend assets successfully copied to src-tauri/dist"
-            echo "index.html size: $(stat -c%s src-tauri/dist/index.html) bytes"
-          else
-            echo "ERROR: Failed to copy frontend assets to src-tauri/dist"
-            exit 1
-          fi
-
-      - name: Verify tauri configuration content
+      - name: Verify tauri configuration and frontend assets
         shell: bash
         run: |
           echo "=== Verifying tauri.conf.json content ==="
           echo "Current working directory: $(pwd)"
-          echo "tauri.conf.json content:"
-          cat src-tauri/tauri.conf.json
           echo "=== Extracting frontendDist value ==="
           node -e "const config = require('./src-tauri/tauri.conf.json'); console.log('frontendDist:', JSON.stringify(config.build.frontendDist));"
-          echo "=== Checking if dist directory exists in src-tauri ==="
-          if [ -d "src-tauri/dist" ]; then
-            echo "src-tauri/dist exists"
-            ls -la src-tauri/dist/ | head -5
+          echo "=== Checking if dist directory exists at project root ==="
+          if [ -d "dist" ]; then
+            echo "dist directory exists at project root"
+            echo "dist directory contents:"
+            ls -la dist/ | head -5
+            if [ -f "dist/index.html" ]; then
+              echo "Frontend assets are available at project root/dist"
+              echo "index.html size: $(stat -c%s dist/index.html) bytes"
+            else
+              echo "ERROR: dist/index.html not found"
+              exit 1
+            fi
           else
-            echo "src-tauri/dist does not exist"
+            echo "ERROR: dist directory not found at project root"
+            exit 1
           fi
 
       - uses: tauri-apps/tauri-action@v0
