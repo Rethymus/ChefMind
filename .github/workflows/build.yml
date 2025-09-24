@@ -141,9 +141,8 @@ jobs:
           echo "=== Checking tauri.conf.json syntax ==="
           node -e "console.log('Tauri config is valid:', JSON.parse(require('fs').readFileSync('src-tauri/tauri.conf.json', 'utf8')) ? 'Yes' : 'No')"
           echo "=== Verifying frontendDist configuration ==="
-          node -e "const config = JSON.parse(require('fs').readFileSync('src-tauri/tauri.conf.json', 'utf8')); console.log('frontendDist value:', config.build.frontendDist); if (config.build.frontendDist !== 'dist') { console.log('ERROR: frontendDist should be \"dist\" but is', config.build.frontendDist); process.exit(1); }"
-          echo "=== Checking Rust compilation ==="
-          cargo check --manifest-path src-tauri/Cargo.toml || echo "Rust check completed with warnings"
+          node -e "const config = JSON.parse(require('fs').readFileSync('src-tauri/tauri.conf.json', 'utf8')); console.log('frontendDist value:', config.build.frontendDist); if (config.build.frontendDist !== '../dist') { console.log('ERROR: frontendDist should be \"../dist\" but is', config.build.frontendDist); process.exit(1); }"
+          echo "=== Rust compilation will be checked after frontend build ==="
 
       - name: build frontend
         run: npm run build
@@ -173,13 +172,11 @@ jobs:
             exit 1
           fi
 
-      - name: Verify tauri configuration and frontend assets
+      - name: Verify frontend build output and check Rust compilation
         shell: bash
         run: |
-          echo "=== Verifying tauri.conf.json content ==="
+          echo "=== Verifying Frontend Build Output ==="
           echo "Current working directory: $(pwd)"
-          echo "=== Extracting frontendDist value ==="
-          node -e "const config = require('./src-tauri/tauri.conf.json'); console.log('frontendDist:', JSON.stringify(config.build.frontendDist));"
           echo "=== Checking if dist directory exists at project root ==="
           if [ -d "dist" ]; then
             echo "dist directory exists at project root"
@@ -196,6 +193,9 @@ jobs:
             echo "ERROR: dist directory not found at project root"
             exit 1
           fi
+          echo "=== Checking Rust compilation with frontend assets present ==="
+          cd src-tauri
+          cargo check || echo "Rust check completed with warnings"
 
       - uses: tauri-apps/tauri-action@v0
         env:
