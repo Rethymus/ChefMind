@@ -64,6 +64,9 @@ components.d.ts
 .env.development.local
 .env.test.local
 .env.production.local
+*.key
+secret*
+config*key*
 
 # 临时文件
 *.tmp
