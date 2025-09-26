@@ -1,0 +1,489 @@
+/*
+ * ChefMind - Element Plus Dialog Dark Mode Fixes
+ *
+ * This file provides comprehensive solutions for fixing white background issues
+ * in Element Plus dialogs during dark mode across the entire application.
+ */
+
+/* Global dialog dark mode fixes */
+[data-theme='dark'] {
+  /* Base dialog styling with maximum specificity */
+  .el-dialog {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  /* Dialog header */
+  .el-dialog__header {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+  }
+
+  /* Dialog body - MAIN FIX FOR WHITE BACKGROUNDS */
+  .el-dialog__body {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+
+    /* Override ALL nested white backgrounds */
+    * {
+      background-color: transparent !important;
+    }
+
+    /* Specific element fixes */
+    .el-card,
+    .el-form,
+    .el-form-item,
+    .el-row,
+    .el-col,
+    .el-tabs,
+    .el-tab-pane,
+    .el-button-group,
+    .el-checkbox-group,
+    .el-radio-group,
+    .el-input,
+    .el-select,
+    .el-date-picker,
+    .el-time-picker,
+    .el-cascader,
+    .el-transfer,
+    .el-table,
+    .el-pagination,
+    .el-tree,
+    .el-upload,
+    .el-image,
+    .el-carousel,
+    .el-calendar,
+    .el-backtop,
+    .el-page-header,
+    .el-skeleton,
+    .el-empty,
+    .el-result,
+    .el-descriptions,
+    .el-timeline,
+    .el-divider,
+    .el-alert,
+    .el-tag,
+    .el-progress,
+    .el-badge,
+    .el-avatar,
+    .el-skeleton-item,
+    .el-skeleton__paragraph,
+    .el-skeleton__title,
+    .el-skeleton__avatar,
+    .el-skeleton__image,
+    .el-skeleton__button,
+    .el-skeleton__input,
+    .el-skeleton__text,
+    .el-skeleton__caption,
+    .el-skeleton__action {
+      background-color: transparent !important;
+    }
+  }
+
+  /* Dialog footer */
+  .el-dialog__footer {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border-top: 1px solid var(--border-color) !important;
+  }
+
+  /* Dialog title */
+  .el-dialog__title {
+    color: var(--text-color) !important;
+    font-weight: 600 !important;
+  }
+
+  /* Dialog close button */
+  .el-dialog__headerbtn .el-icon {
+    color: var(--text-color-secondary) !important;
+  }
+
+  .el-dialog__headerbtn:hover .el-icon {
+    color: var(--text-color) !important;
+  }
+
+  /* Button styling within dialogs */
+  .el-dialog__body .el-button,
+  .el-dialog__footer .el-button {
+    background-color: var(--bg-color-light) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+
+    &:hover {
+      background-color: var(--hover-color) !important;
+      border-color: var(--primary-color) !important;
+    }
+
+    &.el-button--primary {
+      background-color: var(--primary-color) !important;
+      border-color: var(--primary-color) !important;
+      color: white !important;
+
+      &:hover {
+        background-color: var(--primary-dark) !important;
+        border-color: var(--primary-dark) !important;
+      }
+    }
+
+    &.el-button--success {
+      background-color: var(--success-color) !important;
+      border-color: var(--success-color) !important;
+      color: white !important;
+    }
+
+    &.el-button--warning {
+      background-color: var(--warning-color) !important;
+      border-color: var(--warning-color) !important;
+      color: white !important;
+    }
+
+    &.el-button--danger {
+      background-color: var(--danger-color) !important;
+      border-color: var(--danger-color) !important;
+      color: white !important;
+    }
+
+    &.el-button--info {
+      background-color: var(--info-color) !important;
+      border-color: var(--info-color) !important;
+      color: white !important;
+    }
+
+    &.el-button--text {
+      background-color: transparent !important;
+      border-color: transparent !important;
+      color: var(--primary-color) !important;
+    }
+  }
+
+  /* Input fields within dialogs */
+  .el-dialog__body .el-input,
+  .el-dialog__body .el-select,
+  .el-dialog__body .el-textarea {
+    .el-input__inner,
+    .el-select__inner,
+    .el-textarea__inner {
+      background-color: var(--bg-color-light) !important;
+      border-color: var(--border-color) !important;
+      color: var(--text-color) !important;
+
+      &::placeholder {
+        color: var(--text-color-lighter) !important;
+      }
+    }
+  }
+
+  /* Form items within dialogs */
+  .el-dialog__body .el-form-item {
+    .el-form-item__label {
+      color: var(--text-color) !important;
+    }
+
+    .el-form-item__content {
+      color: var(--text-color) !important;
+    }
+  }
+
+  /* Cards within dialogs */
+  .el-dialog__body .el-card {
+    background-color: var(--bg-color-light) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+
+    .el-card__header {
+      background-color: var(--bg-color-light) !important;
+      border-bottom-color: var(--border-color) !important;
+      color: var(--text-color) !important;
+    }
+
+    .el-card__body {
+      background-color: var(--bg-color-light) !important;
+      color: var(--text-color) !important;
+    }
+  }
+
+  /* Tables within dialogs */
+  .el-dialog__body .el-table {
+    background-color: var(--bg-color-light) !important;
+    color: var(--text-color) !important;
+
+    .el-table__header-wrapper {
+      background-color: var(--bg-color-light) !important;
+    }
+
+    .el-table__body-wrapper {
+      background-color: var(--bg-color-light) !important;
+    }
+
+    .el-table__header {
+      background-color: var(--bg-color-light) !important;
+    }
+
+    .el-table__body {
+      background-color: var(--bg-color-light) !important;
+    }
+
+    th.el-table__cell {
+      background-color: var(--bg-color-light) !important;
+      color: var(--text-color) !important;
+      border-bottom-color: var(--border-color) !important;
+    }
+
+    td.el-table__cell {
+      background-color: var(--bg-color-light) !important;
+      color: var(--text-color) !important;
+      border-bottom-color: var(--border-color) !important;
+    }
+
+    .el-table__row:hover > td.el-table__cell {
+      background-color: var(--hover-color) !important;
+    }
+
+    .el-table__empty-block {
+      background-color: var(--bg-color-light) !important;
+    }
+
+    .el-table__empty-text {
+      color: var(--text-color-lighter) !important;
+    }
+  }
+
+  /* Tabs within dialogs */
+  .el-dialog__body .el-tabs {
+    .el-tabs__header {
+      background-color: transparent !important;
+      border-bottom-color: var(--border-color) !important;
+    }
+
+    .el-tabs__nav-wrap {
+      background-color: transparent !important;
+    }
+
+    .el-tabs__nav-scroll {
+      background-color: transparent !important;
+    }
+
+    .el-tabs__nav {
+      background-color: transparent !important;
+    }
+
+    .el-tabs__item {
+      background-color: transparent !important;
+      color: var(--text-color) !important;
+
+      &.is-active {
+        color: var(--primary-color) !important;
+      }
+
+      &:hover {
+        color: var(--primary-color) !important;
+      }
+    }
+
+    .el-tabs__active-bar {
+      background-color: var(--primary-color) !important;
+    }
+
+    .el-tabs__content {
+      background-color: transparent !important;
+    }
+
+    .el-tab-pane {
+      background-color: transparent !important;
+    }
+  }
+
+  /* Checkbox and radio groups within dialogs */
+  .el-dialog__body .el-checkbox-group,
+  .el-dialog__body .el-radio-group {
+    background-color: transparent !important;
+  }
+
+  .el-dialog__body .el-checkbox,
+  .el-dialog__body .el-radio {
+    color: var(--text-color) !important;
+
+    .el-checkbox__label,
+    .el-radio__label {
+      color: var(--text-color) !important;
+    }
+  }
+
+  /* Select dropdowns within dialogs */
+  .el-dialog__body .el-select-dropdown {
+    background-color: var(--bg-color-light) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  .el-dialog__body .el-select-dropdown__item {
+    color: var(--text-color) !important;
+
+    &.hover {
+      background-color: var(--hover-color) !important;
+    }
+
+    &.selected {
+      color: var(--primary-color) !important;
+      background-color: var(--hover-color) !important;
+    }
+  }
+
+  /* Pagination within dialogs */
+  .el-dialog__body .el-pagination {
+    background-color: transparent !important;
+    color: var(--text-color) !important;
+
+    .el-pager li {
+      background-color: var(--bg-color-light) !important;
+      border-color: var(--border-color) !important;
+      color: var(--text-color) !important;
+
+      &.active {
+        background-color: var(--primary-color) !important;
+        border-color: var(--primary-color) !important;
+        color: white !important;
+      }
+
+      &:hover {
+        background-color: var(--hover-color) !important;
+      }
+    }
+
+    .btn-prev,
+    .btn-next {
+      background-color: var(--bg-color-light) !important;
+      border-color: var(--border-color) !important;
+      color: var(--text-color) !important;
+
+      &:hover {
+        background-color: var(--hover-color) !important;
+      }
+    }
+  }
+
+  /* Tag elements within dialogs */
+  .el-dialog__body .el-tag {
+    background-color: var(--bg-color-light) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+
+    &.el-tag--primary {
+      background-color: var(--primary-color) !important;
+      border-color: var(--primary-color) !important;
+      color: white !important;
+    }
+
+    &.el-tag--success {
+      background-color: var(--success-color) !important;
+      border-color: var(--success-color) !important;
+      color: white !important;
+    }
+
+    &.el-tag--warning {
+      background-color: var(--warning-color) !important;
+      border-color: var(--warning-color) !important;
+      color: white !important;
+    }
+
+    &.el-tag--danger {
+      background-color: var(--danger-color) !important;
+      border-color: var(--danger-color) !important;
+      color: white !important;
+    }
+
+    &.el-tag--info {
+      background-color: var(--info-color) !important;
+      border-color: var(--info-color) !important;
+      color: white !important;
+    }
+  }
+
+  /* Alert elements within dialogs */
+  .el-dialog__body .el-alert {
+    background-color: var(--bg-color-light) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+
+    &.el-alert--success {
+      background-color: var(--success-color) !important;
+      border-color: var(--success-color) !important;
+      color: white !important;
+    }
+
+    &.el-alert--warning {
+      background-color: var(--warning-color) !important;
+      border-color: var(--warning-color) !important;
+      color: white !important;
+    }
+
+    &.el-alert--error {
+      background-color: var(--danger-color) !important;
+      border-color: var(--danger-color) !important;
+      color: white !important;
+    }
+
+    &.el-alert--info {
+      background-color: var(--info-color) !important;
+      border-color: var(--info-color) !important;
+      color: white !important;
+    }
+  }
+
+  /* Progress elements within dialogs */
+  .el-dialog__body .el-progress {
+    .el-progress-bar__outer {
+      background-color: var(--bg-color-light) !important;
+      border-color: var(--border-color) !important;
+    }
+
+    .el-progress-bar__inner {
+      background-color: var(--primary-color) !important;
+    }
+  }
+
+  /* Fix for any inline styles that might override our dark mode */
+  .el-dialog__body [style*='background-color: white'],
+  .el-dialog__body [style*='background-color: #fff'],
+  .el-dialog__body [style*='background: white'],
+  .el-dialog__body [style*='background: #fff'] {
+    background-color: var(--card-bg) !important;
+  }
+
+  .el-dialog__body [style*='color: black'],
+  .el-dialog__body [style*='color: #000'] {
+    color: var(--text-color) !important;
+  }
+}
+
+/* Overlay fix for dark mode */
+[data-theme='dark'] .el-overlay {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(2px);
+}
+
+/* Additional fixes for stubborn white backgrounds */
+[data-theme='dark'] .el-dialog__body .el-button--default {
+  background-color: var(--bg-color-light) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-color) !important;
+}
+
+[data-theme='dark'] .el-dialog__body .el-button--default:hover {
+  background-color: var(--hover-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+/* Fix for any remaining white spaces or gaps */
+[data-theme='dark'] .el-dialog__body > *:not(.el-empty) {
+  background-color: transparent !important;
+}
+
+/* Debug helper - uncomment to identify white backgrounds */
+/*
+[data-theme="dark"] .el-dialog__body * {
+  outline: 1px solid red !important;
+}
+*/

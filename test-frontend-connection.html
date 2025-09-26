@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前端数据库连接测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .warning {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 前端数据库连接测试</h1>
+
+        <div class="test-section">
+            <h3>基础环境检查</h3>
+            <button onclick="checkTauriAPI()">检查 Tauri API</button>
+            <button onclick="checkSessionService()">检查 Session 服务</button>
+            <button onclick="checkDatabaseService()">检查数据库服务</button>
+        </div>
+
+        <div class="test-section">
+            <h3>数据库连接测试</h3>
+            <button onclick="testDatabaseConnection()">测试数据库连接</button>
+            <button onclick="testSessionId()">测试 Session ID</button>
+            <button onclick="testParameterBinding()">测试参数绑定</button>
+        </div>
+
+        <div class="test-section">
+            <h3>收藏功能测试</h3>
+            <button onclick="testGetFavorites()">测试获取收藏</button>
+            <button onclick="testAddFavorite()">测试添加收藏</button>
+            <button onclick="testRemoveFavorite()">测试移除收藏</button>
+        </div>
+
+        <div class="test-section">
+            <h3>调试信息</h3>
+            <button onclick="clearLog()">清空日志</button>
+            <div id="log" class="log">等待测试...</div>
+        </div>
+    </div>
+
+    <script>
+        const logDiv = document.getElementById('log');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#000',
+                success: '#155724',
+                error: '#721c24',
+                warning: '#856404'
+            };
+            logDiv.innerHTML += `<span style="color: ${colors[type]}">[${timestamp}] ${message}</span>\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            logDiv.innerHTML = '日志已清空...\n';
+        }
+
+        async function checkTauriAPI() {
+            log('🔍 检查 Tauri API...');
+
+            if (window.__TAURI__) {
+                log('✅ Tauri API 可用', 'success');
+                log(`版本: ${window.__TAURI__.__version || '未知'}`);
+            } else {
+                log('❌ Tauri API 不可用', 'error');
+                log('请确保在 Tauri 应用中运行此页面', 'warning');
+            }
+        }
+
+        async function checkSessionService() {
+            log('🔍 检查 Session 服务...');
+
+            try {
+                // 模拟导入 sessionService
+                const sessionId = localStorage.getItem('chefmind_session_id') || '未设置';
+                log(`当前 Session ID: ${sessionId}`);
+
+                if (sessionId === '未设置') {
+                    // 创建测试 session
+                    const newSessionId = `session_test_${Date.now()}`;
+                    localStorage.setItem('chefmind_session_id', newSessionId);
+                    log(`✅ 创建测试 Session: ${newSessionId}`, 'success');
+                } else {
+                    log('✅ Session 已存在', 'success');
+                }
+            } catch (error) {
+                log(`❌ Session 服务检查失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkDatabaseService() {
+            log('🔍 检查数据库服务...');
+
+            try {
+                if (!window.__TAURI__) {
+                    log('❌ Tauri API 不可用，无法检查数据库服务', 'error');
+                    return;
+                }
+
+                log('✅ 数据库服务类已定义', 'success');
+            } catch (error) {
+                log(`❌ 数据库服务检查失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDatabaseConnection() {
+            log('🔍 测试数据库连接...');
+
+            try {
+                if (!window.__TAURI__) {
+                    throw new Error('Tauri API 不可用');
+                }
+
+                // 测试简单的数据库查询
+                const result = await window.__TAURI__.invoke('database_query', {
+                    query: "SELECT name FROM sqlite_master WHERE type='table'",
+                    params: []
+                });
+
+                log(`✅ 数据库连接成功，找到 ${result.data.length} 个表`, 'success');
+                result.data.forEach(table => {
+                    log(`  - ${table.name}`);
+                });
+            } catch (error) {
+                log(`❌ 数据库连接失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSessionId() {
+            log('🔍 测试 Session ID...');
+
+            try {
+                // 获取或创建 session ID
+                let sessionId = localStorage.getItem('chefmind_session_id');
+                if (!sessionId) {
+                    sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                    localStorage.setItem('chefmind_session_id', sessionId);
+                    log(`🆔 创建新 Session ID: ${sessionId}`, 'success');
+                } else {
+                    log(`📋 使用现有 Session ID: ${sessionId}`, 'success');
+                }
+
+                // 测试 session ID 在数据库查询中的使用
+                if (window.__TAURI__) {
+                    const result = await window.__TAURI__.invoke('database_query', {
+                        query: "SELECT COUNT(*) as count FROM favorites WHERE session_id = ?",
+                        params: [sessionId]
+                    });
+
+                    const count = result.data[0]?.count || 0;
+                    log(`📊 当前 Session 的收藏数量: ${count}`, 'success');
+                }
+            } catch (error) {
+                log(`❌ Session ID 测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function testParameterBinding() {
+            log('🔍 测试参数绑定...');
+
+            try {
+                if (!window.__TAURI__) {
+                    throw new Error('Tauri API 不可用');
+                }
+
+                // 测试带参数的查询
+                const testSessionId = `test_${Date.now()}`;
+                const result = await window.__TAURI__.invoke('database_query', {
+                    query: "SELECT ? as test_param, ? as test_number, ? as test_string",
+                    params: [testSessionId, 42, "测试字符串"]
+                });
+
+                log(`✅ 参数绑定测试成功`, 'success');
+                log(`参数结果: ${JSON.stringify(result.data)}`);
+            } catch (error) {
+                log(`❌ 参数绑定测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGetFavorites() {
+            log('🔍 测试获取收藏...');
+
+            try {
+                if (!window.__TAURI__) {
+                    throw new Error('Tauri API 不可用');
+                }
+
+                const sessionId = localStorage.getItem('chefmind_session_id') || 'test_session_001';
+                log(`使用 Session ID: ${sessionId}`);
+
+                const result = await window.__TAURI__.invoke('database_query', {
+                    query: `
+                        SELECT f.*, r.title, r.description
+                        FROM favorites f
+                        LEFT JOIN recipes r ON f.recipe_id = r.id
+                        WHERE f.session_id = ?
+                        ORDER BY f.created_at DESC
+                    `,
+                    params: [sessionId]
+                });
+
+                log(`✅ 获取收藏成功，找到 ${result.data.length} 条记录`, 'success');
+                result.data.forEach((fav, index) => {
+                    log(`  ${index + 1}. ${fav.recipe_title || fav.title} (ID: ${fav.recipe_id})`);
+                });
+            } catch (error) {
+                log(`❌ 获取收藏失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAddFavorite() {
+            log('🔍 测试添加收藏...');
+
+            try {
+                if (!window.__TAURI__) {
+                    throw new Error('Tauri API 不可用');
+                }
+
+                const sessionId = localStorage.getItem('chefmind_session_id') || 'test_session_001';
+
+                // 先找一个可用的菜谱
+                const recipeResult = await window.__TAURI__.invoke('database_query_one', {
+                    query: "SELECT id, title FROM recipes WHERE id NOT IN (SELECT recipe_id FROM favorites WHERE session_id = ?) LIMIT 1",
+                    params: [sessionId]
+                });
+
+                if (!recipeResult.data) {
+                    log('❌ 没有可用的菜谱用于测试收藏', 'warning');
+                    return;
+                }
+
+                const recipeId = recipeResult.data.id;
+                const recipeTitle = recipeResult.data.title;
+
+                const result = await window.__TAURI__.invoke('database_execute', {
+                    query: "INSERT INTO favorites (session_id, recipe_id, recipe_title) VALUES (?, ?, ?)",
+                    params: [sessionId, recipeId, recipeTitle]
+                });
+
+                log(`✅ 成功添加收藏: ${recipeTitle} (ID: ${recipeId})`, 'success');
+                log(`影响行数: ${result.changes}, 插入ID: ${result.lastInsertId}`);
+            } catch (error) {
+                log(`❌ 添加收藏失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function testRemoveFavorite() {
+            log('🔍 测试移除收藏...');
+
+            try {
+                if (!window.__TAURI__) {
+                    throw new Error('Tauri API 不可用');
+                }
+
+                const sessionId = localStorage.getItem('chefmind_session_id') || 'test_session_001';
+
+                // 删除最新的收藏
+                const result = await window.__TAURI__.invoke('database_execute', {
+                    query: "DELETE FROM favorites WHERE session_id = ? ORDER BY created_at DESC LIMIT 1",
+                    params: [sessionId]
+                });
+
+                if (result.changes > 0) {
+                    log(`✅ 成功删除收藏，影响行数: ${result.changes}`, 'success');
+                } else {
+                    log('⚠️ 没有找到可删除的收藏', 'warning');
+                }
+            } catch (error) {
+                log(`❌ 移除收藏失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 页面加载时自动检查基础环境
+        window.addEventListener('DOMContentLoaded', () => {
+            log('🚀 前端数据库连接测试已加载');
+            log('请在 Tauri 应用中打开此页面进行测试');
+
+            setTimeout(() => {
+                checkTauriAPI();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

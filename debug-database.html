@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据库连接调试工具</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 0;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #fff;
+            font-size: 14px;
+        }
+        .console {
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+        }
+        .input-area {
+            background: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .btn {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 2px;
+            font-family: monospace;
+        }
+        .btn:hover {
+            background: #1177bb;
+        }
+        .btn.danger {
+            background: #c41e3a;
+        }
+        .btn.danger:hover {
+            background: #e74c3c;
+        }
+        .btn.success {
+            background: #27ae60;
+        }
+        .btn.success:hover {
+            background: #2ecc71;
+        }
+        input, textarea {
+            background: #1a1a1a;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 3px;
+            padding: 5px;
+            font-family: monospace;
+            width: 100%;
+            margin: 2px 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 3px;
+        }
+        .success { background: #27ae60; }
+        .error { background: #c41e3a; }
+        .warning { background: #f39c12; color: #000; }
+        .info { background: #3498db; }
+        .section {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 5px;
+        }
+        .result {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 3px;
+            padding: 10px;
+            margin: 5px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .timestamp {
+            color: #888;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 ChefMind 数据库连接调试工具</h1>
+
+    <div class="section">
+        <h3>环境检查</h3>
+        <button class="btn" onclick="checkEnvironment()">检查环境</button>
+        <button class="btn" onclick="checkTauriAPI()">检查 Tauri API</button>
+        <button class="btn" onclick="checkDatabaseConnection()">检查数据库连接</button>
+    </div>
+
+    <div class="section">
+        <h3>数据查询</h3>
+        <button class="btn success" onclick="queryTables()">查询所有表</button>
+        <button class="btn success" onclick="queryFavorites()">查询收藏数据</button>
+        <button class="btn success" onclick="queryRecipes()">查询菜谱数据</button>
+        <button class="btn success" onclick="queryUsers()">查询用户数据</button>
+    </div>
+
+    <div class="section">
+        <h3>自定义查询</h3>
+        <textarea id="customQuery" rows="3" placeholder="输入SQL查询语句...">SELECT COUNT(*) as count FROM favorites WHERE session_id = 'test_session_001'</textarea>
+        <br>
+        <button class="btn" onclick="executeCustomQuery()">执行查询</button>
+        <button class="btn success" onclick="testGetFavorites()">测试 getFavorites 方法</button>
+    </div>
+
+    <div class="section">
+        <h3>测试操作</h3>
+        <button class="btn" onclick="addTestFavorite()">添加测试收藏</button>
+        <button class="btn danger" onclick="removeTestFavorite()">删除测试收藏</button>
+        <button class="btn" onclick="clearConsole()">清空控制台</button>
+    </div>
+
+    <div class="console" id="console">=== 数据库调试控制台 ===
+等待测试操作...</div>
+
+    <div id="results"></div>
+
+    <script>
+        const consoleDiv = document.getElementById('console');
+        const resultsDiv = document.getElementById('results');
+        let testRecipeId = null;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#fff',
+                success: '#2ecc71',
+                error: '#e74c3c',
+                warning: '#f39c12'
+            };
+            consoleDiv.innerHTML += `<span style="color: ${colors[type]}">[${timestamp}] ${message}</span>\n`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        function showResult(title, data, isError = false) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = `<strong>${title}:</strong><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            if (isError) resultDiv.style.borderColor = '#e74c3c';
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function clearConsole() {
+            consoleDiv.innerHTML = '=== 数据库调试控制台 ===\n';
+            resultsDiv.innerHTML = '';
+        }
+
+        async function checkEnvironment() {
+            log('🔍 开始环境检查...', 'info');
+
+            // 检查浏览器环境
+            log(`浏览器: ${navigator.userAgent}`, 'info');
+            log(`平台: ${navigator.platform}`, 'info');
+
+            // 检查 Tauri
+            if (window.__TAURI__) {
+                log('✅ Tauri 环境检测成功', 'success');
+                log(`Tauri 版本: ${window.__TAURI__.__version || '未知'}`, 'info');
+            } else {
+                log('❌ Tauri 环境未检测到！请在 Tauri 应用中运行此页面', 'error');
+                return;
+            }
+
+            // 检查核心 API
+            try {
+                const { invoke } = window.__TAURI__.core;
+                log('✅ Tauri Core API 可用', 'success');
+            } catch (error) {
+                log(`❌ Tauri Core API 不可用: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkTauriAPI() {
+            log('🔍 检查 Tauri API...', 'info');
+
+            try {
+                const { invoke } = window.__TAURI__.core;
+
+                // 测试简单的日志调用
+                await invoke('log_message', { message: '数据库调试测试消息' });
+                log('✅ Tauri invoke 调用成功', 'success');
+
+            } catch (error) {
+                log(`❌ Tauri API 调用失败: ${error.message}`, 'error');
+                showResult('Tauri API 错误', error, true);
+            }
+        }
+
+        async function checkDatabaseConnection() {
+            log('🔍 检查数据库连接...', 'info');
+
+            try {
+                const { invoke } = window.__TAURI__.core;
+
+                // 测试数据库连接 - 查询 sqlite_master
+                const result = await invoke('database_query', {
+                    query: "SELECT name, type FROM sqlite_master WHERE type='table'",
+                    params: []
+                });
+
+                log(`✅ 数据库连接成功！找到 ${result.data.length} 个表`, 'success');
+                showResult('数据库表列表', result.data);
+
+                result.data.forEach(table => {
+                    log(`  - ${table.name} (${table.type})`, 'info');
+                });
+
+            } catch (error) {
+                log(`❌ 数据库连接失败: ${error.message}`, 'error');
+                showResult('数据库连接错误', error, true);
+            }
+        }
+
+        async function queryTables() {
+            log('📋 查询所有表...', 'info');
+
+            try {
+                const { invoke } = window.__TAURI__.core;
+
+                const result = await invoke('database_query', {
+                    query: "SELECT name, type, sql FROM sqlite_master",
+                    params: []
+                });
+
+                log(`✅ 查询成功，返回 ${result.data.length} 个对象`, 'success');
+                showResult('所有数据库对象', result.data);
+
+            } catch (error) {
+                log(`❌ 查询表失败: ${error.message}`, 'error');
+                showResult('查询错误', error, true);
+            }
+        }
+
+        async function queryFavorites() {
+            log('❤️ 查询收藏数据...', 'info');
+
+            try {
+                const { invoke } = window.__TAURI__.core;
+
+                const result = await invoke('database_query', {
+                    query: "SELECT f.*, r.title FROM favorites f LEFT JOIN recipes r ON f.recipe_id = r.id ORDER BY f.created_at DESC",
+                    params: []
+                });
+
+                log(`✅ 查询成功，找到 ${result.data.length} 条收藏记录`, 'success');
+                showResult('收藏数据', result.data);
+
+                result.data.forEach((fav, index) => {
+                    log(`  ${index + 1}. ${fav.recipe_title || fav.title || '未命名'} (ID: ${fav.recipe_id}, 会话: ${fav.session_id})`, 'info');
+                });
+
+            } catch (error) {
+                log(`❌ 查询收藏失败: ${error.message}`, 'error');
+                showResult('查询错误', error, true);
+            }
+        }
+
+        async function queryRecipes() {
+            log('🍳 查询菜谱数据...', 'info');
+
+            try {
+                const { invoke } = window.__TAURI__.core;
+
+                const result = await invoke('database_query', {
+                    query: "SELECT id, title, difficulty, cooking_time FROM recipes LIMIT 10",
+                    params: []
+                });
+
+                log(`✅ 查询成功，返回 ${result.data.length} 条菜谱`, 'success');
+                showResult('菜谱数据（前10条）', result.data);
+
+            } catch (error) {
+                log(`❌ 查询菜谱失败: ${error.message}`, 'error');
+                showResult('查询错误', error, true);
+            }
+        }
+
+        async function queryUsers() {
+            log('👤 查询用户数据...', 'info');
+
+            try {
+                const { invoke } = window.__TAURI__.core;
+
+                const result = await invoke('database_query', {
+                    query: "SELECT session_id, created_at FROM users",
+                    params: []
+                });
+
+                log(`✅ 查询成功，找到 ${result.data.length} 个用户`, 'success');
+                showResult('用户数据', result.data);
+
+                result.data.forEach(user => {
+                    log(`  会话: ${user.session_id}, 创建时间: ${user.created_at}`, 'info');
+                });
+
+            } catch (error) {
+                log(`❌ 查询用户失败: ${error.message}`, 'error');
+                showResult('查询错误', error, true);
+            }
+        }
+
+        async function executeCustomQuery() {
+            const query = document.getElementById('customQuery').value.trim();
+            if (!query) {
+                log('❌ 请输入SQL查询语句', 'error');
+                return;
+            }
+
+            log(`🔧 执行自定义查询: ${query}`, 'info');
+
+            try {
+                const { invoke } = window.__TAURI__.core;
+
+                const result = await invoke('database_query', {
+                    query: query,
+                    params: []
+                });
+
+                log(`✅ 查询执行成功，返回 ${result.data.length} 条记录`, 'success');
+                showResult('自定义查询结果', result.data);
+
+            } catch (error) {
+                log(`❌ 查询执行失败: ${error.message}`, 'error');
+                showResult('查询错误', error, true);
+            }
+        }
+
+        async function testGetFavorites() {
+            log('🧪 测试 getFavorites 方法...', 'info');
+
+            const sessionId = 'test_session_001';
+            log(`使用会话ID: ${sessionId}`, 'info');
+
+            try {
+                const { invoke } = window.__TAURI__.core;
+
+                // 模拟前端 getFavorites 调用
+                const result = await invoke('database_query', {
+                    query: `
+                        SELECT f.*, r.title, r.description, r.ingredients, r.instructions,
+                               r.cooking_time, r.difficulty, r.servings, r.category, r.tags,
+                               r.nutrition_info, r.image_url, r.average_rating
+                        FROM favorites f
+                        LEFT JOIN recipes r ON f.recipe_id = r.id
+                        WHERE f.session_id = ?
+                        ORDER BY f.created_at DESC
+                    `,
+                    params: [sessionId]
+                });
+
+                log(`✅ getFavorites 测试成功，返回 ${result.data.length} 条记录`, 'success');
+                showResult('getFavorites 测试结果', result.data);
+
+                if (result.data.length > 0) {
+                    testRecipeId = result.data[0].recipe_id;
+                    log(`设置测试菜谱ID: ${testRecipeId}`, 'info');
+                }
+
+            } catch (error) {
+                log(`❌ getFavorites 测试失败: ${error.message}`, 'error');
+                showResult('测试错误', error, true);
+            }
+        }
+
+        async function addTestFavorite() {
+            log('➕ 添加测试收藏...', 'info');
+
+            try {
+                const { invoke } = window.__TAURI__.core;
+
+                // 先找一个可用的菜谱ID
+                const recipeResult = await invoke('database_query_one', {
+                    query: "SELECT id, title FROM recipes WHERE id NOT IN (SELECT recipe_id FROM favorites WHERE session_id = 'test_session_001') LIMIT 1",
+                    params: []
+                });
+
+                if (!recipeResult.data) {
+                    log('❌ 没有可用的菜谱用于测试收藏', 'error');
+                    return;
+                }
+
+                const recipeId = recipeResult.data.id;
+                const recipeTitle = recipeResult.data.title;
+
+                const result = await invoke('database_execute', {
+                    query: "INSERT INTO favorites (session_id, recipe_id, recipe_title) VALUES (?, ?, ?)",
+                    params: ['test_session_001', recipeId, recipeTitle]
+                });
+
+                log(`✅ 成功添加收藏: ${recipeTitle} (ID: ${recipeId})`, 'success');
+                log(`影响行数: ${result.changes}, 插入ID: ${result.lastInsertId}`, 'info');
+
+                // 重新查询收藏
+                setTimeout(() => queryFavorites(), 500);
+
+            } catch (error) {
+                log(`❌ 添加收藏失败: ${error.message}`, 'error');
+                showResult('添加收藏错误', error, true);
+            }
+        }
+
+        async function removeTestFavorite() {
+            log('➖ 删除测试收藏...', 'info');
+
+            try {
+                const { invoke } = window.__TAURI__.core;
+
+                // 删除最新的收藏
+                const result = await invoke('database_execute', {
+                    query: "DELETE FROM favorites WHERE session_id = 'test_session_001' ORDER BY created_at DESC LIMIT 1",
+                    params: []
+                });
+
+                log(`✅ 成功删除收藏，影响行数: ${result.changes}`, 'success');
+
+                // 重新查询收藏
+                setTimeout(() => queryFavorites(), 500);
+
+            } catch (error) {
+                log(`❌ 删除收藏失败: ${error.message}`, 'error');
+                showResult('删除收藏错误', error, true);
+            }
+        }
+
+        // 页面加载完成后自动检查环境
+        window.addEventListener('DOMContentLoaded', () => {
+            log('🚀 数据库调试工具已加载', 'info');
+            log('请在 Tauri 应用中打开此页面进行测试', 'warning');
+
+            // 自动检查环境
+            setTimeout(() => {
+                checkEnvironment();
+            }, 1000);
+        });
+
+        // 添加全局函数以便在控制台调用
+        window.debugDB = {
+            checkEnvironment,
+            checkTauriAPI,
+            checkDatabaseConnection,
+            queryTables,
+            queryFavorites,
+            queryRecipes,
+            queryUsers,
+            executeCustomQuery,
+            testGetFavorites,
+            addTestFavorite,
+            removeTestFavorite,
+            clearConsole,
+            log
+        };
+    </script>
+</body>
+</html>

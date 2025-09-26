@@ -1,0 +1,174 @@
+/* ChefMind 智食谱 - 跨平台字体兼容性增强 */
+
+/* 确保所有平台都能正确显示中文字符 */
+@font-face {
+  font-family: 'System Chinese';
+  src:
+    local('PingFang SC'), local('Microsoft YaHei'), local('WenQuanYi Micro Hei'),
+    local('Hiragino Sans GB'), local('Noto Sans CJK SC'), local('Source Han Sans CN'),
+    local('Droid Sans Fallback');
+  font-display: swap;
+}
+
+/* 针对不同操作系统的字体优化 */
+@media screen and (max-width: 768px) {
+  /* 移动设备字体优化 */
+  body {
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
+      'Liberation Sans', 'PingFang SC', 'Microsoft YaHei', 'WenQuanYi Micro Hei', sans-serif;
+  }
+}
+
+/* Linux 系统字体优化 */
+@media screen and (-webkit-min-device-pixel-ratio: 0) and (min-resolution: 120dpi) {
+  body {
+    font-family:
+      'Noto Sans', 'DejaVu Sans', 'Liberation Sans', 'WenQuanYi Micro Hei', 'Source Han Sans CN',
+      'Roboto', 'Ubuntu', sans-serif;
+  }
+}
+
+/* Windows 系统字体优化 */
+@media screen and (min-width: 1024px) {
+  body {
+    font-family:
+      'Segoe UI', 'Microsoft YaHei', 'Arial', 'Noto Sans', 'DejaVu Sans', 'Liberation Sans',
+      'PingFang SC', 'Helvetica Neue', sans-serif;
+  }
+}
+
+/* macOS 系统字体优化 */
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  body {
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', 'Noto Sans',
+      'DejaVu Sans', 'Liberation Sans', sans-serif;
+  }
+}
+
+/* 确保字体平滑渲染 */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* 中文字符优化 */
+.zh-cn,
+.zh-tw,
+.zh-hk {
+  font-family:
+    'PingFang SC', 'Microsoft YaHei', 'WenQuanYi Micro Hei', 'Hiragino Sans GB', 'Noto Sans CJK SC',
+    'Source Han Sans CN', 'Droid Sans Fallback', sans-serif;
+}
+
+/* 英文字符优化 */
+.en {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
+    'DejaVu Sans', 'Liberation Sans', sans-serif;
+}
+
+/* 数字优化 */
+.numbers {
+  font-family:
+    'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', 'Consolas', 'Courier New',
+    monospace;
+}
+
+/* 标题字体增强 */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family:
+    'Segoe UI',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Roboto',
+    'Helvetica Neue',
+    'Arial',
+    'Noto Sans',
+    'DejaVu Sans',
+    'Liberation Sans',
+    'PingFang SC',
+    'Microsoft YaHei',
+    'WenQuanYi Micro Hei',
+    sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* 按钮字体优化 */
+button,
+.btn,
+input[type='button'],
+input[type='submit'],
+input[type='reset'] {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
+    'DejaVu Sans', 'Liberation Sans', sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* 表单字体优化 */
+input,
+textarea,
+select {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
+    'DejaVu Sans', 'Liberation Sans', sans-serif;
+}
+
+/* 代码字体优化 */
+code,
+pre,
+.code {
+  font-family:
+    'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', 'Consolas', 'Courier New',
+    monospace;
+  font-feature-settings: 'liga' 0;
+}
+
+/* 确保Emoji字体支持 */
+.emoji {
+  font-family:
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Android Emoji',
+    EmojiSymbols, sans-serif;
+}
+
+/* 确保图标字体支持 */
+.icon {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 高DPI屏幕字体优化 */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  body {
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* 低DPI屏幕字体优化 */
+@media (-webkit-max-device-pixel-ratio: 1.5), (max-resolution: 144dpi) {
+  body {
+    font-weight: 500;
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+}
+
+/* 打印字体优化 */
+@media print {
+  body {
+    font-family: 'Georgia', 'Times New Roman', 'Noto Serif', 'DejaVu Serif', serif;
+    font-weight: 400;
+  }
+}

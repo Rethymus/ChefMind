@@ -1,0 +1,6 @@
+<!-- SVG 宫保鸡丁图片占位符 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#f39c12"/>
+  <text x="200" y="150" text-anchor="middle" font-family="'Noto Sans CJK SC', 'Source Han Sans CN', 'Noto Sans SC', 'DejaVu Sans', 'WenQuanYi Micro Hei', 'Droid Sans Fallback', sans-serif" font-size="24" fill="white">宫保鸡丁</text>
+  <text x="200" y="180" text-anchor="middle" font-family="'Noto Sans CJK SC', 'Source Han Sans CN', 'Noto Sans SC', 'DejaVu Sans', 'WenQuanYi Micro Hei', 'Droid Sans Fallback', sans-serif" font-size="16" fill="white">Kung Pao Chicken</text>
+</svg>
