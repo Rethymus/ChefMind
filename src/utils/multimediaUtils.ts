@@ -3,7 +3,7 @@
  * 提供一键跳转到各大美食平台搜索相关菜谱的功能
  */
 
-export interface MultimediaPlatform {
+interface MultimediaPlatform {
   name: string
   baseUrl: string
   searchPath: string
@@ -70,7 +70,7 @@ export const MULTIMEDIA_PLATFORMS: Record<string, MultimediaPlatform> = {
  * @param platform 平台类型
  * @returns 搜索关键词
  */
-export function generateSearchKeyword(recipeName: string, platform: string): string {
+function generateSearchKeyword(recipeName: string, platform: string): string {
   const baseKeyword = recipeName.trim()
 
   switch (platform) {
@@ -132,7 +132,7 @@ export function jumpToMultimediaPlatform(
  * @param recipeName 菜谱名称
  * @returns 平台链接映射
  */
-export function generateMultimediaLinks(recipeName: string): Record<string, string> {
+function generateMultimediaLinks(recipeName: string): Record<string, string> {
   const links: Record<string, string> = {}
 
   Object.keys(MULTIMEDIA_PLATFORMS).forEach(platform => {
@@ -150,7 +150,7 @@ export function generateMultimediaLinks(recipeName: string): Record<string, stri
  * @param platform 平台标识
  * @returns 平台配置
  */
-export function getPlatformConfig(platform: string): MultimediaPlatform | null {
+function getPlatformConfig(platform: string): MultimediaPlatform | null {
   return MULTIMEDIA_PLATFORMS[platform] || null
 }
 
@@ -158,6 +158,6 @@ export function getPlatformConfig(platform: string): MultimediaPlatform | null {
  * 获取所有支持的平台列表
  * @returns 平台列表
  */
-export function getAllPlatforms(): MultimediaPlatform[] {
+function getAllPlatforms(): MultimediaPlatform[] {
   return Object.values(MULTIMEDIA_PLATFORMS)
 }

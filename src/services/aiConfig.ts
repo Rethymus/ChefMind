@@ -9,19 +9,18 @@ import { aiConfigService } from './database/aiConfigService'
 export { aiConfigService }
 
 // 为了向后兼容，导出常用的方法
-export const getAIConfigService = () => aiConfigService
+const getAIConfigService = () => aiConfigService
 
 // 常用方法的快捷导出
-export const saveApiKey = (provider: string, apiKey: string, config?: any) =>
+const saveApiKey = (provider: string, apiKey: string, config?: any) =>
   aiConfigService.saveApiKey(provider, apiKey, config)
 
-export const getApiKey = (provider: string) => aiConfigService.getApiKey(provider)
+const getApiKey = (provider: string) => aiConfigService.getApiKey(provider)
 
-export const getProviderConfig = (provider: string) => aiConfigService.getProviderConfig(provider)
+const getProviderConfig = (provider: string) => aiConfigService.getProviderConfig(provider)
 
-export const isProviderConfigured = (provider: string) =>
+const isProviderConfigured = (provider: string) =>
   aiConfigService.isProviderConfigured(provider)
 
-export const getConfiguredProviders = () => aiConfigService.getConfiguredProviders()
+const getConfiguredProviders = () => aiConfigService.getConfiguredProviders()
 
-export default aiConfigService

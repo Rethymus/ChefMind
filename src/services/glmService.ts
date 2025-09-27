@@ -439,7 +439,7 @@ function mockGLMResponse(prompt: string): string {
  * @param options 选项
  * @returns 响应文本
  */
-export async function chat(
+async function chat(
   messages: Array<{ role: string; content: string }>,
   options: GLMCallOptions = {}
 ): Promise<string> {
@@ -449,7 +449,7 @@ export async function chat(
 }
 
 // 默认导出对象
-export const glmService = {
+const glmService = {
   callGLM,
   parseJsonResponse,
   chat,

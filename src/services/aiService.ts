@@ -12,7 +12,7 @@ import type {
 import { callGLM } from './glmService'
 
 // AI提供商枚举
-export enum AIProviderType {
+enum AIProviderType {
   GLM = 'glm',
   OPENAI = 'openai',
   ANTHROPIC = 'anthropic',
@@ -27,14 +27,14 @@ export enum AIProviderType {
 // 扩展AI服务接口
 
 // 烹饪助手响应类型
-export interface CookingAssistance {
+interface CookingAssistance {
   response: string
   suggestions: string[]
   relatedTips: string[]
 }
 
 // 烹饪步骤详细数据类型
-export interface CookingStepData {
+interface CookingStepData {
   instruction: string
   temperature?: number
   timeEstimate?: number
@@ -44,7 +44,7 @@ export interface CookingStepData {
 }
 
 // 食谱推荐类型 (PersonalizedRecommendation 的别名)
-export type RecipeRecommendation = PersonalizedRecommendation
+type RecipeRecommendation = PersonalizedRecommendation
 
 export interface UserPreferences {
   dietaryRestrictions?: string[]
@@ -71,7 +71,7 @@ export interface UserHistoryItem {
   ingredients: string[]
 }
 
-export interface RecipeContext {
+interface RecipeContext {
   mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack'
   season?: 'spring' | 'summer' | 'fall' | 'winter'
   occasion?: string
@@ -654,11 +654,4 @@ export const aiService = new AIService()
 })()
 
 // 导出类型和枚举
-export { AIProviderType as AIProvider }
-export type {
-  IngredientAnalysisResult,
-  NutritionAnalysisResult,
-  RecipeGenerationResult,
-  PersonalizedRecommendation,
-  IngredientValidationResult,
-}
+

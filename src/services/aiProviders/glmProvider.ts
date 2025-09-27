@@ -565,4 +565,3 @@ export class GLMProvider implements BaseAIProvider {
   }
 }
 
-export default new GLMProvider()

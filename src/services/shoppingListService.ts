@@ -19,7 +19,7 @@ export interface ShoppingItem {
 }
 
 // 购物清单过滤条件
-export interface ShoppingListFilter {
+interface ShoppingListFilter {
   category?: string
   completed?: boolean
   search?: string

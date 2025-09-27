@@ -98,7 +98,7 @@ function convertNutrition(rawNutrition?: RawRecipeData['nutrition']): Nutrition 
  * @param request 菜谱生成请求
  * @returns 生成的菜谱
  */
-export async function generateRecipe(request: RecipeGenerationRequest): Promise<IRecipe> {
+async function generateRecipe(request: RecipeGenerationRequest): Promise<IRecipe> {
   try {
     const userPrompt = buildUserPrompt(request)
     console.log('生成菜谱的提示词:', userPrompt)
@@ -290,7 +290,7 @@ function convertToRecipe(recipeData: RawRecipeData, request: RecipeGenerationReq
  * @param requests 菜谱生成请求数组
  * @returns 生成的菜谱数组
  */
-export async function batchGenerateRecipes(
+async function batchGenerateRecipes(
   requests: RecipeGenerationRequest[]
 ): Promise<IRecipe[]> {
   try {
@@ -326,7 +326,7 @@ export async function batchGenerateRecipes(
  * @param options 其他选项
  * @returns 生成的菜谱
  */
-export async function generateRecipeByIngredients(
+async function generateRecipeByIngredients(
   ingredients: string[],
   options: {
     cuisine?: string
@@ -355,7 +355,7 @@ export async function generateRecipeByIngredients(
  * @param count 推荐数量
  * @returns 推荐的菜谱列表
  */
-export async function generateRecipeRecommendations(
+async function generateRecipeRecommendations(
   preferences: UserPreference,
   count: number = 3
 ): Promise<IRecipe[]> {
@@ -400,7 +400,7 @@ export async function generateRecipeRecommendations(
  * @param constraints 健康约束条件
  * @returns 生成的菜谱
  */
-export async function generateHealthyRecipe(constraints: HealthConstraint[]): Promise<IRecipe> {
+async function generateHealthyRecipe(constraints: HealthConstraint[]): Promise<IRecipe> {
   const dietaryRestrictions: string[] = []
 
   // 从健康约束中提取饮食限制
@@ -425,7 +425,7 @@ export async function generateHealthyRecipe(constraints: HealthConstraint[]): Pr
  * @param id 菜谱ID
  * @returns 菜谱对象，如果不存在则返回null
  */
-export async function getRecipeById(id: string): Promise<IRecipe | null> {
+async function getRecipeById(id: string): Promise<IRecipe | null> {
   // 首先尝试从缓存中获取
   const cachedRecipe = getCachedData<IRecipe>(`recipe_${id}`)
   if (cachedRecipe) {
@@ -486,7 +486,7 @@ function findCookingMethod(methodName?: string) {
  * @param filters 过滤条件
  * @returns 搜索结果
  */
-export async function searchRecipes(
+async function searchRecipes(
   query: string,
   filters?: RecipeFilters
 ): Promise<RecipeSearchResult> {
@@ -725,7 +725,7 @@ function buildStepsFromData(stepsData?: unknown[]): string[] | RecipeStep[] {
  * @param recipe 原始菜谱
  * @returns 增强后的菜谱
  */
-export async function enhanceRecipeDescription(recipe: IRecipe): Promise<IRecipe> {
+async function enhanceRecipeDescription(recipe: IRecipe): Promise<IRecipe> {
   try {
     // 构建用户提示词
     const userPrompt = `你是一位美食作家和专业厨师，请为这道名为"${recipe.name || recipe.title}"的菜品创作一段更加生动、详细的描述。
@@ -768,7 +768,7 @@ export async function enhanceRecipeDescription(recipe: IRecipe): Promise<IRecipe
  * @param recipe 菜谱
  * @returns 带有烹饪技巧的菜谱
  */
-export async function generateCookingTips(recipe: IRecipe): Promise<IRecipe> {
+async function generateCookingTips(recipe: IRecipe): Promise<IRecipe> {
   try {
     // 构建用户提示词
     const userPrompt = `你是一位经验丰富的厨师，请为这道名为"${recipe.name || recipe.title}"的菜品提供5-8条专业、实用的烹饪技巧。
@@ -817,7 +817,7 @@ export async function generateCookingTips(recipe: IRecipe): Promise<IRecipe> {
  * @param recipe 菜谱
  * @returns 带有健康益处的菜谱
  */
-export async function generateHealthBenefits(recipe: IRecipe): Promise<IRecipe> {
+async function generateHealthBenefits(recipe: IRecipe): Promise<IRecipe> {
   try {
     // 构建用户提示词
     const userPrompt = `你是一位营养学专家，请分析这道名为"${recipe.name}"的菜品的健康益处。
@@ -865,7 +865,7 @@ export async function generateHealthBenefits(recipe: IRecipe): Promise<IRecipe> 
  * @param recipe 原始菜谱
  * @returns 完全增强后的菜谱
  */
-export async function fullyEnhanceRecipe(recipe: IRecipe): Promise<IRecipe> {
+async function fullyEnhanceRecipe(recipe: IRecipe): Promise<IRecipe> {
   try {
     // 依次应用各种增强
     let enhancedRecipe = await enhanceRecipeDescription(recipe)

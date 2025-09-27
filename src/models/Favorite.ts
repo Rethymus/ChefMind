@@ -4,7 +4,7 @@ import { dataAccess } from '@/services/database/dataAccess'
  * 收藏数据接口（通用适配）
  * 支持浏览器环境和 Node.js 环境
  */
-export interface FavoriteDocument {
+interface FavoriteDocument {
   id: number
   sessionId: string
   recipeId: number
@@ -16,7 +16,7 @@ export interface FavoriteDocument {
 /**
  * 收藏模型类（通用版本，支持浏览器和 Node.js）
  */
-export class FavoriteModel {
+class FavoriteModel {
   private tableName = 'favorites'
 
   /**
@@ -125,4 +125,3 @@ export class FavoriteModel {
 
 // 导出模型实例
 export const Favorite = new FavoriteModel()
-export default Favorite

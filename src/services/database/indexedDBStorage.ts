@@ -4,7 +4,7 @@
  * 支持大规模数据存储和复杂查询
  */
 
-export interface IndexedDBConfig {
+interface IndexedDBConfig {
   dbName: string
   version: number
   stores: Array<{

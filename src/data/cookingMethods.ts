@@ -3,7 +3,7 @@
  * 支持多选和不限制选项
  */
 
-export interface CookingMethod {
+interface CookingMethod {
   id?: string
   label: string
   value: string
@@ -136,18 +136,17 @@ export const cookingMethods: CookingMethod[] = [
 ]
 
 // 获取所有烹饪方式
-export function getAllCookingMethods(): CookingMethod[] {
+function getAllCookingMethods(): CookingMethod[] {
   return cookingMethods
 }
 
 // 根据值查找烹饪方式
-export function findCookingMethod(value: string): CookingMethod | undefined {
+function findCookingMethod(value: string): CookingMethod | undefined {
   return cookingMethods.find(method => method.value === value)
 }
 
 // 根据ID查找烹饪方式
-export function findCookingMethodById(id: string): CookingMethod | undefined {
+function findCookingMethodById(id: string): CookingMethod | undefined {
   return cookingMethods.find(method => method.id === id)
 }
 
-export default cookingMethods

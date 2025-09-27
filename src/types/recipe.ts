@@ -3,7 +3,7 @@
  */
 
 // 食材分类类型
-export type IngredientCategoryType =
+type IngredientCategoryType =
   | '蔬菜'
   | '肉类'
   | '海鲜'
@@ -24,7 +24,7 @@ export interface IngredientCategory {
 }
 
 // 约束条件
-export interface Constraints {
+interface Constraints {
   servings?: number
   cookingTime?: number | null
   difficulty?: number | null
@@ -77,7 +77,7 @@ export interface NutritionAnalysisResult {
 }
 
 // 食谱生成结果
-export interface RecipeGenerationResult {
+interface RecipeGenerationResult {
   id?: string
   title: string
   description: string
@@ -179,7 +179,7 @@ export interface RecipeSearchResult {
 }
 
 // 食谱评分
-export interface RecipeRating {
+interface RecipeRating {
   recipeId: string
   userId: string
   rating: number
@@ -188,7 +188,7 @@ export interface RecipeRating {
 }
 
 // 食谱评分摘要
-export interface RecipeRatingSummary {
+interface RecipeRatingSummary {
   recipeId: string
   overall: number // 总体评分
   count: number // 评分次数
@@ -199,7 +199,7 @@ export interface RecipeRatingSummary {
 }
 
 // 食谱评论
-export interface RecipeComment {
+interface RecipeComment {
   id: string
   recipeId: string
   userId: string
@@ -239,28 +239,28 @@ export interface Ingredient {
 }
 
 // 饮食限制
-export interface DietaryRestriction {
+interface DietaryRestriction {
   label: string
   value: string
   description?: string
 }
 
 // 健康目标
-export interface HealthGoal {
+interface HealthGoal {
   label: string
   value: string
   description?: string
 }
 
 // 过敏原
-export interface Allergy {
+interface Allergy {
   label: string
   value: string
   description?: string
 }
 
 // 口味偏好
-export interface FlavorPreference {
+interface FlavorPreference {
   label: string
   value: string
 }
@@ -380,7 +380,7 @@ export interface IngredientValidationResult {
 }
 
 // 购物清单项目
-export interface ShoppingItem {
+interface ShoppingItem {
   id: string
   name: string
   quantity: number
@@ -393,7 +393,7 @@ export interface ShoppingItem {
 }
 
 // 用户类型
-export interface User {
+interface User {
   id: string
   username: string
   email: string
@@ -402,7 +402,7 @@ export interface User {
 }
 
 // 事件分析接口
-export interface UserEvent {
+interface UserEvent {
   id: string
   userId?: string
   eventType: string

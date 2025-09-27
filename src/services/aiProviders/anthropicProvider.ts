@@ -398,4 +398,3 @@ export class AnthropicProvider implements BaseAIProvider {
   }
 }
 
-export default new AnthropicProvider()

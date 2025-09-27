@@ -132,7 +132,7 @@ function restoreFromLocalStorage() {
 
 // SQLite 现在通过 dataAccess 统一管理，无需单独导入
 
-export interface AIProviderConfig {
+interface AIProviderConfig {
   id?: number
   provider: string
   apiKey: string

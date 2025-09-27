@@ -5,7 +5,7 @@ import type { BaseAIProvider } from './baseProvider'
  * 模拟AI提供者
  * 用于开发和测试环境
  */
-export class MockAIProvider implements BaseAIProvider {
+class MockAIProvider implements BaseAIProvider {
   async generateRecipe(params: RecipeGenerationParams): Promise<Recipe> {
     // 模拟API调用延迟
     await new Promise(resolve => setTimeout(resolve, 1500))

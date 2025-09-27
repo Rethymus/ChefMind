@@ -4,7 +4,7 @@ import { dataAccess } from '@/services/database/dataAccess'
 /**
  * 食谱数据接口（通用适配）
  */
-export interface RecipeDocument {
+interface RecipeDocument {
   id: number
   title: string
   description: string
@@ -29,7 +29,7 @@ export interface RecipeDocument {
 /**
  * 食谱模型类（通用版本，支持浏览器和 Node.js）
  */
-export class RecipeModel {
+class RecipeModel {
   private tableName = 'recipes'
 
   /**
@@ -235,4 +235,3 @@ export class RecipeModel {
 
 // 导出模型实例
 export const Recipe = new RecipeModel()
-export default Recipe

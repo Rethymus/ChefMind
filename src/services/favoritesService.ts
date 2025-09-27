@@ -7,7 +7,7 @@
 import { Favorite } from '@/models/Favorite'
 import { Recipe } from '@/models/Recipe'
 
-export interface FavoriteRecipe {
+interface FavoriteRecipe {
   id: string
   title: string
   description?: string
@@ -27,7 +27,7 @@ export interface FavoriteRecipe {
   createdAt: Date
 }
 
-export class FavoritesService {
+class FavoritesService {
   private readonly STORAGE_KEY = 'chefmind_favorites_v2' // 新的存储键，避免冲突
 
   /**
@@ -284,4 +284,3 @@ export class FavoritesService {
 
 // 导出服务实例
 export const favoritesService = new FavoritesService()
-export default favoritesService

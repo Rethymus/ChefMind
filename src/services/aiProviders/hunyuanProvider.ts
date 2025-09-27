@@ -385,4 +385,3 @@ export class HunyuanProvider implements BaseAIProvider {
   }
 }
 
-export default new HunyuanProvider()

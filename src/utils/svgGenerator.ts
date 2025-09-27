@@ -13,7 +13,7 @@
  */
 
 // 字体颜色调色板（排除黑色和白色）
-export const textColorPalette = [
+const textColorPalette = [
   '#f39c12', // 橙色
   '#e74c3c', // 红色
   '#8b4513', // 棕色
@@ -102,7 +102,7 @@ const chineseToEnglishRecipeNames: Record<string, string> = {
 }
 
 // 根据中文菜名获取英文名称
-export const getEnglishRecipeName = (chineseName: string): string => {
+const getEnglishRecipeName = (chineseName: string): string => {
   // 直接匹配
   if (chineseToEnglishRecipeNames[chineseName]) {
     return chineseToEnglishRecipeNames[chineseName]
@@ -141,7 +141,7 @@ export const getEnglishRecipeName = (chineseName: string): string => {
 }
 
 // SVG配置接口
-export interface SvgConfig {
+interface SvgConfig {
   name: string
   width?: number
   height?: number
@@ -151,12 +151,12 @@ export interface SvgConfig {
 }
 
 // 获取随机字体颜色
-export const getRandomTextColor = (): string => {
+const getRandomTextColor = (): string => {
   return textColorPalette[Math.floor(Math.random() * textColorPalette.length)]
 }
 
 // 基于菜名生成一致的字体颜色（确保相同菜名总是生成相同颜色）
-export const getConsistentTextColor = (name: string): string => {
+const getConsistentTextColor = (name: string): string => {
   if (!name) return textColorPalette[0]
 
   let hash = 0
@@ -210,7 +210,7 @@ export const generateRecipeCoverSvg = (config: SvgConfig): string => {
 }
 
 // 生成随机颜色的SVG封面
-export const generateRandomRecipeCoverSvg = (config: SvgConfig): string => {
+const generateRandomRecipeCoverSvg = (config: SvgConfig): string => {
   // 对于随机颜色版本，我们临时修改配置以使用随机字体颜色
   const modifiedConfig = { ...config }
   const randomTextColor = getRandomTextColor()
@@ -251,7 +251,7 @@ export const generateRandomRecipeCoverSvg = (config: SvgConfig): string => {
 }
 
 // 预设尺寸
-export const PRESET_SIZES = {
+const PRESET_SIZES = {
   small: { width: 200, height: 150 },
   medium: { width: 300, height: 225 },
   large: { width: 400, height: 300 },
@@ -272,7 +272,7 @@ export const generateRecipeCardSvg = (
 }
 
 // 为AI推荐卡片生成SVG
-export const generateAIRecipeCardSvg = (recipeName: string): string => {
+const generateAIRecipeCardSvg = (recipeName: string): string => {
   return generateRecipeCoverSvg({
     name: recipeName,
     width: 400,
@@ -282,7 +282,7 @@ export const generateAIRecipeCardSvg = (recipeName: string): string => {
 }
 
 // 为搜索结果卡片生成SVG
-export const generateResultCardSvg = (recipeName: string): string => {
+const generateResultCardSvg = (recipeName: string): string => {
   return generateRecipeCoverSvg({
     name: recipeName,
     width: 300,
@@ -292,7 +292,7 @@ export const generateResultCardSvg = (recipeName: string): string => {
 }
 
 // 下载SVG文件
-export const downloadSvgFile = (config: SvgConfig, filename?: string): void => {
+const downloadSvgFile = (config: SvgConfig, filename?: string): void => {
   const svgContent = generateRecipeCoverSvg(config)
   const blob = new Blob([svgContent], { type: 'image/svg+xml' })
   const url = URL.createObjectURL(blob)
@@ -306,7 +306,7 @@ export const downloadSvgFile = (config: SvgConfig, filename?: string): void => {
 }
 
 // 复制SVG代码到剪贴板
-export const copySvgToClipboard = async (config: SvgConfig): Promise<boolean> => {
+const copySvgToClipboard = async (config: SvgConfig): Promise<boolean> => {
   try {
     const svgContent = generateRecipeCoverSvg(config)
     await navigator.clipboard.writeText(svgContent)

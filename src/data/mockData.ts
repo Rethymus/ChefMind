@@ -3,7 +3,7 @@
 import type { IngredientCategory, CookingMethod, Recipe, NutritionInfo } from '@/types/recipe'
 
 // 基础食材分类结构 - 使用AI动态生成内容
-export const getIngredientCategories = async (): Promise<IngredientCategory[]> => {
+const getIngredientCategories = async (): Promise<IngredientCategory[]> => {
   try {
     // 从本地存储获取已保存的食材分类
     const stored = localStorage.getItem('chefmind_ingredient_categories')
@@ -37,7 +37,7 @@ export const getIngredientCategories = async (): Promise<IngredientCategory[]> =
 }
 
 // 基础烹饪方式 - 使用AI动态生成内容
-export const getCookingMethods = async (): Promise<CookingMethod[]> => {
+const getCookingMethods = async (): Promise<CookingMethod[]> => {
   try {
     // 从本地存储获取已保存的烹饪方式
     const stored = localStorage.getItem('chefmind_cooking_methods')
@@ -71,7 +71,7 @@ export const getCookingMethods = async (): Promise<CookingMethod[]> => {
 }
 
 // 营养数据库 - 使用AI动态查询
-export const getNutritionInfo = async (ingredientName: string): Promise<NutritionInfo | null> => {
+const getNutritionInfo = async (ingredientName: string): Promise<NutritionInfo | null> => {
   try {
     // 先从本地缓存查找
     const cached = localStorage.getItem(`nutrition_${ingredientName}`)
@@ -101,7 +101,7 @@ export const getNutritionInfo = async (ingredientName: string): Promise<Nutritio
 }
 
 // 食材推荐 - 使用AI动态生成
-export const getIngredientRecommendations = async (ingredientName: string): Promise<string[]> => {
+const getIngredientRecommendations = async (ingredientName: string): Promise<string[]> => {
   try {
     // 提供默认推荐
     const recommendations = ['常见配菜', '调料建议', '烹饪技巧']
@@ -114,7 +114,7 @@ export const getIngredientRecommendations = async (ingredientName: string): Prom
 }
 
 // 外部链接配置 - 保留静态配置
-export const externalLinks = [
+const externalLinks = [
   {
     name: 'Bilibili',
     url: 'https://search.bilibili.com/all?keyword=',
@@ -398,16 +398,16 @@ export const popularRecipes: Recipe[] = [
 ]
 
 // 向后兼容的导出 - 现在返回空数据，组件应使用上面的异步函数
-export const ingredientCategories: IngredientCategory[] = []
-export const cookingMethods: CookingMethod[] = []
-export const nutritionDatabase: Record<string, NutritionInfo> = {}
-export const mockRecipes: Recipe[] = []
-export const mockRecipeData = {
+const ingredientCategories: IngredientCategory[] = []
+const cookingMethods: CookingMethod[] = []
+const nutritionDatabase: Record<string, NutritionInfo> = {}
+const mockRecipes: Recipe[] = []
+const mockRecipeData = {
   recipes: [],
   cookingMethods: [],
   ingredients: [],
 }
-export const recommendationData = {
+const recommendationData = {
   nutrition: {},
   flavor: {},
   classic: {},

@@ -66,7 +66,7 @@ export function getCachedData<T>(key: string): T | null {
  * 清除指定的缓存
  * @param key 缓存键
  */
-export function clearCache(key: string): void {
+function clearCache(key: string): void {
   delete memoryCache[key]
   try {
     localStorage.removeItem(`cache_${key}`)
@@ -78,7 +78,7 @@ export function clearCache(key: string): void {
 /**
  * 清除所有缓存
  */
-export function clearAllCache(): void {
+function clearAllCache(): void {
   // 清除内存缓存
   Object.keys(memoryCache).forEach(key => {
     delete memoryCache[key]

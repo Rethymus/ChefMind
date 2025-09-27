@@ -333,7 +333,7 @@ class AIProviderFactory {
 const aiProviderFactory = AIProviderFactory.getInstance()
 
 // 导出当前AI提供者（延迟初始化）
-export const aiProvider = new Proxy({} as BaseAIProvider, {
+const aiProvider = new Proxy({} as BaseAIProvider, {
   get: (target, prop) => {
     if (!aiProviderFactory['isInitialized']) {
       aiProviderFactory.initialize().catch(error => {
@@ -348,5 +348,3 @@ export const aiProvider = new Proxy({} as BaseAIProvider, {
 export { AIProviderFactory }
 
 // 导出所有AI提供者类型
-export type { BaseAIProvider } from './baseProvider'
-export type { Recipe, RecipeGenerationParams, IngredientValidationResult } from '@/types/recipe'

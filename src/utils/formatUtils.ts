@@ -73,7 +73,7 @@ export const formatServings = (servings: number | string): string => {
 }
 
 // 格式化单个营养值
-export const formatNutritionValue = (value: number, unit: string = ''): string => {
+const formatNutritionValue = (value: number, unit: string = ''): string => {
   if (isNaN(value)) return '0' + unit
 
   // 保留一位小数
@@ -85,16 +85,16 @@ export const formatNutritionValue = (value: number, unit: string = ''): string =
 }
 
 // 格式化卡路里
-export const formatCalories = (calories: number): string => {
+const formatCalories = (calories: number): string => {
   return formatNutritionValue(calories, '千卡')
 }
 
 // 格式化重量单位（克）
-export const formatWeight = (weight: number): string => {
+const formatWeight = (weight: number): string => {
   return formatNutritionValue(weight, 'g')
 }
 
 // 格式化百分比
-export const formatPercentage = (value: number): string => {
+const formatPercentage = (value: number): string => {
   return formatNutritionValue(value, '%')
 }

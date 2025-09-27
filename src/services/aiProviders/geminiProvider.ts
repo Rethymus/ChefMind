@@ -458,4 +458,3 @@ export class GeminiProvider implements BaseAIProvider {
   }
 }
 
-export default new GeminiProvider()

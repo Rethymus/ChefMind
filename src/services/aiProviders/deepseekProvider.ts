@@ -397,4 +397,3 @@ export class DeepSeekProvider implements BaseAIProvider {
   }
 }
 
-export default new DeepSeekProvider()

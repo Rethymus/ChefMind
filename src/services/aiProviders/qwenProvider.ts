@@ -411,4 +411,3 @@ export class QwenProvider implements BaseAIProvider {
   }
 }
 
-export default new QwenProvider()

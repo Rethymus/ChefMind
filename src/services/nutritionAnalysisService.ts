@@ -83,7 +83,7 @@ export interface NutritionAnalysisResult {
 }
 
 // 健康指标接口
-export interface HealthMetrics {
+interface HealthMetrics {
   bmi: number
   bmiStatus: 'underweight' | 'normal' | 'overweight' | 'obese'
   bmiStatusText: string
@@ -171,7 +171,7 @@ const CHINESE_DIETARY_GUIDELINES = {
   },
 }
 
-export class NutritionAnalysisService {
+class NutritionAnalysisService {
   /**
    * 计算基础代谢率 (BMR)
    */

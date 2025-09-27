@@ -382,4 +382,3 @@ export class MoonshotProvider implements BaseAIProvider {
   }
 }
 
-export default new MoonshotProvider()

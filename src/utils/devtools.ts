@@ -2,7 +2,7 @@
 let invoke: any = null
 
 // 开发者工具控制
-export const devTools = {
+const devTools = {
   // 打开/关闭开发者工具 (Tauri v2 中使用更新的方法)
   toggle: async () => {
     try {

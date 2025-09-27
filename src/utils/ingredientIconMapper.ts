@@ -358,7 +358,7 @@ export function getIngredientIcon(ingredientName: string): string {
  * @param ingredients 食材名称数组
  * @returns 食材名称和图标的映射对象
  */
-export function getIngredientIcons(ingredients: string[]): Record<string, string> {
+function getIngredientIcons(ingredients: string[]): Record<string, string> {
   const result: Record<string, string> = {}
   ingredients.forEach(ingredient => {
     result[ingredient] = getIngredientIcon(ingredient)

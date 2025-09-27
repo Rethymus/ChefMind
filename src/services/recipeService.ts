@@ -12,7 +12,7 @@ interface AIResponse {
 }
 
 // 食谱生成参数
-export interface RecipeGenerateParams {
+interface RecipeGenerateParams {
   ingredients: string[]
   cookingMethods?: string[]
   noMethodRestriction?: boolean

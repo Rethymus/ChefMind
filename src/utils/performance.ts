@@ -6,7 +6,7 @@ import { DirectiveBinding } from 'vue'
  * 图片懒加载指令
  * 使用方法：v-lazy="图片URL"
  */
-export const lazyLoadDirective = {
+const lazyLoadDirective = {
   mounted(el: HTMLImageElement, binding: DirectiveBinding<string>) {
     function loadImage() {
       const imageElement = Array.from(el.children).find(el => el.nodeName === 'IMG') as
@@ -57,7 +57,7 @@ export const lazyLoadDirective = {
  * @param height 图片高度
  * @returns 优化后的图片URL
  */
-export function optimizeImage(
+function optimizeImage(
   url: string,
   quality: number = 80,
   width?: number,
@@ -91,7 +91,7 @@ export function optimizeImage(
  * @param delay 延迟时间（毫秒）
  * @returns 防抖后的函数
  */
-export function debounce<T extends (...args: unknown[]) => unknown>(
+function debounce<T extends (...args: unknown[]) => unknown>(
   fn: T,
   delay: number
 ): (...args: Parameters<T>) => void {
@@ -115,7 +115,7 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
  * @param limit 时间限制（毫秒）
  * @returns 节流后的函数
  */
-export function throttle<T extends (...args: unknown[]) => unknown>(
+function throttle<T extends (...args: unknown[]) => unknown>(
   fn: T,
   limit: number
 ): (...args: Parameters<T>) => void {
@@ -138,7 +138,7 @@ export function throttle<T extends (...args: unknown[]) => unknown>(
  * @param fn 要缓存的函数
  * @returns 缓存后的函数
  */
-export function memoize<T extends (...args: unknown[]) => unknown>(
+function memoize<T extends (...args: unknown[]) => unknown>(
   fn: T
 ): (...args: Parameters<T>) => ReturnType<T> {
   const cache = new Map()
@@ -160,7 +160,7 @@ export function memoize<T extends (...args: unknown[]) => unknown>(
 /**
  * 本地存储缓存
  */
-export class CacheStorage {
+class CacheStorage {
   private prefix: string
 
   constructor(prefix: string = 'chefmind_') {
@@ -227,7 +227,7 @@ export class CacheStorage {
 }
 
 // 导出缓存实例
-export const cache = new CacheStorage()
+const cache = new CacheStorage()
 
 /**
  * 注册Service Worker用于缓存和离线访问

@@ -8,7 +8,7 @@
  * @param prefix ID前缀
  * @returns 唯一ID
  */
-export function generateId(prefix: string = ''): string {
+function generateId(prefix: string = ''): string {
   const timestamp = Date.now().toString(36)
   const randomStr = Math.random().toString(36).substring(2, 8)
   return `${prefix}${timestamp}${randomStr}`
@@ -18,7 +18,7 @@ export function generateId(prefix: string = ''): string {
  * 生成数字ID
  * @returns 数字ID
  */
-export function generateNumericId(): number {
+function generateNumericId(): number {
   return Math.floor(Math.random() * 1000000) + 1
 }
 
@@ -38,7 +38,7 @@ export function generateUUID(): string {
  * 生成短ID
  * @returns 短ID字符串
  */
-export function generateShortId(): string {
+function generateShortId(): string {
   return Math.random().toString(36).substring(2, 10)
 }
 
@@ -46,7 +46,7 @@ export function generateShortId(): string {
  * 生成有序ID
  * 基于时间戳和计数器生成有序ID
  */
-export const generateSequentialId = (() => {
+const generateSequentialId = (() => {
   let counter = 0
   let lastTimestamp = 0
 
