@@ -4,7 +4,7 @@
   "description": "ChefMind 智食谱 - AI驱动的智能菜谱生成平台，配备企业级数据存储和性能监控架构",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
@@ -30,8 +30,8 @@
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
-    "@tauri-apps/api": "^2.8.0",
-    "@tauri-apps/cli": "^2.8.4",
+    "@tauri-apps/api": "^2.10.0",
+    "@tauri-apps/cli": "^2.10.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24.5.2",
     "@typescript-eslint/eslint-plugin": "^8.44.0",
