@@ -5,41 +5,42 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
+const host = process.env.TAURI_DEV_HOST
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
     AutoImport({
       resolvers: [ElementPlusResolver()],
-      imports: [
-        'vue',
-        'vue-router',
-        'pinia',
-        '@vueuse/core'
-      ],
+      imports: ['vue', 'vue-router', 'pinia', '@vueuse/core'],
       dts: true,
       eslintrc: {
-        enabled: true
-      }
+        enabled: true,
+      },
+    }),
+    Components({
+      resolvers: [ElementPlusResolver()],
+      dts: true,
     }),
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
   },
   css: {
     preprocessorOptions: {
       scss: {
         additionalData: `@use \"@/styles/variables.scss\" as *;`,
         charset: false,
-        api: 'modern' // Use modern Sass API to avoid deprecation warnings
-      }
+        api: 'modern', // Use modern Sass API to avoid deprecation warnings
+      },
     },
     devSourcemap: true,
     modules: {
-      localsConvention: 'camelCase'
-    }
+      localsConvention: 'camelCase',
+    },
   },
   build: {
     target: 'es2015',
@@ -58,34 +59,44 @@ export default defineConfig({
         manualChunks(id) {
           if (id.includes('node_modules')) {
             if (id.includes('element-plus')) {
-              return 'elementPlus';
+              return 'elementPlus'
             }
-            return 'vendor';
+            return 'vendor'
           }
-          if (id.includes('services/aiService') ||
-              id.includes('services/glmService') ||
-              id.includes('services/aiConfig')) {
-            return 'aiServices';
+          if (
+            id.includes('services/aiService') ||
+            id.includes('services/glmService') ||
+            id.includes('services/aiConfig')
+          ) {
+            return 'aiServices'
           }
           if (id.includes('services/database')) {
-            return 'database';
+            return 'database'
           }
-        }
-      }
+        },
+      },
     },
-    chunkSizeWarningLimit: 1200  // Increased to accommodate large bundles; consider further optimization if needed
+    chunkSizeWarningLimit: 1200, // Increased to accommodate large bundles; consider further optimization if needed
   },
   server: {
-    host: '0.0.0.0',
-    port: 1420, // Tauri开发服务器端口
-    open: false,
-    cors: true,
-    strictPort: true
+    port: 1420,
+    strictPort: true,
+    host: host || false,
+    hmr: host
+      ? {
+          protocol: 'ws',
+          host,
+          port: 1421,
+        }
+      : undefined,
+    watch: {
+      ignored: ['**/src-tauri/**'],
+    },
   },
   preview: {
     host: '0.0.0.0',
     port: 3000,
     open: false,
-    strictPort: true
-  }
+    strictPort: true,
+  },
 })
