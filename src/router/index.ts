@@ -11,6 +11,7 @@ import ShoppingListView from '@/views/ShoppingListView.vue'
 import CookingGuideView from '@/views/CookingGuideView.vue'
 import AnalyticsView from '@/views/AnalyticsView.vue'
 import RecipeDetailView from '@/views/RecipeDetailView.vue'
+import SettingsView from '@/views/SettingsView.vue'
 
 // 组件映射
 const viewComponents = {
@@ -22,6 +23,7 @@ const viewComponents = {
   CookingGuideView,
   AnalyticsView,
   RecipeDetailView,
+  SettingsView,
 }
 
 // 简单的组件加载函数
@@ -84,6 +86,14 @@ const routes: RouteRecordRaw[] = [
     component: loadView('AnalyticsView'),
     meta: {
       title: 'ChefMind 智食谱 - 数据分析',
+    },
+  },
+  {
+    path: '/settings',
+    name: 'Settings',
+    component: loadView('SettingsView'),
+    meta: {
+      title: 'ChefMind 智食谱 - 设置',
     },
   },
   {

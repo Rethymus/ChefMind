@@ -17,6 +17,7 @@
           >购物清单</router-link
         >
         <router-link to="/analytics" class="nav-link" active-class="active">数据分析</router-link>
+        <router-link to="/settings" class="nav-link" active-class="active">设置</router-link>
       </div>
 
       <div class="nav-actions">

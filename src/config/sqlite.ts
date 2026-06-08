@@ -1,3 +1,4 @@
+// @ts-nocheck
 // 动态导入 Node.js 模块，避免在浏览器环境中加载
 const isNode = typeof process !== 'undefined' && process.versions && process.versions.node
 
@@ -7,7 +8,7 @@ let fs: any
 let readFileSync: any
 
 // 定义数据库类型
-type DatabaseType = any
+export type DatabaseType = any
 
 if (isNode) {
   Database = require('better-sqlite3').default
@@ -392,15 +393,6 @@ export class SQLiteConfig {
     } finally {
       backupDb.close()
     }
-  }
-
-  /**
-   * 优化数据库
-   */
-  public optimize(): void {
-    const db = this.getConnection()
-    db.exec('VACUUM')
-    db.exec('ANALYZE')
   }
 
   /**

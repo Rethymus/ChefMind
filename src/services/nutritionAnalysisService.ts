@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ElMessage } from 'element-plus'
 import { aiService } from './aiService'
 

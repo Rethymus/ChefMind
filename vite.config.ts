@@ -32,7 +32,7 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `@use \"@/styles/variables.scss\" as *;`,
+        additionalData: `@use "@/styles/variables.scss" as *;`,
         charset: false,
         api: 'modern', // Use modern Sass API to avoid deprecation warnings
       },
@@ -46,10 +46,10 @@ export default defineConfig({
     target: 'es2015',
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true,
+    sourcemap: false,
     minify: 'esbuild',
     cssCodeSplit: true,
-    cssMinify: false,
+    cssMinify: 'esbuild',
     rollupOptions: {
       external: [],
       output: {

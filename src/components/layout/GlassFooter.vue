@@ -61,10 +61,15 @@
             <p>我们的使命是通过先进的技术，让每个人都能轻松享受烹饪的乐趣。</p>
             <p>团队由热爱美食和技术的专业人士组成，不断探索AI与烹饪的完美结合。</p>
             <div class="video-section">
-              <button @click="playAboutUsVideo" class="video-play-btn glass-button">
+              <a
+                href="https://bilibili.com/video/BV1GJ411x7h7/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="video-play-btn glass-button"
+              >
                 <span class="video-icon">▶️</span>
                 观看介绍视频
-              </button>
+              </a>
             </div>
           </div>
         </div>
@@ -106,31 +111,6 @@
           </div>
         </div>
       </div>
-
-      <!-- 视频播放模态框 -->
-      <div v-if="showVideoModal" class="modal-overlay" @click="closeModals">
-        <div class="modal-content video-modal" @click.stop>
-          <div class="modal-header">
-            <h3>关于我们视频</h3>
-            <button class="modal-close" @click="closeModals">×</button>
-          </div>
-          <div class="modal-body">
-            <div class="video-container">
-              <video
-                ref="videoRef"
-                class="video-player"
-                src="/videos/about_us.mp4"
-                controls
-                autoplay
-                preload="metadata"
-                playsinline
-              >
-                您的浏览器不支持视频播放。
-              </video>
-            </div>
-          </div>
-        </div>
-      </div>
     </teleport>
   </footer>
 </template>
@@ -142,21 +122,11 @@
   const showAboutModal = ref(false)
   const showTermsModal = ref(false)
   const showPrivacyModal = ref(false)
-  const showVideoModal = ref(false)
-
-  // 视频引用
-  const videoRef = ref<HTMLVideoElement>()
 
   // 显示关于我们
   const showAboutUs = (event: Event) => {
     event.preventDefault()
     showAboutModal.value = true
-  }
-
-  // 播放关于我们视频
-  const playAboutUsVideo = (event: Event) => {
-    event.preventDefault()
-    showVideoModal.value = true
   }
 
   // 显示用户协议
@@ -176,13 +146,6 @@
     showAboutModal.value = false
     showTermsModal.value = false
     showPrivacyModal.value = false
-    showVideoModal.value = false
-
-    // 停止视频播放
-    if (videoRef.value) {
-      videoRef.value.pause()
-      videoRef.value.currentTime = 0
-    }
   }
 </script>
 
@@ -582,32 +545,6 @@
 
   .video-icon {
     font-size: 1.1rem;
-  }
-
-  // 视频模态框
-  .video-modal {
-    max-width: 800px;
-    width: 90%;
-    max-height: 90vh;
-  }
-
-  .video-container {
-    position: relative;
-    width: 100%;
-    padding-bottom: 56.25%; /* 16:9 宽高比 */
-    background: #000;
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
-  .video-player {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    background: #000;
   }
 
   // 响应式设计

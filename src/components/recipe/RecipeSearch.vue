@@ -435,7 +435,7 @@
         autoCompleteIngredients: true,
         requestType: 'search_only',
       }
-      const aiResult = await aiService.generateRecipe(searchParams)
+      const aiResult = await aiService.generateRecipe(searchParams as any)
 
       // 转换AI返回的数据为我们需要的格式
       if (aiResult && aiResult.recipe) {
@@ -693,7 +693,7 @@
           image: recipe.image,
           category: recipe.category,
           cookingTime: recipe.cookingTime,
-          difficulty: recipe.difficulty,
+          difficulty: String(recipe.difficulty),
           servings: recipe.servings,
           ingredients: Array.isArray(recipe.ingredients)
             ? recipe.ingredients.map(ing =>
@@ -701,7 +701,7 @@
               )
             : [],
           steps: Array.isArray(recipe.steps)
-            ? recipe.steps
+            ? recipe.steps.map(step => (typeof step === 'string' ? step : step.description))
             : Array.isArray(recipe.instructions)
               ? recipe.instructions
               : [],

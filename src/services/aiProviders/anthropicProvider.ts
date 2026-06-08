@@ -82,9 +82,9 @@ export class AnthropicProvider implements BaseAIProvider {
     ingredientsOrParams: string[] | RecipeGenerationParams,
     preferences?: UserPreferences
   ): Promise<Recipe> {
+    const standardParams = ParamAdapter.toRecipeGenerationParams(ingredientsOrParams, preferences)
+
     try {
-      // 转换为标准参数格式
-      const standardParams = ParamAdapter.toRecipeGenerationParams(ingredientsOrParams, preferences)
 
       // 构建通用提示词
       const prompt = PromptBuilder.buildRecipePrompt(standardParams)
@@ -100,9 +100,7 @@ export class AnthropicProvider implements BaseAIProvider {
       return recipe
     } catch (error) {
       console.error('Anthropic生成食谱失败:', error)
-      return this.createFallbackRecipe(
-        standardParams || (ingredientsOrParams as RecipeGenerationParams)
-      )
+      return this.createFallbackRecipe(standardParams)
     }
   }
 

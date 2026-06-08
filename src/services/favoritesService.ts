@@ -43,6 +43,8 @@ class FavoritesService {
         title: fav.recipeTitle || '未命名食谱',
         image: fav.recipeImage,
         createdAt: fav.createdAt,
+        ingredients: [],
+        steps: [],
       }))
     } catch (error) {
       console.error('获取收藏失败:', error)
@@ -74,13 +76,23 @@ class FavoritesService {
             description: recipe.description || '',
             ingredients: recipe.ingredients || [],
             instructions: recipe.steps || [],
-            cookingTime: recipe.cookingTime || 30,
+            cookingTime: parseInt(String(recipe.cookingTime || 30).replace(/\D/g, '')) || 30,
             difficulty: recipe.difficulty || '中等',
             servings: recipe.servings || 2,
             category: recipe.category || 'AI生成',
-            image: recipe.image || '',
+            imageUrl: recipe.image || '',
             tags: [],
-            nutritionInfo: recipe.nutrition || {},
+            nutritionInfo: recipe.nutrition || {
+              calories: 0,
+              protein: 0,
+              carbs: 0,
+              fat: 0,
+            },
+            cookingMethods: ['炒'],
+            viewCount: 0,
+            favoriteCount: 0,
+            ratingCount: 0,
+            averageRating: 0,
           })
         }
 

@@ -11,3 +11,11 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+interface Window {
+  __TAURI__?: {
+    invoke?: (command: string, args?: Record<string, unknown>) => Promise<unknown>
+    [key: string]: unknown
+  }
+  $router?: unknown
+}

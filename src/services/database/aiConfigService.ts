@@ -138,6 +138,7 @@ interface AIProviderConfig {
   apiKey: string
   baseUrl?: string
   model?: string
+  presetId?: string
   isConfigured: boolean
   source: 'env' | 'database' | 'none'
   createdAt?: string
@@ -200,13 +201,13 @@ export class AIConfigService {
       // 检查是否已存在该提供商的配置
       const existing = await this.getProviderConfig(provider)
 
-      const newConfig = {
+      const newConfig: AIProviderConfig = {
         ...existing,
         provider,
         apiKey,
         ...config,
         isConfigured: true,
-        source: 'database',
+        source: 'database' as const,
         updatedAt: new Date().toISOString(),
       }
 
@@ -270,6 +271,7 @@ export class AIConfigService {
         apiKey: config.apiKey,
         baseUrl: config.baseUrl,
         model: config.model,
+        presetId: config.presetId,
       }
 
       localStorage.setItem('ai-api-configs', JSON.stringify(allConfigs))

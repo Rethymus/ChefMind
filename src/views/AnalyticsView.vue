@@ -536,7 +536,10 @@ import { aiService } from '@/services/aiService'
       meals:
         profile.meals?.map(meal => ({
           type: meal.type,
-          description: meal.foods?.map(food => food.name).join(', ') || '',
+          description:
+            'foods' in meal && Array.isArray(meal.foods)
+              ? meal.foods.map(food => food.name).join(', ')
+              : meal.description || '',
         })) || [],
     }
   }

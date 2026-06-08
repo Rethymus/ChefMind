@@ -272,14 +272,28 @@
                         : `${ing.name} ${ing.amount || ''} ${ing.unit || ''}`.trim()
                     )
                   : [],
-                instructions: Array.isArray(props.recipe.steps) ? props.recipe.steps : [],
-                cookingTime: props.recipe.cookingTime,
+                instructions: Array.isArray(props.recipe.steps)
+                  ? props.recipe.steps.map(step =>
+                      typeof step === 'string' ? step : step.description
+                    )
+                  : [],
+                cookingTime: parseInt(String(props.recipe.cookingTime).replace(/\D/g, '')) || 30,
                 difficulty: props.recipe.difficulty,
                 servings: props.recipe.servings,
-                category: props.recipe.category,
-                image: props.recipe.image,
+                category: props.recipe.category || 'AI生成',
+                imageUrl: props.recipe.image || '',
                 tags: Array.isArray(props.recipe.tags) ? props.recipe.tags : [],
-                nutritionInfo: props.recipe.nutritionInfo,
+                nutritionInfo: props.recipe.nutritionInfo || {
+                  calories: 0,
+                  protein: 0,
+                  carbs: 0,
+                  fat: 0,
+                },
+                cookingMethods: props.recipe.cookingMethods || ['炒'],
+                viewCount: 0,
+                favoriteCount: 0,
+                ratingCount: 0,
+                averageRating: props.recipe.rating || 0,
               })
             }
           } catch (error) {

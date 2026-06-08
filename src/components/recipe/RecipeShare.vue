@@ -71,20 +71,11 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted, watch } from 'vue'
+  import { ref, watch } from 'vue'
   import QRCode from 'qrcode'
   import html2canvas from 'html2canvas'
   import type { Recipe } from '@/services/recipeService'
   import { formatCookingTime, formatDifficulty, formatServings } from '@/utils/formatUtils'
-
-  // 扩展 Window 接口
-  declare global {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
-    interface Window {
-      QRCode: any
-      html2canvas: any
-    }
-  }
 
   // 定义属性
   const props = defineProps<{
@@ -391,22 +382,6 @@
       message: '图片已保存',
     })
   }
-
-  // 生命周期钩子
-  onMounted(() => {
-    // 动态加载QRCode和html2canvas库
-    if (!window.QRCode) {
-      const script = document.createElement('script')
-      script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js'
-      document.head.appendChild(script)
-    }
-
-    if (!window.html2canvas) {
-      const script = document.createElement('script')
-      script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'
-      document.head.appendChild(script)
-    }
-  })
 </script>
 
 <style lang="scss" scoped>

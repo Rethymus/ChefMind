@@ -7,6 +7,7 @@ import { DeepSeekProvider } from './deepseekProvider'
 import { MoonshotProvider } from './moonshotProvider'
 import { QwenProvider } from './qwenProvider'
 import { HunyuanProvider } from './hunyuanProvider'
+import { aiConfigService } from '@/services/aiConfig'
 
 /**
  * AI提供者工厂类
@@ -51,6 +52,26 @@ class AIProviderFactory {
       const enableMockMode = import.meta.env.VITE_ENABLE_MOCK_MODE === 'true'
 
       if (!enableMockMode) {
+        const savedOpenAIConfig = await aiConfigService.getProviderConfig('openai')
+        if (savedOpenAIConfig?.apiKey && savedOpenAIConfig?.baseUrl && savedOpenAIConfig?.model) {
+          if (
+            await this.testOpenAICompatibleConnectivity(
+              savedOpenAIConfig.apiKey,
+              savedOpenAIConfig.baseUrl,
+              savedOpenAIConfig.model
+            )
+          ) {
+            this.currentProviderName = 'openai'
+            this.currentProvider = this.selectProvider(
+              'openai',
+              savedOpenAIConfig.apiKey,
+              savedOpenAIConfig.baseUrl,
+              savedOpenAIConfig.model
+            )
+            return
+          }
+        }
+
         // 获取通用配置
         const genericApiKey = import.meta.env.VITE_API_KEY
         const genericProvider = import.meta.env.VITE_AI_PROVIDER
@@ -150,15 +171,52 @@ class AIProviderFactory {
     model?: string
   ): Promise<boolean> {
     try {
-      const provider = this.selectProvider(providerName, apiKey, baseUrl, model)
+      if (providerName === 'openai' && baseUrl && model) {
+        return this.testOpenAICompatibleConnectivity(apiKey, baseUrl, model)
+      }
 
-      // 简单的连接测试 - 发送一个小的测试请求
-      const testPrompt = '请回复"连接成功"'
-      await provider.generateRecipe(['test'])
+      const provider = this.selectProvider(providerName, apiKey, baseUrl, model)
+      await provider.validateIngredient('番茄')
 
       return true
     } catch (error) {
       return false
+    }
+  }
+
+  private async testOpenAICompatibleConnectivity(
+    apiKey: string,
+    baseUrl: string,
+    model: string
+  ): Promise<boolean> {
+    const normalizedBaseUrl = baseUrl.replace(/\/+$/, '')
+    const completionUrl = normalizedBaseUrl.endsWith('/chat/completions')
+      ? normalizedBaseUrl
+      : `${normalizedBaseUrl}/chat/completions`
+    const controller = new AbortController()
+    const timeout = window.setTimeout(() => controller.abort(), 10000)
+
+    try {
+      const response = await fetch(completionUrl, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: '请只回复“连接成功”。' }],
+          max_tokens: 16,
+          temperature: 0,
+        }),
+      })
+
+      return response.ok
+    } catch {
+      return false
+    } finally {
+      window.clearTimeout(timeout)
     }
   }
 
@@ -263,8 +321,8 @@ class AIProviderFactory {
   ): BaseAIProvider {
     switch (providerName.toLowerCase()) {
       case 'openai':
-        // Using OpenAI-compatible provider (Qwen in this case)
-        return new QwenProvider(apiKey, baseUrl)
+        // OpenAI-compatible provider implementation
+        return new QwenProvider(apiKey, baseUrl, model)
       case 'glm':
         // Using GLM provider
         return new GLMProvider(apiKey)

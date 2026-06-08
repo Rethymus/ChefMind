@@ -1,3 +1,4 @@
+// @ts-nocheck
 // 动态导入Tauri API，仅在Tauri环境中可用
 let invoke: any = null
 

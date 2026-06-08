@@ -500,12 +500,12 @@
             </h3>
             <div class="steps-list">
               <div
-                v-for="(step, index) in generatedRecipe.instructions || generatedRecipe.steps"
-                :key="index"
+                v-for="step in displaySteps"
+                :key="step.order"
                 class="step-item"
               >
-                <div class="step-number">{{ index + 1 }}</div>
-                <div class="step-content">{{ step }}</div>
+                <div class="step-number">{{ step.order }}</div>
+                <div class="step-content">{{ step.text }}</div>
               </div>
             </div>
           </div>
@@ -706,6 +706,19 @@
   const dislikedIngredients = ref<string[]>([])
   const isGenerating = ref(false)
   const generatedRecipe = ref<any>(null)
+  const displaySteps = computed(() =>
+    (generatedRecipe.value?.instructions || generatedRecipe.value?.steps || []).map(
+      (step: unknown, index: number) => ({
+        order: index + 1,
+        text:
+          typeof step === 'string'
+            ? step
+            : step && typeof step === 'object' && 'description' in step
+              ? String((step as { description: unknown }).description)
+              : String(step),
+      })
+    )
+  )
   const recipeRating = ref(4.5)
   const showMoreIngredients = ref(false)
   const activeIngredientTab = ref('vegetables')
@@ -1763,15 +1776,11 @@
         color: var(--text-color) !important;
         padding: 10px 20px !important;
 
-        /* Override any nested white backgrounds */
-        * {
-          background-color: transparent !important;
-        }
-
         /* Specific fixes for common white background elements */
-        .ingredient-category,
-        .ingredient-grid,
-        .ingredient-tabs {
+        :deep(.ingredient-category),
+        :deep(.ingredient-grid),
+        :deep(.ingredient-tabs),
+        :deep(.el-dialog__body *) {
           background-color: transparent !important;
         }
       }

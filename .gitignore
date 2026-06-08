@@ -16,6 +16,7 @@ node_modules
 coverage
 *.lcov
 .nyc_output
+test-results/
 
 # 构建
 dist
@@ -165,6 +166,9 @@ docs/generated/
 .stylelintcache
 .node_repl_history
 *.tgz
+.omc/
+dist/
+src-tauri/dist/
 
 # Tauri 开发文件
 *.appimage

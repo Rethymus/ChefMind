@@ -63,8 +63,8 @@ export class ParamAdapter {
         spiceLevel: isSearchMode ? 'none' : preferences?.spiceLevel || 'medium',
         sweetnessLevel: isSearchMode ? 'none' : preferences?.sweetnessLevel || 'medium',
         servings: preferences?.servings || 2,
-        cookingTime: preferences?.cookingTime || '30分钟',
-        difficulty: preferences?.difficulty || '中等',
+        cookingTime: preferences?.cookingTime?.toString() || '30分钟',
+        difficulty: preferences?.difficulty?.toString() || '中等',
         autoCompleteIngredients: true,
       }
     }

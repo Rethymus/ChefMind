@@ -24,6 +24,11 @@
         <span class="nav-icon">❤️</span>
         <span class="nav-text">收藏</span>
       </router-link>
+
+      <router-link to="/settings" class="nav-item" :class="{ active: $route.name === 'Settings' }">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-text">设置</span>
+      </router-link>
     </div>
   </nav>
 </template>

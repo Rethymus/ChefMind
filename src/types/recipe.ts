@@ -321,6 +321,7 @@ export interface Recipe {
   servings: number
   difficulty: string | number
   cookingMethods: string[]
+  category?: string
   method?: CookingMethod // 兼容旧字段
   kitchenware?: string[]
   dietaryRestrictions?: string[]
@@ -369,7 +370,7 @@ export interface RecipeGenerationParams {
 
   // 新增字段用于支持菜品名称请求
   dishName?: string // 菜品名称（当请求类型为菜品复现时使用）
-  requestType?: 'ingredient_based' | 'dish_recreation' // 请求类型
+  requestType?: 'ingredient_based' | 'dish_recreation' | 'search_only' // 请求类型
 }
 
 // 食材验证结果
