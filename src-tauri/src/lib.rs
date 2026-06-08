@@ -1,9 +1,9 @@
-use tauri::{Manager, PhysicalSize, Emitter, Listener, State};
-use std::sync::Mutex;
-use std::fs;
-use std::path::PathBuf;
 use rusqlite::{Connection, Result};
 use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::PathBuf;
+use std::sync::Mutex;
+use tauri::{Emitter, Listener, Manager, PhysicalSize, State};
 
 // Database state structure
 pub struct DatabaseState {
@@ -31,15 +31,19 @@ pub struct DatabaseResult {
 impl DatabaseState {
     pub fn new(app: &tauri::App) -> Self {
         println!("Initializing database connection...");
-        let data_dir = app
-            .path()
-            .app_data_dir()
-            .unwrap_or_else(|_| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")).join("data"));
+        let data_dir = app.path().app_data_dir().unwrap_or_else(|_| {
+            std::env::current_dir()
+                .unwrap_or_else(|_| PathBuf::from("."))
+                .join("data")
+        });
 
         if !data_dir.exists() {
             if let Err(e) = fs::create_dir_all(&data_dir) {
                 eprintln!("Failed to create data directory: {}", e);
-                return Self { _connection: Mutex::new(None), db_path: data_dir.join("chefmind.db") };
+                return Self {
+                    _connection: Mutex::new(None),
+                    db_path: data_dir.join("chefmind.db"),
+                };
             }
         }
 
@@ -55,13 +59,22 @@ impl DatabaseState {
                 }
                 if let Err(e) = initialize_schema(&conn) {
                     eprintln!("Failed to initialize database schema: {}", e);
-                    return Self { _connection: Mutex::new(None), db_path };
+                    return Self {
+                        _connection: Mutex::new(None),
+                        db_path,
+                    };
                 }
-                Self { _connection: Mutex::new(Some(conn)), db_path }
+                Self {
+                    _connection: Mutex::new(Some(conn)),
+                    db_path,
+                }
             }
             Err(e) => {
                 eprintln!("Failed to connect to database: {}", e);
-                Self { _connection: Mutex::new(None), db_path }
+                Self {
+                    _connection: Mutex::new(None),
+                    db_path,
+                }
             }
         }
     }
@@ -164,7 +177,7 @@ fn initialize_schema(conn: &Connection) -> Result<()> {
         CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key);
         CREATE INDEX IF NOT EXISTS idx_settings_category ON settings(category);
         CREATE INDEX IF NOT EXISTS idx_cache_key ON cache(key);
-        "#
+        "#,
     )
 }
 
@@ -211,7 +224,10 @@ pub fn run() {
                 }
             } else {
                 eprintln!("Failed to get main window");
-                return Err(Box::new(std::io::Error::new(std::io::ErrorKind::NotFound, "Main window not found")));
+                return Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    "Main window not found",
+                )));
             }
 
             println!("Tauri app setup completed successfully");
@@ -296,7 +312,7 @@ fn toggle_dev_tools(window: tauri::WebviewWindow) -> Result<bool, String> {
 fn database_query(
     query: String,
     params: Option<Vec<serde_json::Value>>,
-    db: State<DatabaseState>
+    db: State<DatabaseState>,
 ) -> Result<DatabaseResult, String> {
     println!("Executing query: {}", query);
 
@@ -345,7 +361,7 @@ fn database_query(
                     } else {
                         Box::new(rusqlite::types::Value::Null)
                     }
-                },
+                }
                 serde_json::Value::Bool(b) => Box::new(*b as i64),
                 serde_json::Value::Null => Box::new(rusqlite::types::Value::Null),
                 _ => Box::new(param.to_string()),
@@ -354,17 +370,28 @@ fn database_query(
         }
     }
 
-    let params_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    let params_refs: Vec<&dyn rusqlite::types::ToSql> =
+        params_vec.iter().map(|p| p.as_ref()).collect();
 
     let rows = match stmt.query_map(&params_refs[..], |row| {
         let mut map = serde_json::Map::new();
         for (i, column_name) in column_names.iter().enumerate() {
             let value = match row.get_ref_unwrap(i) {
                 rusqlite::types::ValueRef::Null => serde_json::Value::Null,
-                rusqlite::types::ValueRef::Integer(i) => serde_json::Value::Number(serde_json::Number::from(i)),
-                rusqlite::types::ValueRef::Real(r) => serde_json::Value::Number(serde_json::Number::from_f64(r).unwrap_or(serde_json::Number::from(0))),
-                rusqlite::types::ValueRef::Text(t) => serde_json::Value::String(String::from_utf8(t.to_vec()).unwrap_or_default()),
-                rusqlite::types::ValueRef::Blob(b) => serde_json::Value::Array(b.iter().map(|&b| serde_json::Value::Number(serde_json::Number::from(b))).collect()),
+                rusqlite::types::ValueRef::Integer(i) => {
+                    serde_json::Value::Number(serde_json::Number::from(i))
+                }
+                rusqlite::types::ValueRef::Real(r) => serde_json::Value::Number(
+                    serde_json::Number::from_f64(r).unwrap_or(serde_json::Number::from(0)),
+                ),
+                rusqlite::types::ValueRef::Text(t) => {
+                    serde_json::Value::String(String::from_utf8(t.to_vec()).unwrap_or_default())
+                }
+                rusqlite::types::ValueRef::Blob(b) => serde_json::Value::Array(
+                    b.iter()
+                        .map(|&b| serde_json::Value::Number(serde_json::Number::from(b)))
+                        .collect(),
+                ),
             };
             map.insert(column_name.to_string(), value);
         }
@@ -414,7 +441,7 @@ fn database_query(
 fn database_query_one(
     query: String,
     params: Option<Vec<serde_json::Value>>,
-    db: State<DatabaseState>
+    db: State<DatabaseState>,
 ) -> Result<DatabaseResult, String> {
     println!("Executing query (single row): {}", query);
 
@@ -463,7 +490,7 @@ fn database_query_one(
                     } else {
                         Box::new(rusqlite::types::Value::Null)
                     }
-                },
+                }
                 serde_json::Value::Bool(b) => Box::new(*b as i64),
                 serde_json::Value::Null => Box::new(rusqlite::types::Value::Null),
                 _ => Box::new(param.to_string()),
@@ -472,17 +499,28 @@ fn database_query_one(
         }
     }
 
-    let params_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    let params_refs: Vec<&dyn rusqlite::types::ToSql> =
+        params_vec.iter().map(|p| p.as_ref()).collect();
 
     let mut rows = match stmt.query_map(&params_refs[..], |row| {
         let mut map = serde_json::Map::new();
         for (i, column_name) in column_names.iter().enumerate() {
             let value = match row.get_ref_unwrap(i) {
                 rusqlite::types::ValueRef::Null => serde_json::Value::Null,
-                rusqlite::types::ValueRef::Integer(i) => serde_json::Value::Number(serde_json::Number::from(i)),
-                rusqlite::types::ValueRef::Real(r) => serde_json::Value::Number(serde_json::Number::from_f64(r).unwrap_or(serde_json::Number::from(0))),
-                rusqlite::types::ValueRef::Text(t) => serde_json::Value::String(String::from_utf8(t.to_vec()).unwrap_or_default()),
-                rusqlite::types::ValueRef::Blob(b) => serde_json::Value::Array(b.iter().map(|&b| serde_json::Value::Number(serde_json::Number::from(b))).collect()),
+                rusqlite::types::ValueRef::Integer(i) => {
+                    serde_json::Value::Number(serde_json::Number::from(i))
+                }
+                rusqlite::types::ValueRef::Real(r) => serde_json::Value::Number(
+                    serde_json::Number::from_f64(r).unwrap_or(serde_json::Number::from(0)),
+                ),
+                rusqlite::types::ValueRef::Text(t) => {
+                    serde_json::Value::String(String::from_utf8(t.to_vec()).unwrap_or_default())
+                }
+                rusqlite::types::ValueRef::Blob(b) => serde_json::Value::Array(
+                    b.iter()
+                        .map(|&b| serde_json::Value::Number(serde_json::Number::from(b)))
+                        .collect(),
+                ),
             };
             map.insert(column_name.to_string(), value);
         }
@@ -541,7 +579,7 @@ fn database_query_one(
 fn database_execute(
     query: String,
     params: Option<Vec<serde_json::Value>>,
-    db: State<DatabaseState>
+    db: State<DatabaseState>,
 ) -> Result<DatabaseResult, String> {
     println!("Executing execute: {}", query);
 
@@ -574,7 +612,7 @@ fn database_execute(
                     } else {
                         Box::new(rusqlite::types::Value::Null)
                     }
-                },
+                }
                 serde_json::Value::Bool(b) => Box::new(*b as i64),
                 serde_json::Value::Null => Box::new(rusqlite::types::Value::Null),
                 _ => Box::new(param.to_string()),
@@ -583,7 +621,8 @@ fn database_execute(
         }
     }
 
-    let params_refs: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+    let params_refs: Vec<&dyn rusqlite::types::ToSql> =
+        params_vec.iter().map(|p| p.as_ref()).collect();
 
     let result = match conn.execute(&query, &params_refs[..]) {
         Ok(result) => result,
@@ -603,7 +642,10 @@ fn database_execute(
     let last_insert_id = conn.last_insert_rowid();
     let changes = result as u64;
 
-    println!("Execute successful, {} rows affected, last insert id: {}", changes, last_insert_id);
+    println!(
+        "Execute successful, {} rows affected, last insert id: {}",
+        changes, last_insert_id
+    );
 
     Ok(DatabaseResult {
         success: true,
@@ -612,4 +654,94 @@ fn database_execute(
         last_insert_id: Some(last_insert_id),
         changes: Some(changes),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::initialize_schema;
+    use rusqlite::Connection;
+
+    #[test]
+    fn initializes_required_tables_and_indexes() {
+        let conn = Connection::open_in_memory().expect("open in-memory sqlite database");
+
+        initialize_schema(&conn).expect("initialize schema");
+
+        for table_name in [
+            "users",
+            "recipes",
+            "favorites",
+            "search_history",
+            "settings",
+            "cache",
+        ] {
+            let count: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?1",
+                    [table_name],
+                    |row| row.get(0),
+                )
+                .expect("query table count");
+            assert_eq!(count, 1, "missing table {table_name}");
+        }
+
+        for index_name in [
+            "idx_recipes_created_at",
+            "idx_favorites_session_id",
+            "idx_settings_key",
+            "idx_cache_key",
+        ] {
+            let count: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = ?1",
+                    [index_name],
+                    |row| row.get(0),
+                )
+                .expect("query index count");
+            assert_eq!(count, 1, "missing index {index_name}");
+        }
+    }
+
+    #[test]
+    fn initialized_schema_supports_native_recipe_and_settings_writes() {
+        let conn = Connection::open_in_memory().expect("open in-memory sqlite database");
+
+        initialize_schema(&conn).expect("initialize schema");
+        conn.execute(
+            "INSERT INTO recipes (title, ingredients, instructions, cooking_time, cooking_methods, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            (
+                "番茄炒蛋",
+                "[\"番茄\",\"鸡蛋\"]",
+                "[\"炒蛋\",\"炒番茄\"]",
+                15,
+                "[\"炒\"]",
+                "2026-06-09T00:00:00Z",
+                "2026-06-09T00:00:00Z",
+            ),
+        )
+        .expect("insert recipe");
+        conn.execute(
+            "INSERT INTO settings (key, value, category, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            (
+                "ai_openai_config",
+                "{\"provider\":\"OpenAI\"}",
+                "ai_config",
+                "2026-06-09T00:00:00Z",
+                "2026-06-09T00:00:00Z",
+            ),
+        )
+        .expect("insert setting");
+
+        let recipe_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM recipes", [], |row| row.get(0))
+            .expect("query recipes");
+        let setting_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM settings", [], |row| row.get(0))
+            .expect("query settings");
+
+        assert_eq!(recipe_count, 1);
+        assert_eq!(setting_count, 1);
+    }
 }

@@ -34,6 +34,9 @@ jobs:
       - name: audit dependencies
         run: npm audit --audit-level=high
 
+      - name: check release version consistency
+        run: npm run version:check
+
       - name: lint
         run: npm run lint
 
@@ -88,9 +91,33 @@ jobs:
       - name: check tauri app
         run: npm run tauri:check
 
+  rust-quality:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - name: rust format check
+        run: npm run tauri:fmt
+
+      - name: rust clippy
+        run: npm run tauri:clippy
+
+      - name: rust tests
+        run: npm run tauri:test
+
   create-release:
     if: github.event_name == 'workflow_dispatch'
-    needs: [web-check, tauri-check]
+    needs: [web-check, tauri-check, rust-quality]
     permissions:
       contents: write
     runs-on: ubuntu-latest

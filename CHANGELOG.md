@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.1.5 - 2026-06-09
+
+### Added
+
+- Added CI version consistency checks across package, Tauri, and Cargo release metadata.
+- Added Rust formatting, Clippy, and unit test gates to CI.
+- Added native SQLite schema regression tests for Tauri storage.
+
 ## 3.1.4 - 2026-06-09
 
 ### Added

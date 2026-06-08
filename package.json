@@ -1,6 +1,6 @@
 {
   "name": "chefmind-vue",
-  "version": "3.1.4",
+  "version": "3.1.5",
   "description": "ChefMind 智食谱 - 本地优先的 AI 厨房助手，覆盖菜谱生成、采购、烹饪指导和营养分析",
   "type": "module",
   "scripts": {
@@ -10,6 +10,7 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts",
     "lint:fix": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
     "format": "prettier --write src/",
+    "version:check": "node scripts/check-version-consistency.mjs",
     "type-check": "vue-tsc --noEmit",
     "db:init": "node scripts/init-db-simple.cjs",
     "db:reset": "node scripts/reset-database.js",
@@ -20,7 +21,10 @@
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "vitest run",
     "test:e2e": "playwright test --config=playwright.config.mjs",
-    "tauri:check": "cargo check --locked --manifest-path src-tauri/Cargo.toml"
+    "tauri:check": "cargo check --locked --manifest-path src-tauri/Cargo.toml",
+    "tauri:fmt": "cargo fmt --manifest-path src-tauri/Cargo.toml --check",
+    "tauri:clippy": "cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
+    "tauri:test": "cargo test --locked --manifest-path src-tauri/Cargo.toml"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
