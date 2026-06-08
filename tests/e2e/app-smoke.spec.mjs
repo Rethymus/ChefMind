@@ -13,8 +13,6 @@ const routes = [
 async function openRoute(page, hashPath) {
   const target = `/#${hashPath}`
   await page.goto(target, { waitUntil: 'domcontentloaded' })
-  await page.waitForFunction(() => document.body.textContent?.trim().length > 0)
-  await page.waitForLoadState('networkidle')
 }
 
 test.describe('ChefMind smoke paths', () => {

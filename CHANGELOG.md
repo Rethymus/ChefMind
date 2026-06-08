@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.1.3 - 2026-06-08
+
+### Changed
+
+- Expanded CI quality gates with unit tests, Playwright browser smoke tests, and a Tauri desktop check before release creation.
+- Hardened the GitHub Actions release pipeline by installing the required browser runtime and building frontend assets before desktop validation.
+
 ## 3.1.2 - 2026-06-08
 
 ### Changed
