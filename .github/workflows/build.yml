@@ -28,6 +28,9 @@ jobs:
       - name: install frontend dependencies
         run: npm ci
 
+      - name: install playwright browser
+        run: npx playwright install --with-deps chromium
+
       - name: audit dependencies
         run: npm audit --audit-level=high
 
@@ -78,6 +81,9 @@ jobs:
 
       - name: install frontend dependencies
         run: npm ci
+
+      - name: build frontend assets
+        run: npm run build
 
       - name: check tauri app
         run: npm run tauri:check

@@ -10,14 +10,20 @@ const routes = [
   ['/analytics', /营养|分析|数据/],
 ]
 
+async function openRoute(page, hashPath) {
+  const target = `/#${hashPath}`
+  await page.goto(target, { waitUntil: 'domcontentloaded' })
+  await page.waitForFunction(() => document.body.textContent?.trim().length > 0)
+  await page.waitForLoadState('networkidle')
+}
+
 test.describe('ChefMind smoke paths', () => {
   for (const [hashPath, expectedText] of routes) {
     test(`renders ${hashPath}`, async ({ page }) => {
       const errors = []
       page.on('pageerror', error => errors.push(error.message))
 
-      await page.goto(`/#${hashPath}`)
-      await page.waitForLoadState('networkidle')
+      await openRoute(page, hashPath)
 
       await expect(page.locator('body')).toContainText(expectedText)
       expect(errors).toEqual([])
@@ -25,7 +31,7 @@ test.describe('ChefMind smoke paths', () => {
   }
 
   test('opens the About Us video link to the configured Bilibili URL', async ({ page }) => {
-    await page.goto('/#/')
+    await openRoute(page, '/')
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
     await page.getByText('关于我们').first().click()
 
