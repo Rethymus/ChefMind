@@ -37,12 +37,54 @@ jobs:
       - name: type check
         run: npm run type-check
 
+      - name: unit tests
+        run: npm run test:unit
+
       - name: build web app
         run: npm run build
 
+      - name: browser smoke tests
+        run: npm run test:e2e
+
+      - name: upload playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  tauri-check:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - name: install frontend dependencies
+        run: npm ci
+
+      - name: check tauri app
+        run: npm run tauri:check
+
   create-release:
     if: github.event_name == 'workflow_dispatch'
-    needs: web-check
+    needs: [web-check, tauri-check]
     permissions:
       contents: write
     runs-on: ubuntu-latest
