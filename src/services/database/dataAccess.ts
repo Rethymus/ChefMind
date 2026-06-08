@@ -1,6 +1,6 @@
 /**
  * 通用数据访问层
- * 支持浏览器环境和 Node.js 环境
+ * 支持浏览器、Tauri 原生和 Node.js 环境
  */
 
 import { IndexedDBStorage } from './indexedDBStorage'
@@ -11,6 +11,11 @@ const isNode =
   process.versions &&
   process.versions.node &&
   typeof window === 'undefined'
+
+const isTauri =
+  typeof window !== 'undefined' &&
+  !!window.__TAURI__ &&
+  typeof window.__TAURI__.invoke === 'function'
 
 // 检测 IndexedDB 支持情况
 const supportsIndexedDB = typeof indexedDB !== 'undefined' && typeof IDBKeyRange !== 'undefined'
@@ -239,7 +244,7 @@ class SQLiteDataAccess {
     const placeholders = keys.map(() => '?').join(', ')
     const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`
 
-    const result = db.execute(sql, Object.values(data))
+    const result = await db.execute(sql, Object.values(data))
     return this.findOne(table, { where: { id: result.lastInsertRowid } })
   }
 
@@ -249,14 +254,14 @@ class SQLiteDataAccess {
     const setClause = keys.map(key => `${key} = ?`).join(', ')
     const sql = `UPDATE ${table} SET ${setClause} WHERE id = ?`
 
-    db.execute(sql, [...Object.values(data), id])
+    await db.execute(sql, [...Object.values(data), id])
     return this.findOne(table, { where: { id } })
   }
 
   async delete(table: string, id: number): Promise<boolean> {
     const db = await this.getDb()
     const sql = `DELETE FROM ${table} WHERE id = ?`
-    const result = db.execute(sql, [id])
+    const result = await db.execute(sql, [id])
     return (result.changes || 0) > 0
   }
 
@@ -277,7 +282,7 @@ class SQLiteDataAccess {
       sql += ` WHERE ${conditions.join(' AND ')}`
     }
 
-    const result = db.queryOne(sql, params)
+    const result = await db.queryOne(sql, params)
     return result.count
   }
 
@@ -293,13 +298,151 @@ class SQLiteDataAccess {
   }
 }
 
+interface TauriDatabaseResult {
+  success: boolean
+  data?: Array<Record<string, any>> | null
+  error?: string | null
+  last_insert_id?: number | null
+  changes?: number | null
+}
+
+class TauriSQLiteDataAccess {
+  private async invokeDatabase(
+    command: 'database_query' | 'database_query_one' | 'database_execute',
+    query: string,
+    params: any[] = []
+  ): Promise<TauriDatabaseResult> {
+    if (!window.__TAURI__?.invoke) {
+      throw new Error('Tauri invoke API is not available')
+    }
+
+    const result = (await window.__TAURI__.invoke(command, {
+      query,
+      params,
+    })) as TauriDatabaseResult
+
+    if (!result.success) {
+      throw new Error(result.error || `Tauri database command failed: ${command}`)
+    }
+
+    return result
+  }
+
+  private buildWhereClause(query: any = {}, params: any[] = []): string {
+    if (!query.where) return ''
+
+    const conditions = Object.entries(query.where).map(([key, value]) => {
+      if (typeof value === 'string' && value.includes('%')) {
+        params.push(value)
+        return `${key} LIKE ?`
+      }
+      params.push(value)
+      return `${key} = ?`
+    })
+
+    return conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : ''
+  }
+
+  async find(
+    table: string,
+    query: any = {},
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<any[]> {
+    const params: any[] = []
+    let sql = `SELECT * FROM ${table}`
+    sql += this.buildWhereClause(query, params)
+
+    if (query.orderBy) {
+      sql += ` ORDER BY ${query.orderBy}`
+    }
+
+    sql += ` LIMIT ? OFFSET ?`
+    params.push(limit, offset)
+
+    const result = await this.invokeDatabase('database_query', sql, params)
+    return result.data || []
+  }
+
+  async findOne(table: string, query: any = {}): Promise<any | null> {
+    const params: any[] = []
+    let sql = `SELECT * FROM ${table}`
+    sql += this.buildWhereClause(query, params)
+    sql += ' LIMIT 1'
+
+    const result = await this.invokeDatabase('database_query_one', sql, params)
+    return result.data?.[0] || null
+  }
+
+  async insert(table: string, data: any): Promise<any> {
+    const item = {
+      ...data,
+      created_at: data.created_at || new Date().toISOString(),
+      updated_at: data.updated_at || new Date().toISOString(),
+    }
+    const keys = Object.keys(item)
+    const placeholders = keys.map(() => '?').join(', ')
+    const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`
+
+    const result = await this.invokeDatabase('database_execute', sql, Object.values(item))
+    return this.findOne(table, { where: { id: result.last_insert_id } })
+  }
+
+  async update(table: string, id: number, data: any): Promise<any | null> {
+    const item = {
+      ...data,
+      updated_at: new Date().toISOString(),
+    }
+    const keys = Object.keys(item)
+
+    if (keys.length === 0) {
+      return this.findOne(table, { where: { id } })
+    }
+
+    const setClause = keys.map(key => `${key} = ?`).join(', ')
+    const sql = `UPDATE ${table} SET ${setClause} WHERE id = ?`
+
+    await this.invokeDatabase('database_execute', sql, [...Object.values(item), id])
+    return this.findOne(table, { where: { id } })
+  }
+
+  async delete(table: string, id: number): Promise<boolean> {
+    const result = await this.invokeDatabase('database_execute', `DELETE FROM ${table} WHERE id = ?`, [
+      id,
+    ])
+    return (result.changes || 0) > 0
+  }
+
+  async count(table: string, query: any = {}): Promise<number> {
+    const params: any[] = []
+    let sql = `SELECT COUNT(*) as count FROM ${table}`
+    sql += this.buildWhereClause(query, params)
+
+    const result = await this.invokeDatabase('database_query_one', sql, params)
+    return Number(result.data?.[0]?.count || 0)
+  }
+
+  async rawQuery(sql: string, params: any[] = []): Promise<any[]> {
+    const result = await this.invokeDatabase('database_query', sql, params)
+    return result.data || []
+  }
+
+  async rawQueryOne(sql: string, params: any[] = []): Promise<any | null> {
+    const result = await this.invokeDatabase('database_query_one', sql, params)
+    return result.data?.[0] || null
+  }
+}
+
 // 通用数据访问层
 export class UniversalDataAccess {
   private static instance: UniversalDataAccess
-  private storage: MemoryStorage | SQLiteDataAccess | IndexedDBStorage
+  private storage: MemoryStorage | SQLiteDataAccess | IndexedDBStorage | TauriSQLiteDataAccess
 
   private constructor() {
-    if (isNode) {
+    if (isTauri) {
+      this.storage = new TauriSQLiteDataAccess()
+      console.log('🗄️ 使用 Tauri 原生 SQLite 数据存储')
+    } else if (isNode) {
       try {
         // Node.js 环境：尝试使用 SQLite
         const runtimeRequire =
@@ -424,7 +567,7 @@ export class UniversalDataAccess {
 
   // 原始 SQL 查询方法（用于复杂查询）
   async query(sql: string, params: any[] = []): Promise<any[]> {
-    if (this.storage instanceof SQLiteDataAccess) {
+    if (this.storage instanceof SQLiteDataAccess || this.storage instanceof TauriSQLiteDataAccess) {
       return this.storage.rawQuery(sql, params)
     } else {
       // 内存存储和 IndexedDB 不支持原始 SQL 查询，返回空数组
@@ -434,7 +577,7 @@ export class UniversalDataAccess {
   }
 
   async queryOne(sql: string, params: any[] = []): Promise<any | null> {
-    if (this.storage instanceof SQLiteDataAccess) {
+    if (this.storage instanceof SQLiteDataAccess || this.storage instanceof TauriSQLiteDataAccess) {
       return this.storage.rawQueryOne(sql, params)
     } else {
       // 内存存储和 IndexedDB 不支持原始 SQL 查询，返回 null
@@ -447,6 +590,8 @@ export class UniversalDataAccess {
   getStorageType(): string {
     if (this.storage instanceof SQLiteDataAccess) {
       return 'SQLite'
+    } else if (this.storage instanceof TauriSQLiteDataAccess) {
+      return 'TauriSQLite'
     } else if (this.storage instanceof IndexedDBStorage) {
       return 'IndexedDB'
     } else {

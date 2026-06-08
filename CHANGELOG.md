@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.1.4 - 2026-06-09
+
+### Added
+
+- Added Tauri native SQLite storage routing for desktop and mobile builds.
+- Added platform storage documentation covering release targets and fallbacks.
+- Added macOS to the GitHub Release desktop build matrix.
+
+### Changed
+
+- Moved Tauri SQLite data from the process working directory to the OS app data directory.
+- Enabled the global Tauri bridge so release builds can use native database commands.
+
 ## 3.1.3 - 2026-06-08
 
 ### Changed

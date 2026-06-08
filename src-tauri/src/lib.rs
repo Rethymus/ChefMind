@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 // Database state structure
 pub struct DatabaseState {
     _connection: Mutex<Option<Connection>>,
+    db_path: PathBuf,
 }
 
 // Database query structure
@@ -27,22 +28,18 @@ pub struct DatabaseResult {
     pub changes: Option<u64>,
 }
 
-impl Default for DatabaseState {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl DatabaseState {
-    pub fn new() -> Self {
+    pub fn new(app: &tauri::App) -> Self {
         println!("Initializing database connection...");
-        let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-        let data_dir = current_dir.join("data");
+        let data_dir = app
+            .path()
+            .app_data_dir()
+            .unwrap_or_else(|_| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")).join("data"));
 
         if !data_dir.exists() {
             if let Err(e) = fs::create_dir_all(&data_dir) {
                 eprintln!("Failed to create data directory: {}", e);
-                return Self { _connection: Mutex::new(None) };
+                return Self { _connection: Mutex::new(None), db_path: data_dir.join("chefmind.db") };
             }
         }
 
@@ -52,25 +49,123 @@ impl DatabaseState {
         match Connection::open(&db_path) {
             Ok(conn) => {
                 println!("Database connection established");
-                if let Err(e) = conn.execute_batch("PRAGMA journal_mode = DELETE; PRAGMA foreign_keys = ON; PRAGMA synchronous = NORMAL;") {
+                if let Err(e) = conn.execute_batch("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA synchronous = NORMAL; PRAGMA busy_timeout = 10000;") {
                     eprintln!("Failed to configure database: {}", e);
-                    return Self { _connection: Mutex::new(None) };
+                    return Self { _connection: Mutex::new(None), db_path };
                 }
-                Self { _connection: Mutex::new(Some(conn)) }
+                if let Err(e) = initialize_schema(&conn) {
+                    eprintln!("Failed to initialize database schema: {}", e);
+                    return Self { _connection: Mutex::new(None), db_path };
+                }
+                Self { _connection: Mutex::new(Some(conn)), db_path }
             }
             Err(e) => {
                 eprintln!("Failed to connect to database: {}", e);
-                Self { _connection: Mutex::new(None) }
+                Self { _connection: Mutex::new(None), db_path }
             }
         }
     }
 
     pub fn get_connection(&self) -> Result<Connection> {
-        let current_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-        let data_dir = current_dir.join("data");
-        let db_path = data_dir.join("chefmind.db");
-        Connection::open(&db_path)
+        let conn = Connection::open(&self.db_path)?;
+        conn.execute_batch("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA synchronous = NORMAL; PRAGMA busy_timeout = 10000;")?;
+        initialize_schema(&conn)?;
+        Ok(conn)
     }
+}
+
+fn initialize_schema(conn: &Connection) -> Result<()> {
+    conn.execute_batch(
+        r#"
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT UNIQUE NOT NULL,
+            preferences TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS recipes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            ingredients TEXT NOT NULL,
+            instructions TEXT NOT NULL,
+            cooking_time INTEGER,
+            difficulty TEXT,
+            servings INTEGER DEFAULT 4,
+            category TEXT,
+            tags TEXT,
+            nutrition_info TEXT,
+            image_url TEXT,
+            cooking_methods TEXT,
+            view_count INTEGER DEFAULT 0,
+            favorite_count INTEGER DEFAULT 0,
+            rating_count INTEGER DEFAULT 0,
+            average_rating REAL DEFAULT 0,
+            ai_provider TEXT,
+            ai_model TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS favorites (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            recipe_id INTEGER NOT NULL,
+            recipe_title TEXT,
+            recipe_image TEXT,
+            notes TEXT,
+            rating INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+            UNIQUE(session_id, recipe_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS search_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            ingredients TEXT NOT NULL,
+            cooking_methods TEXT,
+            dietary_restrictions TEXT,
+            result_count INTEGER DEFAULT 0,
+            search_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS settings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            key TEXT UNIQUE NOT NULL,
+            value TEXT,
+            category TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS cache (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            key TEXT UNIQUE NOT NULL,
+            value TEXT NOT NULL,
+            ttl INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            expires_at DATETIME
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_users_session_id ON users(session_id);
+        CREATE INDEX IF NOT EXISTS idx_recipes_title ON recipes(title);
+        CREATE INDEX IF NOT EXISTS idx_recipes_category ON recipes(category);
+        CREATE INDEX IF NOT EXISTS idx_recipes_created_at ON recipes(created_at);
+        CREATE INDEX IF NOT EXISTS idx_favorites_session_id ON favorites(session_id);
+        CREATE INDEX IF NOT EXISTS idx_favorites_recipe_id ON favorites(recipe_id);
+        CREATE INDEX IF NOT EXISTS idx_search_history_session_id ON search_history(session_id);
+        CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key);
+        CREATE INDEX IF NOT EXISTS idx_settings_category ON settings(category);
+        CREATE INDEX IF NOT EXISTS idx_cache_key ON cache(key);
+        "#
+    )
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -78,7 +173,7 @@ pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
             println!("=== ChefMind Tauri App Starting ===");
-            let db_state = DatabaseState::new();
+            let db_state = DatabaseState::new(app);
             app.manage(db_state);
 
             if let Some(window) = app.get_webview_window("main") {

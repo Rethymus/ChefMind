@@ -18,6 +18,12 @@ const isNode =
   process.versions.node &&
   typeof window === 'undefined'
 
+const usesNativeDatabase =
+  isNode ||
+  (typeof window !== 'undefined' &&
+    !!window.__TAURI__ &&
+    typeof window.__TAURI__.invoke === 'function')
+
 // 浏览器环境下的内存存储
 class AIConfigMemoryStorage {
   private configs: Map<string, any> = new Map()
@@ -215,8 +221,8 @@ export class AIConfigService {
         newConfig.createdAt = new Date().toISOString()
       }
 
-      if (isNode) {
-        // Node.js 环境：使用 SQLite 通过 dataAccess
+      if (usesNativeDatabase) {
+        // Node.js/Tauri 环境：使用 SQLite 通过 dataAccess
         // console.log(`🗄️ 使用 SQLite 保存 ${provider} 配置`)
         try {
           const db = await initDataAccess()
@@ -292,8 +298,8 @@ export class AIConfigService {
       // 同步localStorage到内存存储
       this.syncFromLocalStorage()
 
-      if (isNode) {
-        // Node.js 环境：使用 SQLite 通过 dataAccess
+      if (usesNativeDatabase) {
+        // Node.js/Tauri 环境：使用 SQLite 通过 dataAccess
         // console.log(`🗄️ 使用 SQLite 获取 ${provider} 配置`)
         try {
           const db = await initDataAccess()
@@ -337,8 +343,8 @@ export class AIConfigService {
    */
   async getAllProviderConfigs(): Promise<AIProviderConfig[]> {
     try {
-      if (isNode) {
-        // Node.js 环境：使用 SQLite 通过 dataAccess
+      if (usesNativeDatabase) {
+        // Node.js/Tauri 环境：使用 SQLite 通过 dataAccess
         try {
           const db = await initDataAccess()
           if (db) {
@@ -380,8 +386,8 @@ export class AIConfigService {
    */
   async deleteProviderConfig(provider: string): Promise<void> {
     try {
-      if (isNode) {
-        // Node.js 环境：使用 SQLite 通过 dataAccess
+      if (usesNativeDatabase) {
+        // Node.js/Tauri 环境：使用 SQLite 通过 dataAccess
         try {
           const db = await initDataAccess()
           if (db) {
@@ -528,8 +534,8 @@ export class AIConfigService {
         updatedAt: new Date().toISOString(),
       }
 
-      if (isNode) {
-        // Node.js 环境：使用 SQLite 通过 dataAccess
+      if (usesNativeDatabase) {
+        // Node.js/Tauri 环境：使用 SQLite 通过 dataAccess
         try {
           const db = await initDataAccess()
           if (db) {
@@ -610,8 +616,8 @@ export class AIConfigService {
    */
   async clearAllConfigs(): Promise<void> {
     try {
-      if (isNode) {
-        // Node.js 环境：使用 SQLite 通过 dataAccess
+      if (usesNativeDatabase) {
+        // Node.js/Tauri 环境：使用 SQLite 通过 dataAccess
         try {
           const db = await initDataAccess()
           if (db) {
