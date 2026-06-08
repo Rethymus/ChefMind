@@ -35,7 +35,7 @@
             隐私协议
           </a>
           <a
-            href="https://bilibili.com/video/BV1GJ411x7h7/"
+            href="https://www.bilibili.com/video/BV1GJ411x7h7/"
             target="_blank"
             rel="noopener noreferrer"
             class="footer-link glass-button primary"
@@ -62,7 +62,7 @@
             <p>团队由热爱美食和技术的专业人士组成，不断探索AI与烹饪的完美结合。</p>
             <div class="video-section">
               <a
-                href="https://bilibili.com/video/BV1GJ411x7h7/"
+                href="https://www.bilibili.com/video/BV1GJ411x7h7/"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="video-play-btn glass-button"

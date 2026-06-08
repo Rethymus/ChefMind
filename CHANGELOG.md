@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.2 - 2026-06-08
+
+### Changed
+
+- Updated the About Us introduction video link to open the official Bilibili video URL.
+
 ## 3.1.1 - 2026-06-08
 
 ### Changed
