@@ -37,7 +37,6 @@ src-tauri/target/**/*
 *.exe
 
 # Rust 和 Cargo
-Cargo.lock
 **/*.rs.bk
 *.pdb
 

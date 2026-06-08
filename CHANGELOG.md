@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.1.1 - 2026-06-08
+
+### Changed
+
+- Committed the Tauri `Cargo.lock` file so desktop builds are reproducible across CI and release runners.
+- Updated the GitHub Actions workflow to opt into the Node 24 actions runtime ahead of the Node 20 deprecation.
+- Isolated Node-only SQLite loading from the browser bundle and removed ineffective dynamic imports to keep production builds cleaner.
+- Regenerated README journey screenshots after the latest verification pass.
+
+### Fixed
+
+- Fixed SQLite data access initialization so asynchronous connections are resolved before query execution.
+
 ## 3.1.0 - 2026-06-08
 
 ### Added

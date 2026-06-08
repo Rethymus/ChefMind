@@ -183,10 +183,14 @@ class MemoryStorage {
 
 // SQLite 数据访问层 (Node.js 环境)
 class SQLiteDataAccess {
-  private db: any
+  private db: any | Promise<any>
 
-  constructor(db: any) {
+  constructor(db: any | Promise<any>) {
     this.db = db
+  }
+
+  private async getDb(): Promise<any> {
+    return await this.db
   }
 
   async find(
@@ -195,6 +199,7 @@ class SQLiteDataAccess {
     limit: number = 50,
     offset: number = 0
   ): Promise<any[]> {
+    const db = await this.getDb()
     let sql = `SELECT * FROM ${table}`
     const params: any[] = []
 
@@ -220,7 +225,7 @@ class SQLiteDataAccess {
     sql += ` LIMIT ? OFFSET ?`
     params.push(limit, offset)
 
-    return this.db.query(sql, params)
+    return db.query(sql, params)
   }
 
   async findOne(table: string, query: any = {}): Promise<any | null> {
@@ -229,30 +234,34 @@ class SQLiteDataAccess {
   }
 
   async insert(table: string, data: any): Promise<any> {
+    const db = await this.getDb()
     const keys = Object.keys(data)
     const placeholders = keys.map(() => '?').join(', ')
     const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`
 
-    const result = this.db.execute(sql, Object.values(data))
+    const result = db.execute(sql, Object.values(data))
     return this.findOne(table, { where: { id: result.lastInsertRowid } })
   }
 
   async update(table: string, id: number, data: any): Promise<any | null> {
+    const db = await this.getDb()
     const keys = Object.keys(data)
     const setClause = keys.map(key => `${key} = ?`).join(', ')
     const sql = `UPDATE ${table} SET ${setClause} WHERE id = ?`
 
-    this.db.execute(sql, [...Object.values(data), id])
+    db.execute(sql, [...Object.values(data), id])
     return this.findOne(table, { where: { id } })
   }
 
   async delete(table: string, id: number): Promise<boolean> {
+    const db = await this.getDb()
     const sql = `DELETE FROM ${table} WHERE id = ?`
-    const result = this.db.execute(sql, [id])
+    const result = db.execute(sql, [id])
     return (result.changes || 0) > 0
   }
 
   async count(table: string, query: any = {}): Promise<number> {
+    const db = await this.getDb()
     let sql = `SELECT COUNT(*) as count FROM ${table}`
     const params: any[] = []
 
@@ -268,17 +277,19 @@ class SQLiteDataAccess {
       sql += ` WHERE ${conditions.join(' AND ')}`
     }
 
-    const result = this.db.queryOne(sql, params)
+    const result = db.queryOne(sql, params)
     return result.count
   }
 
   // 原始 SQL 查询方法
   async rawQuery(sql: string, params: any[] = []): Promise<any[]> {
-    return this.db.query(sql, params)
+    const db = await this.getDb()
+    return db.query(sql, params)
   }
 
   async rawQueryOne(sql: string, params: any[] = []): Promise<any | null> {
-    return this.db.queryOne(sql, params)
+    const db = await this.getDb()
+    return db.queryOne(sql, params)
   }
 }
 
@@ -291,7 +302,9 @@ export class UniversalDataAccess {
     if (isNode) {
       try {
         // Node.js 环境：尝试使用 SQLite
-        const { default: SQLiteConfig } = require('@/config/sqlite')
+        const runtimeRequire =
+          typeof require === 'function' ? require : (0, eval)('require')
+        const { default: SQLiteConfig } = runtimeRequire(['@/config', 'sqlite'].join('/'))
         const sqliteConfig = SQLiteConfig.getInstance()
         this.storage = new SQLiteDataAccess(sqliteConfig.getConnection())
         console.log('🗄️ 使用 SQLite 数据存储')

@@ -196,6 +196,7 @@
   import { getIngredientIcon } from '@/utils/ingredientIconMapper'
   import RecipeMultimediaPlatforms from '@/components/recipe/RecipeMultimediaPlatforms.vue'
   import { Favorite } from '@/models/Favorite'
+  import { Recipe as RecipeModel } from '@/models/Recipe'
   import { useRouter } from 'vue-router'
 
   const props = defineProps<{
@@ -256,13 +257,11 @@
 
           // 确保食谱数据也保存到 recipes 表
           try {
-            const { Recipe } = await import('@/models/Recipe')
-
             // 检查食谱是否已存在于 recipes 表
-            const existingRecipe = await Recipe.findById(recipeId)
+            const existingRecipe = await RecipeModel.findById(recipeId)
             if (!existingRecipe) {
               // 将食谱数据保存到 recipes 表
-              await Recipe.create({
+              await RecipeModel.create({
                 title: props.recipe.name || props.recipe.title || '未命名菜谱',
                 description: props.recipe.description,
                 ingredients: Array.isArray(props.recipe.ingredients)

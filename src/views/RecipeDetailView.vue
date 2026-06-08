@@ -292,6 +292,7 @@
   import RecipeNutrition from '@/components/recipe/RecipeNutrition.vue'
   import RecipeExport from '@/components/recipe/RecipeExport.vue'
   import RecipeMultimediaPlatforms from '@/components/recipe/RecipeMultimediaPlatforms.vue'
+  import { favoritesService } from '@/services/favoritesService'
 
   const router = useRouter()
   const recipeService = useRecipeService()
@@ -371,7 +372,6 @@
 
     try {
       // 使用统一的收藏服务
-      const { favoritesService } = await import('@/services/favoritesService')
       isFavorite.value = await favoritesService.isFavorited(sessionId.value, recipe.value.id)
     } catch (error) {
       console.error('检查收藏状态失败:', error)
@@ -383,8 +383,6 @@
     if (!recipe.value) return
 
     try {
-      const { favoritesService } = await import('@/services/favoritesService')
-
       if (isFavorite.value) {
         // 取消收藏
         const success = await favoritesService.removeFavorite(sessionId.value, recipe.value.id)
@@ -738,7 +736,6 @@
   onMounted(async () => {
     // 迁移旧的 localStorage 数据到统一存储
     try {
-      const { favoritesService } = await import('@/services/favoritesService')
       await favoritesService.migrateFromLocalStorage(sessionId.value)
     } catch (error) {
       console.warn('收藏数据迁移失败:', error)

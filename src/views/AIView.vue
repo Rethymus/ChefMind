@@ -679,6 +679,7 @@
     ShoppingCart,
   } from '@element-plus/icons-vue'
   import { aiService } from '@/services/aiService'
+  import { favoritesService } from '@/services/favoritesService'
   // import type { CookingMethod } from '@/types/recipe' // 暂时未使用
   import APIKeyReminder from '@/components/common/APIKeyReminder.vue'
   import { generateRecipeCardSvg } from '@/utils/svgGenerator'
@@ -1090,7 +1091,6 @@
     }
 
     try {
-      const { favoritesService } = await import('@/services/favoritesService')
       const sessionId = localStorage.getItem('sessionId') || 'default-session'
       isFavorited.value = await favoritesService.isFavorited(sessionId, generatedRecipe.value.id)
     } catch (error) {
@@ -1110,7 +1110,6 @@
 
     try {
       // 使用 favoritesService 统一处理收藏功能
-      const { favoritesService } = await import('@/services/favoritesService')
       const sessionId = localStorage.getItem('sessionId') || 'default-session'
 
       const currentState = isFavorited.value
