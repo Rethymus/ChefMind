@@ -1,9 +1,14 @@
+use keyring::Entry;
+use reqwest::{redirect::Policy, Client};
 use rusqlite::{Connection, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::net::IpAddr;
 use std::path::PathBuf;
 use std::sync::Mutex;
+use std::time::Duration;
 use tauri::{Emitter, Listener, Manager, PhysicalSize, State};
+use url::Url;
 
 // Database state structure
 pub struct DatabaseState {
@@ -26,6 +31,135 @@ pub struct DatabaseResult {
     pub error: Option<String>,
     pub last_insert_id: Option<i64>,
     pub changes: Option<u64>,
+}
+
+const CREDENTIAL_SERVICE: &str = "com.chefmind.tauri.byok";
+const DEFAULT_PROVIDER_ID: &str = "openai";
+
+#[derive(Debug, Serialize, Deserialize)]
+struct StoredProviderCredential {
+    api_key: String,
+    base_url: String,
+    model: String,
+}
+
+fn validate_provider_id(provider_id: &str) -> std::result::Result<(), String> {
+    if provider_id == DEFAULT_PROVIDER_ID {
+        Ok(())
+    } else {
+        Err("Unsupported AI provider credential".to_string())
+    }
+}
+
+fn validate_base_url(base_url: &str) -> std::result::Result<Url, String> {
+    let parsed = Url::parse(base_url.trim()).map_err(|_| "Base URL is invalid".to_string())?;
+
+    if parsed.scheme() != "https" {
+        return Err("Base URL must use HTTPS".to_string());
+    }
+    if !parsed.username().is_empty() || parsed.password().is_some() {
+        return Err("Base URL must not contain credentials".to_string());
+    }
+    if parsed.query().is_some() || parsed.fragment().is_some() {
+        return Err("Base URL must not contain a query string or fragment".to_string());
+    }
+
+    let host = parsed
+        .host_str()
+        .ok_or_else(|| "Base URL must contain a host".to_string())?
+        .to_ascii_lowercase();
+
+    if host == "localhost" || host.ends_with(".localhost") || host.parse::<IpAddr>().is_ok() {
+        return Err("Local and literal-IP endpoints are not allowed".to_string());
+    }
+
+    Ok(parsed)
+}
+
+fn completion_url(base_url: &str) -> std::result::Result<Url, String> {
+    let mut url = validate_base_url(base_url)?;
+    let path = url.path().trim_end_matches('/');
+    if !path.ends_with("/chat/completions") {
+        let completion_path = if path.is_empty() {
+            "/chat/completions".to_string()
+        } else {
+            format!("{path}/chat/completions")
+        };
+        url.set_path(&completion_path);
+    }
+    Ok(url)
+}
+
+fn credential_entry(provider_id: &str) -> std::result::Result<Entry, String> {
+    validate_provider_id(provider_id)?;
+    Entry::new(CREDENTIAL_SERVICE, provider_id)
+        .map_err(|_| "Unable to access the operating system credential store".to_string())
+}
+
+fn read_credential(provider_id: &str) -> std::result::Result<StoredProviderCredential, String> {
+    let serialized = credential_entry(provider_id)?
+        .get_password()
+        .map_err(|_| "No secure credential is configured for this provider".to_string())?;
+    let credential = serde_json::from_str::<StoredProviderCredential>(&serialized)
+        .map_err(|_| "The stored provider credential is invalid".to_string())?;
+    validate_base_url(&credential.base_url)?;
+    if credential.api_key.trim().is_empty() || credential.model.trim().is_empty() {
+        return Err("The stored provider credential is incomplete".to_string());
+    }
+    Ok(credential)
+}
+
+async fn request_completion(
+    credential: &StoredProviderCredential,
+    prompt: &str,
+    max_tokens: u32,
+    temperature: f64,
+) -> std::result::Result<String, String> {
+    if prompt.trim().is_empty() || prompt.len() > 100_000 {
+        return Err("Prompt is invalid".to_string());
+    }
+    if max_tokens == 0 || max_tokens > 16_384 || !(0.0..=2.0).contains(&temperature) {
+        return Err("Completion options are invalid".to_string());
+    }
+
+    let endpoint = completion_url(&credential.base_url)?;
+    let client = Client::builder()
+        .redirect(Policy::none())
+        .timeout(Duration::from_secs(30))
+        .build()
+        .map_err(|_| "Unable to create a secure HTTP client".to_string())?;
+
+    let response = client
+        .post(endpoint)
+        .bearer_auth(&credential.api_key)
+        .json(&serde_json::json!({
+            "model": credential.model,
+            "messages": [{ "role": "user", "content": prompt }],
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }))
+        .send()
+        .await
+        .map_err(|_| "Unable to reach the AI provider".to_string())?;
+
+    if !response.status().is_success() {
+        return Err(format!(
+            "AI provider request failed with HTTP {}",
+            response.status()
+        ));
+    }
+
+    let payload = response
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|_| "AI provider returned an invalid response".to_string())?;
+
+    payload
+        .pointer("/choices/0/message/content")
+        .and_then(serde_json::Value::as_str)
+        .map(str::to_string)
+        .filter(|content| !content.trim().is_empty())
+        .ok_or_else(|| "AI provider response did not include completion content".to_string())
 }
 
 impl DatabaseState {
@@ -241,6 +375,10 @@ pub fn run() {
             get_system_info,
             get_window_info,
             toggle_dev_tools,
+            credential_store,
+            credential_delete,
+            ai_chat_completion,
+            test_provider_configuration,
             database_query,
             database_query_one,
             database_execute
@@ -306,6 +444,67 @@ fn toggle_dev_tools(window: tauri::WebviewWindow) -> Result<bool, String> {
     }
     println!("Developer tools toggle request sent to frontend");
     Ok(true)
+}
+
+#[tauri::command]
+fn credential_store(
+    provider_id: String,
+    api_key: String,
+    base_url: String,
+    model: String,
+) -> std::result::Result<(), String> {
+    validate_provider_id(&provider_id)?;
+    validate_base_url(&base_url)?;
+    if api_key.trim().is_empty() || model.trim().is_empty() || model.len() > 256 {
+        return Err("Provider credential is incomplete".to_string());
+    }
+
+    let serialized = serde_json::to_string(&StoredProviderCredential {
+        api_key,
+        base_url: base_url.trim().trim_end_matches('/').to_string(),
+        model: model.trim().to_string(),
+    })
+    .map_err(|_| "Unable to prepare the provider credential".to_string())?;
+
+    credential_entry(&provider_id)?
+        .set_password(&serialized)
+        .map_err(|_| {
+            "Unable to save the provider credential in the operating system store".to_string()
+        })
+}
+
+#[tauri::command]
+fn credential_delete(provider_id: String) -> std::result::Result<(), String> {
+    let entry = credential_entry(&provider_id)?;
+    let _ = entry.delete_credential();
+    Ok(())
+}
+
+#[tauri::command]
+async fn ai_chat_completion(
+    provider_id: String,
+    prompt: String,
+    max_tokens: u32,
+    temperature: f64,
+) -> std::result::Result<String, String> {
+    let credential = read_credential(&provider_id)?;
+    request_completion(&credential, &prompt, max_tokens, temperature).await
+}
+
+#[tauri::command]
+async fn test_provider_configuration(
+    api_key: String,
+    base_url: String,
+    model: String,
+) -> std::result::Result<(), String> {
+    let credential = StoredProviderCredential {
+        api_key,
+        base_url,
+        model,
+    };
+    request_completion(&credential, "请只回复“连接成功”。", 16, 0.0)
+        .await
+        .map(|_| ())
 }
 
 #[tauri::command]
@@ -658,7 +857,7 @@ fn database_execute(
 
 #[cfg(test)]
 mod tests {
-    use super::initialize_schema;
+    use super::{completion_url, initialize_schema, validate_base_url};
     use rusqlite::Connection;
 
     #[test]
@@ -743,5 +942,28 @@ mod tests {
 
         assert_eq!(recipe_count, 1);
         assert_eq!(setting_count, 1);
+    }
+
+    #[test]
+    fn provider_endpoint_policy_rejects_unsafe_hosts_and_http() {
+        for endpoint in [
+            "http://api.example.com/v1",
+            "https://localhost:3000/v1",
+            "https://127.0.0.1/v1",
+            "https://user:password@api.example.com/v1",
+            "https://api.example.com/v1?token=secret",
+        ] {
+            assert!(validate_base_url(endpoint).is_err(), "accepted {endpoint}");
+        }
+    }
+
+    #[test]
+    fn provider_endpoint_policy_builds_chat_completion_url() {
+        let endpoint =
+            completion_url("https://api.example.com/v1/").expect("accept public HTTPS endpoint");
+        assert_eq!(
+            endpoint.as_str(),
+            "https://api.example.com/v1/chat/completions"
+        );
     }
 }

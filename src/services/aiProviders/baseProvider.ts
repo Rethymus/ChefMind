@@ -8,11 +8,21 @@ import {
 } from '@/types/recipe'
 import { UserPreferences, UserHistoryItem } from '@/services/aiService'
 
+export interface TextGenerationOptions {
+  maxTokens?: number
+  temperature?: number
+}
+
 /**
  * AI提供者基础接口
  * 所有AI提供者都应实现此接口
  */
 export type BaseAIProvider = {
+  /**
+   * Generate provider-neutral text for analyses and legacy helpers.
+   */
+  generateText?(prompt: string, options?: TextGenerationOptions): Promise<string>
+
   /**
    * 生成食谱
    * @param params 食谱生成参数

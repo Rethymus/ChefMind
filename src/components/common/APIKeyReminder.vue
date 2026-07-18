@@ -7,7 +7,7 @@
       <div class="reminder-text">
         <h4>AI 功能提醒</h4>
         <p>
-          AI 功能已就绪！系统已检测到有效的环境变量配置，正在使用真实的 AI 功能为您提供最佳体验。
+          配置你自己的供应商 API Key 后即可使用真实 AI。Web 版 Key 仅在当前页面保留；桌面版会使用系统凭据库。
         </p>
       </div>
       <div class="reminder-actions">
@@ -23,9 +23,10 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted } from 'vue'
+  import { aiConfigService } from '@/services/aiConfig'
 
   interface Props {
-    provider?: 'openai' | 'glm' | 'qwen' | 'all'
+    provider?: 'openai' | 'all'
     persistent?: boolean
     showQuickConfig?: boolean
   }
@@ -43,36 +44,9 @@
   }>()
 
   const isDismissed = ref(false)
+  const isConfigured = ref(false)
 
-  // 检查是否有 API 密钥配置
-  const hasApiKey = computed(() => {
-    if (props.provider === 'all') {
-      return hasUniversalKey.value || hasOpenAIKey.value || hasGLMKey.value || hasQwenKey.value
-    } else if (props.provider === 'openai') {
-      return hasOpenAIKey.value || hasUniversalKey.value
-    } else if (props.provider === 'glm') {
-      return hasGLMKey.value || hasUniversalKey.value
-    } else if (props.provider === 'qwen') {
-      return hasQwenKey.value || hasUniversalKey.value
-    }
-    return false
-  })
-
-  const hasUniversalKey = computed(() => {
-    return !!import.meta.env.VITE_API_KEY
-  })
-
-  const hasOpenAIKey = computed(() => {
-    return !!import.meta.env.VITE_OPENAI_API_KEY
-  })
-
-  const hasGLMKey = computed(() => {
-    return !!import.meta.env.VITE_GLM_API_KEY
-  })
-
-  const hasQwenKey = computed(() => {
-    return !!import.meta.env.VITE_QWEN_API_KEY
-  })
+  const hasApiKey = computed(() => isConfigured.value)
 
   // 是否显示提醒
   const showReminder = computed(() => {
@@ -91,23 +65,10 @@
   // 显示配置指南
   const showConfigGuide = () => {
     emit('show-guide')
-    // 显示OpenAI兼容的配置指南
+    // 显示 BYOK 配置指南
     alert(
-      '请在项目根目录创建 .env 文件，并添加以下OpenAI兼容的API配置：\n\n' +
-        '# === 通用OpenAI兼容配置 ===\n' +
-        'VITE_API_KEY=your_api_key_here\n' +
-        'VITE_API_BASE_URL=https://api.openai.com/v1\n' +
-        'VITE_API_MODEL=gpt-4o-mini\n\n' +
-        '# === 其他服务商示例 ===\n' +
-        '# GLM (智谱清言)\n' +
-        '# VITE_GLM_API_KEY=your_glm_key\n' +
-        '# VITE_GLM_API_URL=https://open.bigmodel.cn/api/paas/v4/\n' +
-        '# VITE_GLM_MODEL=glm-4-air\n\n' +
-        '# Qwen (通义千问)\n' +
-        '# VITE_QWEN_API_KEY=your_qwen_key\n' +
-        '# VITE_QWEN_API_URL=https://dashscope.aliyuncs.com/compatible-mode/v1\n' +
-        '# VITE_QWEN_MODEL=qwen-turbo\n\n' +
-        '# 注意：优先使用通用配置，如需特定服务商配置请取消对应注释'
+      '前往“设置”页，选择供应商预设并填写你在该供应商控制台创建的 API Key、Base URL 和模型名称。\n\n' +
+        '请勿将 API Key 写入 .env、VITE_* 变量、GitHub Secret 或公开仓库。'
     )
   }
 
@@ -126,6 +87,9 @@
     if (!props.persistent) {
       isDismissed.value = false
     }
+    aiConfigService.isProviderConfigured('openai').then(configured => {
+      isConfigured.value = configured
+    })
   })
 
   // 暴露方法给父组件
@@ -134,6 +98,9 @@
     hasApiKey,
     resetReminder: () => {
       isDismissed.value = false
+      aiConfigService.isProviderConfigured('openai').then(configured => {
+        isConfigured.value = configured
+      })
     },
   })
 </script>

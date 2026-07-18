@@ -6,9 +6,11 @@ import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 const host = process.env.TAURI_DEV_HOST
+const base = process.env.VITE_BASE_PATH || '/'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base,
   plugins: [
     vue(),
     AutoImport({
@@ -65,8 +67,8 @@ export default defineConfig({
           }
           if (
             id.includes('services/aiService') ||
-            id.includes('services/glmService') ||
-            id.includes('services/aiConfig')
+            id.includes('services/aiConfig') ||
+            id.includes('services/aiProviders')
           ) {
             return 'aiServices'
           }

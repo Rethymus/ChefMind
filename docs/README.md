@@ -42,7 +42,7 @@
 ### 技术栈
 - **前端**: Vue 3 + TypeScript + Vite + Element Plus
 - **后端**: Tauri + Rust + SQLite
-- **AI 集成**: 多提供商支持 (OpenAI, GLM, Anthropic, Gemini 等)
+- **AI 集成**: OpenAI-compatible BYOK，支持多供应商预设和自定义兼容服务
 - **状态管理**: Pinia
 - **样式**: SCSS + Tailwind CSS
 

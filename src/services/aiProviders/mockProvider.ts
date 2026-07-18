@@ -6,6 +6,42 @@ import type { BaseAIProvider } from './baseProvider'
  * 用于开发和测试环境
  */
 class MockAIProvider implements BaseAIProvider {
+  async generateText(prompt: string): Promise<string> {
+    if (prompt.includes('3道') && prompt.includes('JSON')) {
+      return JSON.stringify([
+        {
+          title: '番茄炒蛋',
+          description: '本地模拟的快手家常菜。',
+          ingredients: ['番茄 2个', '鸡蛋 3个'],
+          instructions: ['准备食材', '炒熟鸡蛋和番茄', '调味出锅'],
+          cookingTime: '15分钟',
+          servings: 2,
+          difficulty: '简单',
+        },
+      ])
+    }
+
+    if (prompt.includes('食谱') && prompt.includes('JSON')) {
+      return JSON.stringify({
+        name: '本地模拟菜谱',
+        description: '这是离线演示用的模拟菜谱。',
+        ingredients: [{ name: '番茄', amount: '2', unit: '个' }],
+        steps: ['准备食材', '加热烹饪', '装盘享用'],
+        cookingTime: 20,
+        servings: 2,
+        difficulty: '简单',
+      })
+    }
+
+    if (prompt.includes('JSON')) {
+      return JSON.stringify({
+        recommendations: ['这是本地模拟结果，请配置自己的 AI Provider 以获取实际分析。'],
+      })
+    }
+
+    return '这是本地模拟结果，请配置自己的 AI Provider 以获取实际分析。'
+  }
+
   async generateRecipe(params: RecipeGenerationParams): Promise<Recipe> {
     // 模拟API调用延迟
     await new Promise(resolve => setTimeout(resolve, 1500))

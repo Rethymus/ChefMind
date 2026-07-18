@@ -1,6 +1,7 @@
 // ChefMind 智食谱 - AI菜谱服务
 
-import { callGLM, parseJsonResponse } from './glmService'
+import { aiService } from './aiService'
+import { parseAIJsonResponse } from './aiResponseParser'
 import { generateUUID } from '../utils/idGenerator'
 import { cookingMethods } from '../data/cookingMethods'
 import { cacheData, getCachedData } from '../utils/cacheUtils'
@@ -101,16 +102,12 @@ function convertNutrition(rawNutrition?: RawRecipeData['nutrition']): Nutrition 
 async function generateRecipe(request: RecipeGenerationRequest): Promise<IRecipe> {
   try {
     const userPrompt = buildUserPrompt(request)
-    console.log('生成菜谱的提示词:', userPrompt)
-
-    const response = await callGLM(userPrompt, {
+    const response = await aiService.generateText(userPrompt, {
       temperature: 0.7,
       maxTokens: 4096,
     })
 
-    console.log('GLM API响应:', response)
-
-    const recipeData = parseJsonResponse<RawRecipeData>(response)
+    const recipeData = parseAIJsonResponse<RawRecipeData>(response)
     const recipe = convertToRecipe(recipeData, request)
 
     // 保存到SQLite数据库
@@ -528,13 +525,10 @@ async function searchRecipes(
 
     // 如果数据库中没有结果，使用AI生成
     const userPrompt = buildSearchPrompt(query, filters)
-    console.log('搜索菜谱的提示词:', userPrompt)
-
-    const response = await callGLM(userPrompt, {
+    const response = await aiService.generateText(userPrompt, {
       temperature: 0.7,
       maxTokens: 4096,
     })
-    console.log('GLM API响应:', response)
 
     // 处理响应并返回结果
     return processSearchResponse(response, filters)
@@ -619,7 +613,7 @@ function buildTimeFilter(cookingTime?: { min?: number; max?: number }): string {
  */
 function processSearchResponse(response: string, filters?: RecipeFilters): RecipeSearchResult {
   // 解析JSON响应
-  const recipesData = parseJsonResponse<IRecipe[]>(response)
+  const recipesData = parseAIJsonResponse<IRecipe[]>(response)
 
   // 转换为Recipe对象数组
   const recipes = convertSearchResults(recipesData)
@@ -740,8 +734,7 @@ async function enhanceRecipeDescription(recipe: IRecipe): Promise<IRecipe> {
     
     请创作一段生动、吸引人的菜品描述，包括外观、香气、口感、风味特点等。`
 
-    // 调用GLM API
-    const response = await callGLM(userPrompt, {
+    const response = await aiService.generateText(userPrompt, {
       temperature: 0.8, // 稍微提高创意性
       maxTokens: 1024,
     })
@@ -783,8 +776,7 @@ async function generateCookingTips(recipe: IRecipe): Promise<IRecipe> {
     
     请提供5-8条专业、实用的烹饪技巧，帮助用户更好地完成这道菜。`
 
-    // 调用GLM API
-    const response = await callGLM(userPrompt, {
+    const response = await aiService.generateText(userPrompt, {
       temperature: 0.7,
       maxTokens: 1024,
     })
@@ -831,8 +823,7 @@ async function generateHealthBenefits(recipe: IRecipe): Promise<IRecipe> {
     请提供4-6条健康益处，每条应该简洁明了，科学准确，避免夸大或不实的健康声明。
     请直接返回健康益处列表，每条一行，不要包含任何额外的解释或格式。`
 
-    // 调用GLM API
-    const response = await callGLM(userPrompt, {
+    const response = await aiService.generateText(userPrompt, {
       temperature: 0.7,
       maxTokens: 1024,
     })

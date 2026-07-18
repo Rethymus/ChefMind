@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <DesktopNavBar />
+    <LocalDataNotice />
     <ErrorBoundary>
       <div class="app-content">
         <router-view />
@@ -18,6 +19,7 @@
   import NotificationContainer from '@/components/common/NotificationContainer.vue'
   import MobileNavBar from '@/components/common/MobileNavBar.vue'
   import DesktopNavBar from '@/components/common/DesktopNavBar.vue'
+  import LocalDataNotice from '@/components/common/LocalDataNotice.vue'
   import GlassFooter from '@/components/layout/GlassFooter.vue'
   import { useThemeStore } from '@/stores/theme'
   import { registerServiceWorker } from '@/utils/performance'

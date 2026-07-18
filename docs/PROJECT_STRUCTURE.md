@@ -119,17 +119,10 @@ src/
 │   ├── aiProviders/                    # AI提供商实现
 │   │   ├── index.ts                   # AI提供商工厂和入口
 │   │   ├── baseProvider.ts            # AI提供商基础接口
-│   │   ├── mockProvider.ts            # 模拟AI提供商
-│   │   ├── glmProvider.ts             # 智谱AI提供商
-│   │   ├── anthropicProvider.ts       # Anthropic提供商
-│   │   ├── geminiProvider.ts          # Google Gemini提供商
-│   │   ├── deepseekProvider.ts        # DeepSeek提供商
-│   │   ├── moonshotProvider.ts        # Moonshot提供商
-│   │   ├── qwenProvider.ts            # 通义千问提供商
-│   │   ├── hunyuanProvider.ts         # 腾讯混元提供商
-│   │   ├── openaiProvider.ts          # OpenAI兼容提供商
+│   │   ├── openAICompatibleProvider.ts # OpenAI-compatible BYOK 适配器
+│   │   ├── mockProvider.ts            # 本地模拟提供商
+│   │   ├── promptBuilder.ts           # Provider 中立提示词构建
 │   │   ├── paramAdapter.ts            # 参数适配器
-│   │   └── promptBuilder.ts           # Prompt构建器
 │   └── database/                      # 数据库访问层
 │       ├── aiConfigService.ts         # AI配置数据库服务
 │       ├── dataAccess.ts              # 通用数据访问层
@@ -329,7 +322,7 @@ SQLite数据库文件存储位置：
 - **SQLite** - 轻量级数据库
 
 ### AI 服务集成
-- **多AI提供商支持** - OpenAI、GLM、Anthropic、Gemini、DeepSeek、Moonshot、Qwen、Hunyuan
+- **多 AI Provider 支持** - 通过 OpenAI-compatible BYOK 配置连接 OpenAI、DeepSeek、通义千问、Moonshot、智谱、硅基流动及自定义兼容服务
 - **智能缓存系统** - 多层缓存策略
 - **个性化推荐** - AI驱动的菜谱推荐
 - **营养分析** - 智能营养成分分析

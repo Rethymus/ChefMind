@@ -31,10 +31,12 @@ Web builds use IndexedDB database `ChefMindDB` with object stores for:
 - `favorites`
 - `users`
 - `search_history`
-- `settings`
+- `settings`（不含 API Key）
 
 If IndexedDB is unavailable, the app falls back to in-memory sample data so the UI can still render, but data is not persistent.
 
 ## Compatibility Notes
 
 Some UI state is intentionally small and remains in `localStorage`, such as theme preferences, temporary cooking guide handoff data, simple caches, and legacy migration backups. Persistent recipe, favorite, settings, and search tables should go through `dataAccess`.
+
+API Key is deliberately excluded from browser persistent storage: the Web build keeps it only in page memory, while the Tauri build stores it in the operating-system credential store. Browser data may still be cleared by the user or the browser, so use the in-app JSON export as a backup.

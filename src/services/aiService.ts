@@ -9,20 +9,8 @@ import type {
   IngredientAnalysisResult,
   NutritionAnalysisResult,
 } from '@/types/recipe'
-import { callGLM } from './glmService'
 
-// AI提供商枚举
-enum AIProviderType {
-  GLM = 'glm',
-  OPENAI = 'openai',
-  ANTHROPIC = 'anthropic',
-  GEMINI = 'gemini',
-  DEEPSEEK = 'deepseek',
-  MOONSHOT = 'moonshot',
-  QWEN = 'qwen',
-  HUNYUAN = 'hunyuan',
-  MOCK = 'mock',
-}
+type AIProviderType = 'openai' | 'mock'
 
 // 扩展AI服务接口
 
@@ -235,8 +223,12 @@ class AIService {
     }
 
     try {
-      // 直接调用GLM API进行文本生成
-      const response = await callGLM(prompt, {
+      const generateText = this.currentProvider.generateText
+      if (!generateText) {
+        throw new Error('当前 AI Provider 不支持通用文本生成')
+      }
+
+      const response = await generateText.call(this.currentProvider, prompt, {
         maxTokens: options?.maxTokens || 2000,
         temperature: options?.temperature || 0.7,
       })
@@ -632,15 +624,8 @@ class AIService {
   // 获取提供商名称
   private getProviderName(provider: AIProviderType): string {
     const names = {
-      [AIProviderType.GLM]: '智谱 GLM',
-      [AIProviderType.OPENAI]: 'OpenAI GPT',
-      [AIProviderType.ANTHROPIC]: 'Anthropic Claude',
-      [AIProviderType.GEMINI]: 'Google Gemini',
-      [AIProviderType.DEEPSEEK]: 'DeepSeek',
-      [AIProviderType.MOONSHOT]: 'Moonshot',
-      [AIProviderType.QWEN]: '通义千问',
-      [AIProviderType.HUNYUAN]: '腾讯混元',
-      [AIProviderType.MOCK]: '模拟模式',
+      openai: 'OpenAI-compatible BYOK',
+      mock: '模拟模式',
     }
     return names[provider] || '未知'
   }
@@ -654,4 +639,3 @@ export const aiService = new AIService()
 })()
 
 // 导出类型和枚举
-

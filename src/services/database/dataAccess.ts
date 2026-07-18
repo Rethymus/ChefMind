@@ -296,6 +296,11 @@ class SQLiteDataAccess {
     const db = await this.getDb()
     return db.queryOne(sql, params)
   }
+
+  async rawExecute(sql: string, params: any[] = []): Promise<{ changes?: number }> {
+    const db = await this.getDb()
+    return db.execute(sql, params)
+  }
 }
 
 interface TauriDatabaseResult {
@@ -430,6 +435,11 @@ class TauriSQLiteDataAccess {
   async rawQueryOne(sql: string, params: any[] = []): Promise<any | null> {
     const result = await this.invokeDatabase('database_query_one', sql, params)
     return result.data?.[0] || null
+  }
+
+  async rawExecute(sql: string, params: any[] = []): Promise<{ changes?: number }> {
+    const result = await this.invokeDatabase('database_execute', sql, params)
+    return { changes: result.changes || 0 }
   }
 }
 
@@ -586,6 +596,14 @@ export class UniversalDataAccess {
     }
   }
 
+  async execute(sql: string, params: any[] = []): Promise<{ changes?: number }> {
+    if (this.storage instanceof SQLiteDataAccess || this.storage instanceof TauriSQLiteDataAccess) {
+      return this.storage.rawExecute(sql, params)
+    }
+
+    throw new Error('当前存储后端不支持 SQL 执行')
+  }
+
   // 获取存储后端类型
   getStorageType(): string {
     if (this.storage instanceof SQLiteDataAccess) {
@@ -630,6 +648,14 @@ export class UniversalDataAccess {
         await this.insert(table, item)
       }
     }
+  }
+
+  async replaceAll(records: Record<string, any[]>): Promise<void> {
+    if (this.storage instanceof IndexedDBStorage) {
+      return this.storage.replaceAll(records)
+    }
+
+    throw new Error('当前存储后端不支持原子导入')
   }
 
   // 清空表

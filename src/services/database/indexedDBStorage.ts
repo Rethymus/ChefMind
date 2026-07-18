@@ -314,6 +314,8 @@ export class IndexedDBStorage {
   async bulkInsert(table: string, items: any[]): Promise<void> {
     await this.ensureInitialized()
 
+    if (items.length === 0) return
+
     return new Promise((resolve, reject) => {
       try {
         const objectStore = this.getObjectStore(table, 'readwrite')
@@ -375,6 +377,44 @@ export class IndexedDBStorage {
       } catch (error) {
         console.error('❌ 清空表异常:', error)
         reject(error)
+      }
+    })
+  }
+
+  /** Replace several stores in one IndexedDB transaction. */
+  async replaceAll(records: Record<string, any[]>): Promise<void> {
+    await this.ensureInitialized()
+    if (!this.db) throw new Error('IndexedDB 未初始化')
+
+    const storeNames = Object.keys(records)
+    if (storeNames.length === 0) return
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(storeNames, 'readwrite')
+      let settled = false
+
+      const fail = (error: unknown) => {
+        if (!settled) {
+          settled = true
+          reject(error)
+        }
+      }
+
+      transaction.oncomplete = () => {
+        if (!settled) {
+          settled = true
+          resolve()
+        }
+      }
+      transaction.onerror = () => fail(transaction.error || new Error('IndexedDB 导入失败'))
+      transaction.onabort = () => fail(transaction.error || new Error('IndexedDB 导入已取消'))
+
+      for (const storeName of storeNames) {
+        const store = transaction.objectStore(storeName)
+        store.clear()
+        for (const record of records[storeName]) {
+          store.put(record)
+        }
       }
     })
   }

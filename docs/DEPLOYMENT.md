@@ -114,16 +114,15 @@ EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 ```
 
-### 3. 环境变量配置
+### 3. 构建环境变量
 
 ```bash
-# .env.production
+# .env.production（仅限非敏感的构建配置）
 VITE_APP_TITLE=ChefMind
-VITE_APP_VERSION=2.2.0
-VITE_API_BASE_URL=https://api.your-domain.com
-VITE_AI_API_KEY=your-ai-api-key
-VITE_ENABLE_ANALYTICS=true
+VITE_APP_VERSION=3.1.5
 ```
+
+不要在 `.env`、`VITE_*` 或部署平台 Secret 中注入模型供应商 API Key。Vite 会把 `VITE_*` 值编译进浏览器产物；ChefMind 的 BYOK Key 必须由用户在运行时通过设置页输入。
 
 ### 4. PM2 部署 (Node.js 后端)
 

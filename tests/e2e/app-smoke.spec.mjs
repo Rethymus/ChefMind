@@ -41,4 +41,28 @@ test.describe('ChefMind smoke paths', () => {
     )
     await expect(link).toHaveAttribute('target', '_blank')
   })
+
+  test('keeps Web BYOK keys out of persistent browser storage', async ({ page }) => {
+    await openRoute(page, '/settings')
+
+    const fields = page.locator('.settings-view .field')
+    await fields.nth(1).locator('input').fill('demo-model')
+    await fields.nth(2).locator('input').fill('https://api.example.com/v1')
+    await fields.nth(3).locator('input').fill('demo-user-key')
+    await page.getByRole('button', { name: '保存配置' }).click()
+
+    await expect(page.getByText('AI 配置已保留在本次页面')).toBeVisible()
+    const leakedKey = await page.evaluate(() => {
+      const persistedValues = [...Array.from({ length: localStorage.length }, (_, index) => {
+        const key = localStorage.key(index)
+        return key ? `${key}:${localStorage.getItem(key)}` : ''
+      }), ...Array.from({ length: sessionStorage.length }, (_, index) => {
+        const key = sessionStorage.key(index)
+        return key ? `${key}:${sessionStorage.getItem(key)}` : ''
+      })]
+      return persistedValues.some(value => value.includes('demo-user-key'))
+    })
+
+    expect(leakedKey).toBe(false)
+  })
 })

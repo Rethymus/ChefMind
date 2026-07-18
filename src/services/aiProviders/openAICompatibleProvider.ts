@@ -1,4 +1,4 @@
-import type { BaseAIProvider } from './baseProvider'
+import type { BaseAIProvider, TextGenerationOptions } from './baseProvider'
 import type {
   Recipe,
   RecipeGenerationParams,
@@ -11,27 +11,51 @@ import type { UserHistoryItem, UserPreferences } from '@/services/aiService'
 import { PromptBuilder } from './promptBuilder'
 import { ParamAdapter } from './paramAdapter'
 
-export class MoonshotProvider implements BaseAIProvider {
-  private readonly apiKey: string
+export class OpenAICompatibleProvider implements BaseAIProvider {
+  private readonly apiKey?: string
   private readonly baseURL: string
   private readonly model: string
+  private readonly providerId: string
 
-  constructor(apiKey?: string, baseURL: string = 'https://api.moonshot.cn/v1') {
-    this.apiKey = apiKey || import.meta.env.VITE_MOONSHOT_API_KEY || ''
-    this.baseURL = baseURL || 'https://api.moonshot.cn/v1'
-    this.model = import.meta.env.VITE_MOONSHOT_MODEL || 'moonshot-v1-8k'
+  constructor(apiKey?: string, baseURL?: string, model?: string, providerId: string = 'openai') {
+    this.apiKey = apiKey
+    this.providerId = providerId
+
+    if (baseURL) {
+      this.baseURL = baseURL.endsWith('/chat/completions')
+        ? baseURL
+        : baseURL.endsWith('/')
+          ? baseURL + 'chat/completions'
+          : baseURL + '/chat/completions'
+    } else {
+      this.baseURL = ''
+    }
+
+    this.model = model || ''
   }
 
-  private async callMoonshot(
+  private async callChatCompletion(
     prompt: string,
-    options?: { maxTokens?: number; temperature?: number }
+    options?: TextGenerationOptions
   ): Promise<string> {
+    if (typeof window !== 'undefined' && window.__TAURI__?.invoke && !this.apiKey) {
+      return (await window.__TAURI__.invoke('ai_chat_completion', {
+        providerId: this.providerId,
+        prompt,
+        maxTokens: options?.maxTokens || 2000,
+        temperature: options?.temperature || 0.7,
+      })) as string
+    }
+
     if (!this.apiKey) {
-      throw new Error('Moonshot API密钥未配置')
+      throw new Error('尚未配置 API Key')
+    }
+    if (!this.baseURL || !this.model) {
+      throw new Error('尚未配置 Base URL 或模型名称')
     }
 
     try {
-      const response = await fetch(`${this.baseURL}/chat/completions`, {
+      const response = await fetch(this.baseURL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -45,22 +69,33 @@ export class MoonshotProvider implements BaseAIProvider {
               content: prompt,
             },
           ],
-          max_tokens: options?.maxTokens || 1000,
+          max_tokens: options?.maxTokens || 2000,
           temperature: options?.temperature || 0.7,
         }),
       })
 
       if (!response.ok) {
-        const error = await response.text()
-        throw new Error(`Moonshot API错误: ${response.status} - ${error}`)
+        const errorText = await response.text()
+        console.error('AI 兼容接口响应错误:', response.status, response.statusText)
+        throw new Error(`AI 兼容接口请求失败: ${response.status} ${response.statusText}`)
       }
 
       const data = await response.json()
+
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        console.error('AI 兼容接口响应格式错误')
+        throw new Error('AI 兼容接口响应格式错误')
+      }
+
       return data.choices[0].message.content
     } catch (error) {
-      console.error('Moonshot API调用失败:', error)
+      console.error('AI 兼容接口调用失败:', error)
       throw error
     }
+  }
+
+  async generateText(prompt: string, options?: TextGenerationOptions): Promise<string> {
+    return this.callChatCompletion(prompt, options)
   }
 
   private parseJsonResponse<T>(response: string): T {
@@ -71,7 +106,7 @@ export class MoonshotProvider implements BaseAIProvider {
       }
       throw new Error('响应中未找到有效的JSON')
     } catch (error) {
-      console.error('解析Moonshot JSON响应失败:', error)
+      console.error('解析 AI 兼容接口 JSON 响应失败:', error)
       throw new Error('解析响应失败')
     }
   }
@@ -87,7 +122,7 @@ export class MoonshotProvider implements BaseAIProvider {
       // 构建通用提示词
       const prompt = PromptBuilder.buildRecipePrompt(standardParams)
 
-      const response = await this.callMoonshot(prompt, {
+      const response = await this.callChatCompletion(prompt, {
         maxTokens: 2000,
         temperature: 0.7,
       })
@@ -97,7 +132,7 @@ export class MoonshotProvider implements BaseAIProvider {
 
       return recipe
     } catch (error) {
-      console.error('Moonshot生成食谱失败:', error)
+      console.error('AI 兼容接口生成食谱失败:', error)
       return this.createFallbackRecipe(standardParams)
     }
   }
@@ -109,7 +144,7 @@ export class MoonshotProvider implements BaseAIProvider {
     const title = recipeResult.title || `${params.ingredients[0]}食谱`
 
     return {
-      id: 'moonshot-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+      id: 'provider-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
       title,
       name: title,
       description: recipeResult.description || `使用${params.ingredients.join('、')}制作的美味食谱`,
@@ -132,7 +167,7 @@ export class MoonshotProvider implements BaseAIProvider {
     const title = `${params.ingredients[0]}食谱`
 
     return {
-      id: 'moonshot-fallback-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+      id: 'provider-fallback-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
       title,
       name: title,
       description: `使用${params.ingredients.join('、')}制作的美味食谱`,
@@ -163,7 +198,7 @@ export class MoonshotProvider implements BaseAIProvider {
 }
 `
 
-      const response = await this.callMoonshot(prompt, {
+      const response = await this.callChatCompletion(prompt, {
         maxTokens: 200,
         temperature: 0.3,
       })
@@ -180,7 +215,7 @@ export class MoonshotProvider implements BaseAIProvider {
         alternatives: result.alternatives,
       }
     } catch (error) {
-      console.error('Moonshot验证食材失败:', error)
+      console.error('AI 兼容接口验证食材失败:', error)
       return {
         isValid: true,
         reason: '验证服务暂时不可用，请自行确认是否为可食用食材',
@@ -210,14 +245,14 @@ export class MoonshotProvider implements BaseAIProvider {
 }
 `
 
-      const response = await this.callMoonshot(prompt, {
+      const response = await this.callChatCompletion(prompt, {
         maxTokens: 500,
         temperature: 0.3,
       })
 
       return this.parseJsonResponse<IngredientAnalysisResult>(response)
     } catch (error) {
-      console.error('Moonshot分析食材失败:', error)
+      console.error('AI 兼容接口分析食材失败:', error)
       return {
         name: '未知食材',
         confidence: 0.5,
@@ -263,14 +298,14 @@ export class MoonshotProvider implements BaseAIProvider {
 }
 `
 
-      const response = await this.callMoonshot(prompt, {
+      const response = await this.callChatCompletion(prompt, {
         maxTokens: 1000,
         temperature: 0.3,
       })
 
       return this.parseJsonResponse<NutritionAnalysisResult>(response)
     } catch (error) {
-      console.error('Moonshot分析营养成分失败:', error)
+      console.error('AI 兼容接口分析营养成分失败:', error)
       return {
         calories: 0,
         protein: 0,
@@ -320,14 +355,14 @@ export class MoonshotProvider implements BaseAIProvider {
 ]
 `
 
-      const response = await this.callMoonshot(prompt, {
+      const response = await this.callChatCompletion(prompt, {
         maxTokens: 2000,
         temperature: 0.7,
       })
 
       return this.parseJsonResponse<PersonalizedRecommendation[]>(response)
     } catch (error) {
-      console.error('Moonshot获取个性化推荐失败:', error)
+      console.error('AI 兼容接口获取个性化推荐失败:', error)
       return []
     }
   }
@@ -357,7 +392,7 @@ export class MoonshotProvider implements BaseAIProvider {
 }
 `
 
-      const response = await this.callMoonshot(prompt, {
+      const response = await this.callChatCompletion(prompt, {
         maxTokens: 1000,
         temperature: 0.5,
       })
@@ -369,7 +404,7 @@ export class MoonshotProvider implements BaseAIProvider {
         estimatedTime: number
       }>(response)
     } catch (error) {
-      console.error('Moonshot获取烹饪指导失败:', error)
+      console.error('AI 兼容接口获取烹饪指导失败:', error)
       return {
         guidance: '按照步骤进行操作',
         tips: ['注意火候', '及时调味'],
@@ -379,4 +414,3 @@ export class MoonshotProvider implements BaseAIProvider {
     }
   }
 }
-

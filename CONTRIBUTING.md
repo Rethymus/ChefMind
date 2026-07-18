@@ -9,10 +9,10 @@ npm ci
 npm run dev
 ```
 
-The app runs on Vite. For mock AI behavior during local testing:
+The app starts in Mock mode until a user configures a BYOK connection from Settings. For local screenshots:
 
 ```bash
-VITE_AI_PROVIDER=mock npm run dev -- --host 127.0.0.1 --port 1420
+npm run dev -- --host 127.0.0.1 --port 1420
 ```
 
 ## Quality Gate
