@@ -2,6 +2,7 @@
   <div id="app">
     <DesktopNavBar />
     <LocalDataNotice />
+    <GitHubPagesCorsNotice />
     <ErrorBoundary>
       <div class="app-content">
         <router-view />
@@ -19,6 +20,7 @@
   import NotificationContainer from '@/components/common/NotificationContainer.vue'
   import MobileNavBar from '@/components/common/MobileNavBar.vue'
   import DesktopNavBar from '@/components/common/DesktopNavBar.vue'
+  import GitHubPagesCorsNotice from '@/components/common/GitHubPagesCorsNotice.vue'
   import LocalDataNotice from '@/components/common/LocalDataNotice.vue'
   import GlassFooter from '@/components/layout/GlassFooter.vue'
   import { useThemeStore } from '@/stores/theme'

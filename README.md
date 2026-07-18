@@ -1,5 +1,9 @@
 # ChefMind 智食谱
 
+<p align="center">
+  <img src="./docs/assets/chefmind-logo.png" alt="ChefMind 智食谱 logo" width="520" />
+</p>
+
 > 把“今天吃什么”这件小事，变成一个更健康、更省心、更有掌控感的日常系统。
 
 [![Vue](https://img.shields.io/badge/Vue-3.4+-4FC08D?style=flat-square&logo=vue.js&logoColor=white)](https://vuejs.org/)

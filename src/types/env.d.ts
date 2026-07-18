@@ -10,6 +10,8 @@ interface ImportMeta {
   readonly env: ImportMetaEnv
 }
 
+declare const __CHEFMIND_GITHUB_PAGES__: boolean
+
 interface Window {
   __TAURI__?: {
     invoke?: (command: string, args?: Record<string, unknown>) => Promise<unknown>
